@@ -15,5 +15,7 @@ class League (
     val id: Long = 0,
 
     @Column(name = "league_name")
-    val leagueName: String
+    val leagueName: String,
+
+    val version: Long = 0
 )

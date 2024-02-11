@@ -30,5 +30,8 @@ data class PlayerAccount(
     val admin: Boolean = false,
 
     @Column(name = "super_admin")
-    val superAdmin: Boolean = false
+    val superAdmin: Boolean = false,
+
+    @Column(name = "default_league_id")
+    val defaultLeagueId: Long? = null
 )
