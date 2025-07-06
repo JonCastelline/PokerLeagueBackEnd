@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.model.PlayerAccount
+import com.pokerleaguebackend.payload.JwtAuthenticationResponse
 import com.pokerleaguebackend.payload.LoginRequest
 import com.pokerleaguebackend.payload.SignUpRequest
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -35,7 +36,7 @@ class AuthController(
 
         SecurityContextHolder.getContext().authentication = authentication
         val jwt = tokenProvider.generateToken(authentication)
-        return ResponseEntity.ok(jwt)
+        return ResponseEntity.ok(JwtAuthenticationResponse(jwt))
     }
 
     @PostMapping("/signup")

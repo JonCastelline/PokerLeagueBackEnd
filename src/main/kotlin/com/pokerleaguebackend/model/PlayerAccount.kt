@@ -1,11 +1,14 @@
 package com.pokerleaguebackend.model
 
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
+import jakarta.persistence.Table
+import jakarta.persistence.Id
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.Column
+import jakarta.persistence.OneToMany
+import jakarta.persistence.CascadeType
+import java.util.ArrayList
 
 @Entity
 @Table(name = "player_account")
@@ -32,6 +35,6 @@ data class PlayerAccount(
     @Column(name = "super_admin")
     val superAdmin: Boolean = false,
 
-    @Column(name = "default_league_id")
-    val defaultLeagueId: Long? = null
+    @OneToMany(mappedBy = "playerAccount", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val players: List<Player> = ArrayList()
 )
