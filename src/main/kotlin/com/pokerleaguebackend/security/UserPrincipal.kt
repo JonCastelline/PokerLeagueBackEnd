@@ -6,7 +6,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
 class UserPrincipal(
-    private val playerAccount: PlayerAccount
+    val playerAccount: PlayerAccount
 ) : UserDetails {
 
     override fun getAuthorities(): Collection<GrantedAuthority> {
