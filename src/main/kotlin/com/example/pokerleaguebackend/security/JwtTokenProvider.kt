@@ -2,10 +2,12 @@ package com.example.pokerleaguebackend.security
 
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
+import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 import java.util.*
+import javax.crypto.SecretKey
 
 @Component
 class JwtTokenProvider {
@@ -16,6 +18,15 @@ class JwtTokenProvider {
     @Value("\${app.jwtExpirationInMs}")
     private var jwtExpirationInMs: Int = 0
 
+    private var secretKey: SecretKey? = null
+
+    fun getSecretKey(): SecretKey {
+        if (secretKey == null) {
+            secretKey = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
+        }
+        return secretKey as SecretKey
+    }
+
     fun generateToken(authentication: Authentication): String {
         val userPrincipal = authentication.principal as UserPrincipal
         val now = Date()
@@ -25,13 +36,14 @@ class JwtTokenProvider {
             .setSubject(userPrincipal.username)
             .setIssuedAt(Date())
             .setExpiration(expiryDate)
-            .signWith(SignatureAlgorithm.HS512, jwtSecret)
+            .signWith(getSecretKey(), SignatureAlgorithm.HS512)
             .compact()
     }
 
     fun getEmailFromJWT(token: String): String {
-        val claims = Jwts.parser()
-            .setSigningKey(jwtSecret)
+        val claims = Jwts.parserBuilder()
+            .setSigningKey(getSecretKey())
+            .build()
             .parseClaimsJws(token)
             .body
 
@@ -40,7 +52,7 @@ class JwtTokenProvider {
 
     fun validateToken(authToken: String): Boolean {
         try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken)
+            Jwts.parserBuilder().setSigningKey(getSecretKey()).build().parseClaimsJws(authToken)
             return true
         } catch (ex: Exception) {
             // log exception

@@ -1,5 +1,7 @@
 package com.example.pokerleaguebackend
 
+import com.example.pokerleaguebackend.model.League
+
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
