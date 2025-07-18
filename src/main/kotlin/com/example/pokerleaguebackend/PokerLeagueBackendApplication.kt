@@ -1,11 +1,11 @@
-package com.pokerleaguebackend
+package com.example.pokerleaguebackend
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
 
 @SpringBootApplication
-class PokerLeagueBackEndApplication
+class PokerLeagueBackendApplication
 
 fun main(args: Array<String>) {
-	runApplication<PokerLeagueBackEndApplication>(*args)
+    runApplication<PokerLeagueBackendApplication>(*args)
 }
