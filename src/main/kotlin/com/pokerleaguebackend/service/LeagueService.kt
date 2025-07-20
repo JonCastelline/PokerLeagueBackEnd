@@ -13,6 +13,8 @@ import java.util.Base64
 import org.springframework.transaction.annotation.Transactional
 
 import jakarta.persistence.EntityManager
+import java.util.Date
+import java.util.Calendar
 
 @Service
 class LeagueService(
@@ -31,7 +33,12 @@ class LeagueService(
             .orElseThrow { IllegalArgumentException("Creator not found") }
 
         val inviteCode = generateInviteCode()
-        val league = League(leagueName = leagueName, inviteCode = inviteCode)
+        val calendar = Calendar.getInstance()
+        calendar.time = Date()
+        calendar.add(Calendar.HOUR_OF_DAY, 24)
+        val expirationDate = calendar.time
+
+        val league = League(leagueName = leagueName, inviteCode = inviteCode, expirationDate = expirationDate)
         val savedLeague = leagueRepository.save(league)
         entityManager.flush()
         entityManager.clear()
@@ -47,14 +54,25 @@ class LeagueService(
         return savedLeague
     }
 
-    fun getLeagueById(leagueId: Long): League? {
-        return leagueRepository.findById(leagueId).orElse(null)
+    fun getLeagueById(leagueId: Long, playerId: Long): League? {
+        val league = leagueRepository.findById(leagueId).orElse(null)
+        if (league != null) {
+            val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id!!, playerId)
+            if (membership != null) {
+                return league
+            }
+        }
+        return null
     }
 
     @Transactional
     fun joinLeague(inviteCode: String, playerId: Long): League {
         val league = leagueRepository.findByInviteCode(inviteCode)
             ?: throw IllegalArgumentException("Invalid invite code")
+
+        if (league.expirationDate != null && league.expirationDate!!.before(Date())) {
+            throw IllegalStateException("Invite code has expired")
+        }
 
         val player = playerAccountRepository.findById(playerId)
             .orElseThrow { IllegalArgumentException("Player not found") }
@@ -79,5 +97,10 @@ class LeagueService(
         val buffer = ByteArray(6)
         random.nextBytes(buffer)
         return encoder.encodeToString(buffer)
+    }
+
+    fun getLeaguesForPlayer(playerId: Long): List<League> {
+        val memberships = leagueMembershipRepository.findAllByPlayerAccountId(playerId)
+        return memberships.map { it.league }
     }
 }

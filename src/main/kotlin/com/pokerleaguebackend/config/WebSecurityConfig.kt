@@ -28,12 +28,12 @@ class WebSecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFi
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .cors().and()
-            .csrf().disable()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-            .authorizeHttpRequests {
-                it.requestMatchers("/api/auth/**").permitAll()
-                .anyRequest().authenticated()
+            .csrf { it.disable() }
+            .cors { it.disable() }
+            .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
+            .authorizeHttpRequests { auth ->
+                auth.requestMatchers("/api/auth/**").permitAll()
+                auth.anyRequest().authenticated()
             }
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)

@@ -22,13 +22,21 @@ class LeagueController(private val leagueService: LeagueService) {
     @PostMapping("/join")
     fun joinLeague(@RequestBody joinLeagueRequest: JoinLeagueRequest, @AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<League> {
         val playerAccount = (userDetails as com.pokerleaguebackend.security.UserPrincipal).playerAccount
-        val league = leagueService.joinLeague(joinLeagueRequest.inviteCode, playerAccount.id!!)
+        val league = leagueService.joinLeague(joinLeagueRequest.inviteCode, playerAccount.id)
         return ResponseEntity.ok(league)
     }
 
     @GetMapping("/{leagueId}")
-    fun getLeague(@PathVariable leagueId: Long): ResponseEntity<League> {
-        val league = leagueService.getLeagueById(leagueId)
+    fun getLeague(@PathVariable leagueId: Long, @AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<League> {
+        val playerAccount = (userDetails as com.pokerleaguebackend.security.UserPrincipal).playerAccount
+        val league = leagueService.getLeagueById(leagueId, playerAccount.id)
         return league?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
+    }
+
+    @GetMapping
+    fun getLeaguesForPlayer(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<List<League>> {
+        val playerAccount = (userDetails as com.pokerleaguebackend.security.UserPrincipal).playerAccount
+        val leagues = leagueService.getLeaguesForPlayer(playerAccount.id)
+        return ResponseEntity.ok(leagues)
     }
 }
