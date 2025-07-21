@@ -7,8 +7,7 @@ import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import org.springframework.stereotype.Service
-import java.security.SecureRandom
-import java.util.Base64
+import java.util.UUID
 
 import org.springframework.transaction.annotation.Transactional
 
@@ -24,15 +23,12 @@ class LeagueService(
     private val entityManager: EntityManager
 ) {
 
-    private val random = SecureRandom()
-    private val encoder = Base64.getUrlEncoder().withoutPadding()
-
     @Transactional
     fun createLeague(leagueName: String, creatorId: Long): League {
         val creator = playerAccountRepository.findById(creatorId)
             .orElseThrow { IllegalArgumentException("Creator not found") }
 
-        val inviteCode = generateInviteCode()
+        val inviteCode = UUID.randomUUID().toString()
         val calendar = Calendar.getInstance()
         calendar.time = Date()
         calendar.add(Calendar.HOUR_OF_DAY, 24)
@@ -91,12 +87,6 @@ class LeagueService(
         leagueMembershipRepository.save(membership)
 
         return league
-    }
-
-    private fun generateInviteCode(): String {
-        val buffer = ByteArray(6)
-        random.nextBytes(buffer)
-        return encoder.encodeToString(buffer)
     }
 
     fun getLeaguesForPlayer(playerId: Long): List<League> {

@@ -11,6 +11,6 @@ class League(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
     var leagueName: String? = null,
-    var inviteCode: String? = null,
+    var inviteCode: String,
     var expirationDate: java.util.Date? = null
 )

@@ -1,5 +1,6 @@
 package com.pokerleaguebackend.controller
 
+import com.pokerleaguebackend.payload.ApiResponse
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.payload.JwtAuthenticationResponse
 import com.pokerleaguebackend.payload.LoginRequest
@@ -45,9 +46,10 @@ class AuthController(
     }
 
     @PostMapping("/signup")
-    fun registerUser(@Valid @RequestBody signUpRequest: SignUpRequest): ResponseEntity<String> {
+    fun registerUser(@Valid @RequestBody signUpRequest: SignUpRequest): ResponseEntity<ApiResponse> {
         if (playerAccountRepository.findByEmail(signUpRequest.email) != null) {
             return ResponseEntity(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse(false, "Email address already in use!"))
         }
 
         val playerAccount = PlayerAccount(
@@ -63,6 +65,6 @@ class AuthController(
             .fromCurrentContextPath().path("/api/users/{email}")
             .buildAndExpand(result.email).toUri()
 
-        return ResponseEntity.created(location).body("User registered successfully!")
+        return ResponseEntity.created(location).body(ApiResponse(true, "User registered successfully!"))
     }
 }
