@@ -3,10 +3,11 @@ package com.pokerleaguebackend.security
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import io.jsonwebtoken.security.Keys
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
-import java.util.*
+import java.util.Date
 import javax.crypto.SecretKey
 
 @Component
@@ -19,6 +20,8 @@ class JwtTokenProvider {
     private var jwtExpirationInMs: Int = 0
 
     private var secretKey: SecretKey? = null
+
+    private val logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
 
     fun getSecretKey(): SecretKey {
         if (secretKey == null) {
@@ -59,7 +62,7 @@ class JwtTokenProvider {
             Jwts.parserBuilder().setSigningKey(getSecretKey()).build().parseClaimsJws(authToken)
             return true
         } catch (ex: Exception) {
-            // log exception
+            logger.error("Invalid JWT token", ex)
         }
         return false
     }
