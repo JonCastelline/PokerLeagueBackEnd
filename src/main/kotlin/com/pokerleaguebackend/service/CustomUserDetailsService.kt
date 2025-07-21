@@ -8,14 +8,11 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
 
 @Service
-class CustomUserDetailsService(
-    private val playerAccountRepository: PlayerAccountRepository
-) : UserDetailsService {
+class CustomUserDetailsService(private val playerAccountRepository: PlayerAccountRepository) : UserDetailsService {
 
-    override fun loadUserByUsername(username: String): UserDetails {
-        val playerAccount = playerAccountRepository.findByEmail(username)
-            ?: throw UsernameNotFoundException("User not found with email : $username")
-
+    override fun loadUserByUsername(email: String): UserDetails {
+        val playerAccount = playerAccountRepository.findByEmail(email)
+            ?: throw UsernameNotFoundException("User not found with email: $email")
         return UserPrincipal(playerAccount)
     }
 }

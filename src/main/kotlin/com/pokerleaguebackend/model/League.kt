@@ -1,17 +1,16 @@
 package com.pokerleaguebackend.model
 
 import jakarta.persistence.Entity
-import jakarta.persistence.Table
-import jakarta.persistence.Id
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
-import java.util.UUID
+import jakarta.persistence.Id
 
 @Entity
-@Table(name = "league")
-data class League(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
-    val leagueName: String,
-    val inviteCode: String = UUID.randomUUID().toString()
+class League(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long? = null,
+    var leagueName: String? = null,
+    var inviteCode: String,
+    var expirationDate: java.util.Date? = null
 )

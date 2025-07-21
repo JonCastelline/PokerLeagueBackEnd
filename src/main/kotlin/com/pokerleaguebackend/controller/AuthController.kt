@@ -1,11 +1,13 @@
 package com.pokerleaguebackend.controller
 
+import com.pokerleaguebackend.payload.ApiResponse
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.payload.JwtAuthenticationResponse
 import com.pokerleaguebackend.payload.LoginRequest
 import com.pokerleaguebackend.payload.SignUpRequest
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -15,6 +17,9 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder
+import java.net.URI
+import jakarta.validation.Valid
 
 @RestController
 @RequestMapping("/api/auth")
@@ -26,7 +31,7 @@ class AuthController(
 ) {
 
     @PostMapping("/signin")
-    fun authenticateUser(@RequestBody loginRequest: LoginRequest): ResponseEntity<*> {
+    fun authenticateUser(@Valid @RequestBody loginRequest: LoginRequest): ResponseEntity<*> {
         val authentication = authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken(
                 loginRequest.email,
@@ -35,14 +40,16 @@ class AuthController(
         )
 
         SecurityContextHolder.getContext().authentication = authentication
+
         val jwt = tokenProvider.generateToken(authentication)
         return ResponseEntity.ok(JwtAuthenticationResponse(jwt))
     }
 
     @PostMapping("/signup")
-    fun registerUser(@RequestBody signUpRequest: SignUpRequest): ResponseEntity<*> {
+    fun registerUser(@Valid @RequestBody signUpRequest: SignUpRequest): ResponseEntity<ApiResponse> {
         if (playerAccountRepository.findByEmail(signUpRequest.email) != null) {
-            return ResponseEntity.badRequest().body("Email Address already in use!")
+            return ResponseEntity(HttpStatus.BAD_REQUEST)
+            .body(ApiResponse(false, "Email address already in use!"))
         }
 
         val playerAccount = PlayerAccount(
@@ -52,8 +59,12 @@ class AuthController(
             password = passwordEncoder.encode(signUpRequest.password)
         )
 
-        playerAccountRepository.save(playerAccount)
+        val result = playerAccountRepository.save(playerAccount)
 
-        return ResponseEntity.ok("User registered successfully!")
+        val location: URI = ServletUriComponentsBuilder
+            .fromCurrentContextPath().path("/api/users/{email}")
+            .buildAndExpand(result.email).toUri()
+
+        return ResponseEntity.created(location).body(ApiResponse(true, "User registered successfully!"))
     }
 }

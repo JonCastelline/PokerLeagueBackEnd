@@ -1,37 +1,31 @@
 package com.pokerleaguebackend.model
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import com.fasterxml.jackson.annotation.JsonManagedReference
+import jakarta.persistence.*
 
 @Entity
 @Table(name = "league_settings")
-class LeagueSettings (
+data class LeagueSettings(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(name = "league_id")
-    val leagueId: Long,
+    @OneToOne
+    @JoinColumn(name = "season_id", referencedColumnName = "id")
+    val season: Season,
 
-    @Column(name = "track_kills")
     val trackKills: Boolean = false,
-
-    @Column(name = "track_bounties")
     val trackBounties: Boolean = false,
-
-    @Column(name = "kills_points")
-    val killsPoints: Double = 0.0,
-
-    @Column(name = "bounties_points")
-    val bountiesPoints: Double = 0.0,
-
-    @Column(name = "duration_seconds")
+    val killPoints: java.math.BigDecimal,
+    val bountyPoints: java.math.BigDecimal,
     val durationSeconds: Int = 1200,
+    val bountyOnLeaderAbsenceRule: String,
 
-    @Column(name = "season_id")
-    val seasonId: Long
+    @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JsonManagedReference
+    val blindLevels: List<BlindLevel> = emptyList(),
+
+    @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JsonManagedReference
+    val placePoints: List<PlacePoint> = emptyList()
 )

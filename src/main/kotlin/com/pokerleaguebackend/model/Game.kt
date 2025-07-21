@@ -1,31 +1,27 @@
 package com.pokerleaguebackend.model
 
-import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import java.sql.Time
+import java.util.Date
 
 @Entity
 @Table(name = "game")
-class Game (
+data class Game(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @Column(name = "game_name")
     val gameName: String,
+    val gameDate: Date,
+    val gameTime: Time,
 
-    @Column(name = "game_date")
-    val gameDate: String,
-
-    @Column(name = "game_time")
-    val gameTime: String,
-
-    @Column(name = "league_id")
-    val leagueId: Long,
-
-    @Column(name = "season_id")
-    val seasonId: Long
+    @ManyToOne
+    @JoinColumn(name = "season_id")
+    val season: Season
 )

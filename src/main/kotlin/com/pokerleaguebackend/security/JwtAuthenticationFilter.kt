@@ -4,20 +4,21 @@ import com.pokerleaguebackend.service.CustomUserDetailsService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.springframework.beans.factory.annotation.Autowired
+import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
+import org.springframework.stereotype.Component
 import org.springframework.util.StringUtils
 import org.springframework.web.filter.OncePerRequestFilter
 
-class JwtAuthenticationFilter : OncePerRequestFilter() {
+@Component
+class JwtAuthenticationFilter(
+    private val tokenProvider: JwtTokenProvider,
+    private val customUserDetailsService: CustomUserDetailsService
+) : OncePerRequestFilter() {
 
-    @Autowired
-    lateinit var tokenProvider: JwtTokenProvider
-
-    @Autowired
-    lateinit var customUserDetailsService: CustomUserDetailsService
+    private val logger = LoggerFactory.getLogger(JwtAuthenticationFilter::class.java)
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -25,15 +26,16 @@ class JwtAuthenticationFilter : OncePerRequestFilter() {
         filterChain: FilterChain
     ) {
         try {
-            val jwt = getJwtFromRequest(request)
-
-                if (jwt != null && StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                    val username = tokenProvider.getUsernameFromJWT(jwt)
-                    val userDetails = customUserDetailsService.loadUserByUsername(username)
+            getJwtFromRequest(request)?.let { jwt ->
+                if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+                    val userEmail = tokenProvider.getEmailFromJWT(jwt)
+                    val userDetails = customUserDetailsService.loadUserByUsername(userEmail)
                     val authentication = UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
                     authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
+
                     SecurityContextHolder.getContext().authentication = authentication
                 }
+            }
         } catch (ex: Exception) {
             logger.error("Could not set user authentication in security context", ex)
         }

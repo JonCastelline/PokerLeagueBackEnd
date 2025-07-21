@@ -2,33 +2,55 @@ package com.pokerleaguebackend.security
 
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
+import io.jsonwebtoken.security.Keys
+import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
 import java.util.Date
-import org.springframework.core.env.Environment
+import javax.crypto.SecretKey
 
 @Component
-class JwtTokenProvider(private val env: Environment) {
+class JwtTokenProvider {
 
-    val jwtSecret: String = env.getProperty("jwtSecret") ?: throw IllegalArgumentException("jwtSecret not found")
-    val jwtExpirationInMs: Long = env.getProperty("jwtExpirationInMs")?.toLong() ?: throw IllegalArgumentException("jwtExpirationInMs not found")
+    @Value("\${app.jwtSecret}")
+    private lateinit var jwtSecret: String
+
+    @Value("\${app.jwtExpirationInMs}")
+    private var jwtExpirationInMs: Int = 0
+
+    private var secretKey: SecretKey? = null
+
+    private val logger = LoggerFactory.getLogger(JwtTokenProvider::class.java)
+
+    fun getSecretKey(): SecretKey {
+        if (secretKey == null) {
+            secretKey = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
+        }
+        return secretKey as SecretKey
+    }
 
     fun generateToken(authentication: Authentication): String {
         val userPrincipal = authentication.principal as UserPrincipal
+        return generateToken(userPrincipal.username)
+    }
+
+    fun generateToken(email: String): String {
         val now = Date()
         val expiryDate = Date(now.time + jwtExpirationInMs)
 
         return Jwts.builder()
-            .setSubject(userPrincipal.username)
+            .setSubject(email)
             .setIssuedAt(Date())
             .setExpiration(expiryDate)
-            .signWith(SignatureAlgorithm.HS512, jwtSecret)
+            .signWith(getSecretKey(), SignatureAlgorithm.HS512)
             .compact()
     }
 
-    fun getUsernameFromJWT(token: String): String {
-        val claims = Jwts.parser()
-            .setSigningKey(jwtSecret)
+    fun getEmailFromJWT(token: String): String {
+        val claims = Jwts.parserBuilder()
+            .setSigningKey(getSecretKey())
+            .build()
             .parseClaimsJws(token)
             .body
 
@@ -37,10 +59,10 @@ class JwtTokenProvider(private val env: Environment) {
 
     fun validateToken(authToken: String): Boolean {
         try {
-            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(authToken)
+            Jwts.parserBuilder().setSigningKey(getSecretKey()).build().parseClaimsJws(authToken)
             return true
         } catch (ex: Exception) {
-            // Log exception
+            logger.error("Invalid JWT token", ex)
         }
         return false
     }
