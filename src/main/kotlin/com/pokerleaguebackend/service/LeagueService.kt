@@ -93,4 +93,25 @@ class LeagueService(
         val memberships = leagueMembershipRepository.findAllByPlayerAccountId(playerId)
         return memberships.map { it.league }
     }
+
+    @Transactional
+    fun refreshInviteCode(leagueId: Long, playerId: Long): League {
+        val league = leagueRepository.findById(leagueId)
+            .orElseThrow { IllegalArgumentException("League not found") }
+
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id!!, playerId)
+            ?: throw IllegalStateException("Player is not a member of this league")
+
+        if (membership.role != "Admin") {
+            throw IllegalStateException("Only admins can refresh the invite code")
+        }
+
+        league.inviteCode = UUID.randomUUID().toString()
+        val calendar = Calendar.getInstance()
+        calendar.time = Date()
+        calendar.add(Calendar.HOUR_OF_DAY, 24)
+        league.expirationDate = calendar.time
+
+        return leagueRepository.save(league)
+    }
 }

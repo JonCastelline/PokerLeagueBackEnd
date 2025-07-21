@@ -265,4 +265,44 @@ class LeagueControllerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(2))
     }
+
+    @Test
+    fun `should refresh invite code for a league`() {
+        // 1. Create a league
+        val createLeagueRequest = CreateLeagueRequest(leagueName = "Refresh League", creatorId = testUser!!.id)
+        val result = mockMvc.perform(post("/api/leagues")
+            .header("Authorization", "Bearer $token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(createLeagueRequest)))
+            .andExpect(status().isOk())
+            .andReturn()
+        val leagueResponse = result.response.contentAsString
+        val leagueId = objectMapper.readTree(leagueResponse).get("id").asLong()
+        val oldInviteCode = objectMapper.readTree(leagueResponse).get("inviteCode").asText()
+
+        // 2. Refresh the invite code
+        val refreshResult = mockMvc.perform(post("/api/leagues/$leagueId/refresh-invite")
+            .header("Authorization", "Bearer $token"))
+            .andExpect(status().isOk())
+            .andReturn()
+        val refreshedLeagueResponse = refreshResult.response.contentAsString
+        val newInviteCode = objectMapper.readTree(refreshedLeagueResponse).get("inviteCode").asText()
+
+        // 3. Verify the new invite code is different from the old one
+        assert(newInviteCode != oldInviteCode)
+
+        // 4. Verify a non-admin cannot refresh the code
+        val newUser = PlayerAccount(
+            firstName = "Non",
+            lastName = "Admin",
+            email = "non.admin@example.com",
+            password = passwordEncoder.encode("password")
+        )
+        val savedNewUser = playerAccountRepository.save(newUser)
+        val newUserToken = jwtTokenProvider.generateToken(savedNewUser.email)
+
+        mockMvc.perform(post("/api/leagues/$leagueId/refresh-invite")
+            .header("Authorization", "Bearer $newUserToken"))
+            .andExpect(status().isInternalServerError())
+    }
 }
