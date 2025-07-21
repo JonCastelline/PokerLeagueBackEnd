@@ -1,13 +1,7 @@
 package com.pokerleaguebackend.model
 
-import com.pokerleaguebackend.model.Season
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.OneToOne
-import jakarta.persistence.Table
+import com.fasterxml.jackson.annotation.JsonManagedReference
+import jakarta.persistence.*
 
 @Entity
 @Table(name = "league_settings")
@@ -26,6 +20,12 @@ data class LeagueSettings(
     val bountyPoints: java.math.BigDecimal,
     val durationSeconds: Int = 1200,
     val bountyOnLeaderAbsenceRule: String,
-    val blindStructure: String,
-    val placePoints: String
+
+    @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JsonManagedReference
+    val blindLevels: List<BlindLevel> = emptyList(),
+
+    @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JsonManagedReference
+    val placePoints: List<PlacePoint> = emptyList()
 )
