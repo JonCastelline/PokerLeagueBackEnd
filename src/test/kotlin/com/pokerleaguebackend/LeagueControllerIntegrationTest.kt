@@ -28,8 +28,11 @@ import java.util.Calendar
 import java.util.Date
 import com.pokerleaguebackend.repository.LeagueRepository
 
+import org.springframework.transaction.annotation.Transactional
+
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 class LeagueControllerIntegrationTest {
 
     @Autowired
