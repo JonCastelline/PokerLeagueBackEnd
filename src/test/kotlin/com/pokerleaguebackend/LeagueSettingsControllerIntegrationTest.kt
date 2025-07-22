@@ -158,7 +158,7 @@ class LeagueSettingsControllerIntegrationTest {
 
         mockMvc.perform(get("/api/seasons/${testSeason.id}/settings")
             .header("Authorization", "Bearer $nonMemberToken"))
-            .andExpect(status().isInternalServerError())
+            .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message").value("Player is not a member of this league"))
     }
 
@@ -201,12 +201,12 @@ class LeagueSettingsControllerIntegrationTest {
             .andExpect(jsonPath("$.placePoints[0].points").value(10))
 
         // Verify settings are persisted
-        val fetchedSettings = leagueSettingsRepository.findBySeasonId(testSeason.id!!)
+        val fetchedSettings = leagueSettingsRepository.findBySeasonId(testSeason.id)
         assertNotNull(fetchedSettings)
         assertEquals(false, fetchedSettings?.trackKills)
         assertEquals(true, fetchedSettings?.trackBounties)
-        assertEquals(BigDecimal("2.00"), fetchedSettings?.killPoints)
-        assertEquals(BigDecimal("3.00"), fetchedSettings?.bountyPoints)
+        assertEquals(0, BigDecimal("2.00").compareTo(fetchedSettings?.killPoints))
+        assertEquals(0, BigDecimal("3.00").compareTo(fetchedSettings?.bountyPoints))
         assertEquals(2400, fetchedSettings?.durationSeconds)
         assertEquals("Next Highest Player", fetchedSettings?.bountyOnLeaderAbsenceRule)
         assertEquals(2, fetchedSettings?.blindLevels?.size)
@@ -232,7 +232,7 @@ class LeagueSettingsControllerIntegrationTest {
             .header("Authorization", "Bearer $regularUserToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(updatedSettingsDto)))
-            .andExpect(status().isInternalServerError())
+            .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message").value("Only admins can update league settings"))
     }
 
@@ -261,7 +261,7 @@ class LeagueSettingsControllerIntegrationTest {
             .header("Authorization", "Bearer $nonMemberToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(updatedSettingsDto)))
-            .andExpect(status().isInternalServerError())
+            .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message").value("Player is not a member of this league"))
     }
 }

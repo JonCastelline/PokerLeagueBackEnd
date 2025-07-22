@@ -9,6 +9,7 @@ import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueSettingsRepository
 import com.pokerleaguebackend.repository.PlacePointRepository
 import com.pokerleaguebackend.repository.SeasonRepository
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -26,7 +27,7 @@ class LeagueSettingsService(
             .orElseThrow { IllegalArgumentException("Season not found") }
 
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id!!, playerId)
-            ?: throw IllegalStateException("Player is not a member of this league")
+            ?: throw AccessDeniedException("Player is not a member of this league")
 
         return leagueSettingsRepository.findBySeasonId(seasonId)
             ?: throw IllegalStateException("League settings not found for this season")
@@ -38,10 +39,10 @@ class LeagueSettingsService(
             .orElseThrow { IllegalArgumentException("Season not found") }
 
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id!!, playerId)
-            ?: throw IllegalStateException("Player is not a member of this league")
+            ?: throw AccessDeniedException("Player is not a member of this league")
 
         if (membership.role != "Admin") {
-            throw IllegalStateException("Only admins can update league settings")
+            throw AccessDeniedException("Only admins can update league settings")
         }
 
         val existingSettings = leagueSettingsRepository.findBySeasonId(seasonId)

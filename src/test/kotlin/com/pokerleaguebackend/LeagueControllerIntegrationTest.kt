@@ -141,7 +141,7 @@ class LeagueControllerIntegrationTest {
             .header("Authorization", "Bearer $newUserToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(joinLeagueRequest)))
-            .andExpect(status().isBadRequest())
+            .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message").value("Invite code has expired"))
     }
 
@@ -306,6 +306,6 @@ class LeagueControllerIntegrationTest {
 
         mockMvc.perform(post("/api/leagues/$leagueId/refresh-invite")
             .header("Authorization", "Bearer $newUserToken"))
-            .andExpect(status().isInternalServerError())
+            .andExpect(status().isForbidden())
     }
 }
