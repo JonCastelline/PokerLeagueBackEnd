@@ -48,8 +48,7 @@ class AuthController(
     @PostMapping("/signup")
     fun registerUser(@Valid @RequestBody signUpRequest: SignUpRequest): ResponseEntity<ApiResponse> {
         if (playerAccountRepository.findByEmail(signUpRequest.email) != null) {
-            return ResponseEntity(HttpStatus.BAD_REQUEST)
-            .body(ApiResponse(false, "Email address already in use!"))
+            return ResponseEntity(ApiResponse(false, "Email address already in use!"), HttpStatus.BAD_REQUEST)
         }
 
         val playerAccount = PlayerAccount(

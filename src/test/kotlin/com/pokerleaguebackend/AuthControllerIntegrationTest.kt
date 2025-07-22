@@ -12,8 +12,11 @@ import org.springframework.http.MediaType
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 
+import org.springframework.transaction.annotation.Transactional
+
 @SpringBootTest
 @AutoConfigureMockMvc
+@Transactional
 class AuthControllerIntegrationTest {
 
     @Autowired
@@ -38,7 +41,7 @@ class AuthControllerIntegrationTest {
             content = objectMapper.writeValueAsString(signUpRequest)
         }.andExpect {
             status { isCreated() }
-            content { string("User registered successfully!") }
+            jsonPath("$.message") { value("User registered successfully!") }
         }
 
         val loginRequest = LoginRequest(

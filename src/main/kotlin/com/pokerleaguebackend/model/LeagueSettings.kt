@@ -8,24 +8,24 @@ import jakarta.persistence.*
 data class LeagueSettings(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
+    var id: Long = 0,
 
     @OneToOne
     @JoinColumn(name = "season_id", referencedColumnName = "id")
-    val season: Season,
+    var season: Season,
 
-    val trackKills: Boolean = false,
-    val trackBounties: Boolean = false,
-    val killPoints: java.math.BigDecimal,
-    val bountyPoints: java.math.BigDecimal,
-    val durationSeconds: Int = 1200,
-    val bountyOnLeaderAbsenceRule: String,
-
-    @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
-    @JsonManagedReference
-    val blindLevels: List<BlindLevel> = emptyList(),
+    var trackKills: Boolean = false,
+    var trackBounties: Boolean = false,
+    var killPoints: java.math.BigDecimal,
+    var bountyPoints: java.math.BigDecimal,
+    var durationSeconds: Int = 1200,
+    var bountyOnLeaderAbsenceRule: String,
 
     @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
     @JsonManagedReference
-    val placePoints: List<PlacePoint> = emptyList()
+    var blindLevels: MutableList<BlindLevel> = mutableListOf(),
+
+    @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JsonManagedReference
+    var placePoints: MutableList<PlacePoint> = mutableListOf()
 )
