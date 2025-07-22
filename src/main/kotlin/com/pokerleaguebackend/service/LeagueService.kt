@@ -6,6 +6,7 @@ import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import java.util.UUID
 
@@ -103,7 +104,7 @@ class LeagueService(
             ?: throw IllegalStateException("Player is not a member of this league")
 
         if (membership.role != "Admin") {
-            throw IllegalStateException("Only admins can refresh the invite code")
+            throw AccessDeniedException("Only admins can refresh the invite code")
         }
 
         league.inviteCode = UUID.randomUUID().toString()
