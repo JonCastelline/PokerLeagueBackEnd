@@ -18,7 +18,7 @@ class JwtAuthenticationFilter(
     private val customUserDetailsService: CustomUserDetailsService
 ) : OncePerRequestFilter() {
 
-    private val logger = LoggerFactory.getLogger(JwtAuthenticationFilter::class.java)
+    private val jwtLogger = LoggerFactory.getLogger(JwtAuthenticationFilter::class.java)
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -37,7 +37,7 @@ class JwtAuthenticationFilter(
                 }
             }
         } catch (ex: Exception) {
-            logger.error("Could not set user authentication in security context", ex)
+            jwtLogger.error("Could not set user authentication in security context", ex)
         }
 
         filterChain.doFilter(request, response)

@@ -12,6 +12,7 @@ import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import com.pokerleaguebackend.model.UserRole
 import java.math.BigDecimal
 
 @Service
@@ -40,7 +41,7 @@ class LeagueSettingsService(
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerId)
             ?: throw AccessDeniedException("Player is not a member of this league")
 
-        if (membership.role != "Admin") {
+        if (membership.role != UserRole.ADMIN) {
             throw AccessDeniedException("Only admins can update league settings")
         }
 

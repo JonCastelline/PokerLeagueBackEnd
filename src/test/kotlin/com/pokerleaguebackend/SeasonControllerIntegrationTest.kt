@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
+import com.pokerleaguebackend.model.UserRole
 import java.util.Date
 
 @SpringBootTest
@@ -82,7 +83,7 @@ class SeasonControllerIntegrationTest {
             playerAccount = adminUser,
             league = testLeague,
             playerName = "Admin User",
-            role = "Admin"
+            role = UserRole.ADMIN
         ))
     }
 

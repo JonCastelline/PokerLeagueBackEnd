@@ -9,6 +9,8 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 
 @Entity
 @Table(name = "league_membership")
@@ -26,5 +28,6 @@ data class LeagueMembership(
     val league: League,
 
     val playerName: String,
-    val role: String
+    @Enumerated(EnumType.STRING)
+    val role: UserRole
 )

@@ -23,5 +23,5 @@ data class Game(
 
     @ManyToOne
     @JoinColumn(name = "season_id")
-    val season: Season
+    var season: Season
 )
