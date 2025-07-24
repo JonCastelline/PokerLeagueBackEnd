@@ -34,6 +34,7 @@ import java.math.BigDecimal
 import java.util.Date
 
 import org.springframework.transaction.annotation.Transactional
+import com.pokerleaguebackend.model.UserRole
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -109,14 +110,14 @@ class LeagueSettingsControllerIntegrationTest {
             playerAccount = adminUser,
             league = testLeague,
             playerName = "Admin User",
-            role = "Admin"
+            role = UserRole.ADMIN
         ))
 
         leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
             playerAccount = regularUser,
             league = testLeague,
             playerName = "Regular User",
-            role = "Player"
+            role = UserRole.PLAYER
         ))
 
         testSeason = seasonRepository.save(Season(

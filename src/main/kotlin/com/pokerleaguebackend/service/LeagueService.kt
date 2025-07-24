@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional
 import jakarta.persistence.EntityManager
 import java.util.Date
 import java.util.Calendar
+import com.pokerleaguebackend.model.UserRole
 
 @Service
 class LeagueService(
@@ -48,7 +49,7 @@ class LeagueService(
             playerAccount = creator,
             league = savedLeague,
             playerName = "${creator.firstName} ${creator.lastName}",
-            role = "Admin"
+            role = UserRole.ADMIN
         )
         leagueMembershipRepository.save(membership)
 
@@ -87,7 +88,7 @@ class LeagueService(
             playerAccount = player,
             league = league,
             playerName = "${player.firstName} ${player.lastName}",
-            role = "Player"
+            role = UserRole.PLAYER
         )
         leagueMembershipRepository.save(membership)
 
@@ -107,7 +108,7 @@ class LeagueService(
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerId)
             ?: throw IllegalStateException("Player is not a member of this league")
 
-        if (membership.role != "Admin") {
+        if (membership.role != UserRole.ADMIN) {
             throw AccessDeniedException("Only admins can refresh the invite code")
         }
 
@@ -130,7 +131,7 @@ class LeagueService(
         val game = gameRepository.findById(gameId).orElse(null) ?: return false
         val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(game.season.league.id, playerAccount.id)
-        return membership?.role == "Admin"
+        return membership?.role == UserRole.ADMIN
     }
 
     fun isLeagueMember(seasonId: Long, username: String): Boolean {
@@ -143,6 +144,6 @@ class LeagueService(
         val season = seasonRepository.findById(seasonId).orElse(null) ?: return false
         val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerAccount.id)
-        return membership?.role == "Admin"
+        return membership?.role == UserRole.ADMIN
     }
 }

@@ -9,6 +9,7 @@ import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import com.pokerleaguebackend.model.UserRole
 
 @Service
 class GameService(
@@ -26,7 +27,7 @@ class GameService(
         val adminMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, adminPlayerId)
             ?: throw AccessDeniedException("Player is not an admin of this league")
 
-        if (adminMembership.role != "Admin") {
+        if (adminMembership.role != UserRole.ADMIN) {
             throw AccessDeniedException("Only admins can create games")
         }
 
@@ -42,7 +43,7 @@ class GameService(
         val adminMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(game.season.league.id, adminPlayerId)
             ?: throw AccessDeniedException("Player is not an admin of this league")
 
-        if (adminMembership.role != "Admin") {
+        if (adminMembership.role != UserRole.ADMIN) {
             throw AccessDeniedException("Only admins can record game results")
         }
 
