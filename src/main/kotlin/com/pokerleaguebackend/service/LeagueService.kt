@@ -6,6 +6,8 @@ import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
+import com.pokerleaguebackend.repository.GameRepository
+import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -21,6 +23,8 @@ class LeagueService(
     private val leagueRepository: LeagueRepository,
     private val leagueMembershipRepository: LeagueMembershipRepository,
     private val playerAccountRepository: PlayerAccountRepository,
+    private val gameRepository: GameRepository,
+    private val seasonRepository: SeasonRepository,
     private val entityManager: EntityManager
 ) {
 
@@ -114,5 +118,31 @@ class LeagueService(
         league.expirationDate = calendar.time
 
         return leagueRepository.save(league)
+    }
+
+    fun isLeagueMemberByGame(gameId: Long, username: String): Boolean {
+        val game = gameRepository.findById(gameId).orElse(null) ?: return false
+        val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
+        return leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(game.season.league.id, playerAccount.id) != null
+    }
+
+    fun isLeagueAdminByGame(gameId: Long, username: String): Boolean {
+        val game = gameRepository.findById(gameId).orElse(null) ?: return false
+        val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(game.season.league.id, playerAccount.id)
+        return membership?.role == "Admin"
+    }
+
+    fun isLeagueMember(seasonId: Long, username: String): Boolean {
+        val season = seasonRepository.findById(seasonId).orElse(null) ?: return false
+        val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
+        return leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerAccount.id) != null
+    }
+
+    fun isLeagueAdmin(seasonId: Long, username: String): Boolean {
+        val season = seasonRepository.findById(seasonId).orElse(null) ?: return false
+        val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerAccount.id)
+        return membership?.role == "Admin"
     }
 }
