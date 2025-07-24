@@ -9,7 +9,7 @@ import jakarta.persistence.Id
 class League(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
+    var id: Long = 0,
     var leagueName: String? = null,
     var inviteCode: String,
     var expirationDate: java.util.Date? = null

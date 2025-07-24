@@ -134,8 +134,8 @@ class LeagueSettingsControllerIntegrationTest {
             bountyPoints = BigDecimal("0.0"),
             durationSeconds = 1800,
             bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NO_BOUNTY,
-            enableAttendancePoints = true,
-            attendancePoints = BigDecimal("1.0"),
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal("0.0"),
             startingStack = 1500
         ))
     }

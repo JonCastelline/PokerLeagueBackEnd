@@ -1,7 +1,17 @@
 package com.pokerleaguebackend.model
 
 import com.fasterxml.jackson.annotation.JsonManagedReference
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OneToOne
+import jakarta.persistence.Table
 import java.math.BigDecimal
 
 @Entity
@@ -24,8 +34,8 @@ data class LeagueSettings(
     @Enumerated(EnumType.STRING)
     var bountyOnLeaderAbsenceRule: BountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NO_BOUNTY,
 
-    var enableAttendancePoints: Boolean = true,
-    var attendancePoints: BigDecimal = BigDecimal.ONE,
+    var enableAttendancePoints: Boolean = false,
+    var attendancePoints: BigDecimal = BigDecimal.ZERO,
     var startingStack: Int = 1500,
 
     @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
