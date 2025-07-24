@@ -1,6 +1,7 @@
 package com.pokerleaguebackend
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.pokerleaguebackend.model.BountyOnLeaderAbsenceRule
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueSettings
 import com.pokerleaguebackend.model.PlayerAccount
@@ -132,7 +133,10 @@ class LeagueSettingsControllerIntegrationTest {
             killPoints = BigDecimal("1.0"),
             bountyPoints = BigDecimal("0.0"),
             durationSeconds = 1800,
-            bountyOnLeaderAbsenceRule = "No Bounty"
+            bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NO_BOUNTY,
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal("0.0"),
+            startingStack = 1500
         ))
     }
 
@@ -170,14 +174,17 @@ class LeagueSettingsControllerIntegrationTest {
             killPoints = BigDecimal("2.0"),
             bountyPoints = BigDecimal("3.0"),
             durationSeconds = 2400,
-            bountyOnLeaderAbsenceRule = "Next Highest Player",
+            bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NEXT_HIGHEST_PLAYER,
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal("0.0"),
+            startingStack = 2000,
             blindLevels = listOf(
                 BlindLevelDto(level = 1, smallBlind = 25, bigBlind = 50),
                 BlindLevelDto(level = 2, smallBlind = 50, bigBlind = 100)
             ),
             placePoints = listOf(
-                PlacePointDto(place = 1, points = 10),
-                PlacePointDto(place = 2, points = 7)
+                PlacePointDto(place = 1, points = "10.0".toBigDecimal()),
+                PlacePointDto(place = 2, points = "7.0".toBigDecimal())
             )
         )
 
@@ -191,14 +198,14 @@ class LeagueSettingsControllerIntegrationTest {
             .andExpect(jsonPath("$.killPoints").value(2.0))
             .andExpect(jsonPath("$.bountyPoints").value(3.0))
             .andExpect(jsonPath("$.durationSeconds").value(2400))
-            .andExpect(jsonPath("$.bountyOnLeaderAbsenceRule").value("Next Highest Player"))
+            .andExpect(jsonPath("$.bountyOnLeaderAbsenceRule").value("NEXT_HIGHEST_PLAYER"))
             .andExpect(jsonPath("$.blindLevels", hasSize<Any>(2)))
             .andExpect(jsonPath("$.blindLevels[0].level").value(1))
             .andExpect(jsonPath("$.blindLevels[0].smallBlind").value(25))
             .andExpect(jsonPath("$.blindLevels[0].bigBlind").value(50))
             .andExpect(jsonPath("$.placePoints", hasSize<Any>(2)))
             .andExpect(jsonPath("$.placePoints[0].place").value(1))
-            .andExpect(jsonPath("$.placePoints[0].points").value(10))
+            .andExpect(jsonPath("$.placePoints[0].points").value(10.0))
 
         // Verify settings are persisted
         val fetchedSettings = leagueSettingsRepository.findBySeasonId(testSeason.id)
@@ -208,7 +215,7 @@ class LeagueSettingsControllerIntegrationTest {
         assertEquals(0, BigDecimal("2.00").compareTo(fetchedSettings?.killPoints))
         assertEquals(0, BigDecimal("3.00").compareTo(fetchedSettings?.bountyPoints))
         assertEquals(2400, fetchedSettings?.durationSeconds)
-        assertEquals("Next Highest Player", fetchedSettings?.bountyOnLeaderAbsenceRule)
+        assertEquals(BountyOnLeaderAbsenceRule.NEXT_HIGHEST_PLAYER, fetchedSettings?.bountyOnLeaderAbsenceRule)
         assertEquals(2, fetchedSettings?.blindLevels?.size)
         assertEquals(1, fetchedSettings?.blindLevels?.get(0)?.level)
         assertEquals(2, fetchedSettings?.placePoints?.size)
@@ -223,7 +230,10 @@ class LeagueSettingsControllerIntegrationTest {
             killPoints = BigDecimal("2.0"),
             bountyPoints = BigDecimal("3.0"),
             durationSeconds = 2400,
-            bountyOnLeaderAbsenceRule = "Next Highest Player",
+            bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NEXT_HIGHEST_PLAYER,
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal("0.0"),
+            startingStack = 2000,
             blindLevels = emptyList(),
             placePoints = emptyList()
         )
@@ -252,7 +262,10 @@ class LeagueSettingsControllerIntegrationTest {
             killPoints = BigDecimal("2.0"),
             bountyPoints = BigDecimal("3.0"),
             durationSeconds = 2400,
-            bountyOnLeaderAbsenceRule = "Next Highest Player",
+            bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NEXT_HIGHEST_PLAYER,
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal("0.0"),
+            startingStack = 2000,
             blindLevels = emptyList(),
             placePoints = emptyList()
         )

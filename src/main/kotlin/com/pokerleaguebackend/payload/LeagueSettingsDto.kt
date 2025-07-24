@@ -1,5 +1,6 @@
 package com.pokerleaguebackend.payload
 
+import com.pokerleaguebackend.model.BountyOnLeaderAbsenceRule
 import java.math.BigDecimal
 
 data class LeagueSettingsDto(
@@ -8,7 +9,10 @@ data class LeagueSettingsDto(
     val killPoints: BigDecimal,
     val bountyPoints: BigDecimal,
     val durationSeconds: Int,
-    val bountyOnLeaderAbsenceRule: String,
+    val bountyOnLeaderAbsenceRule: BountyOnLeaderAbsenceRule,
+    val enableAttendancePoints: Boolean,
+    val attendancePoints: BigDecimal,
+    val startingStack: Int,
     val blindLevels: List<BlindLevelDto>,
     val placePoints: List<PlacePointDto>
 )

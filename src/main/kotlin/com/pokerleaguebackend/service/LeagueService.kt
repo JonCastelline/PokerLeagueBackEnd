@@ -54,7 +54,7 @@ class LeagueService(
     fun getLeagueById(leagueId: Long, playerId: Long): League? {
         val league = leagueRepository.findById(leagueId).orElse(null)
         if (league != null) {
-            val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id!!, playerId)
+            val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerId)
             if (membership != null) {
                 return league
             }
@@ -74,7 +74,7 @@ class LeagueService(
         val player = playerAccountRepository.findById(playerId)
             .orElseThrow { IllegalArgumentException("Player not found") }
 
-        val existingMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id!!, playerId)
+        val existingMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerId)
         if (existingMembership != null) {
             throw IllegalStateException("Player is already a member of this league")
         }
@@ -100,7 +100,7 @@ class LeagueService(
         val league = leagueRepository.findById(leagueId)
             .orElseThrow { IllegalArgumentException("League not found") }
 
-        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id!!, playerId)
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerId)
             ?: throw IllegalStateException("Player is not a member of this league")
 
         if (membership.role != "Admin") {
