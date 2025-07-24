@@ -2,8 +2,10 @@ package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.model.Game
 import com.pokerleaguebackend.model.GameResult
+import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.service.GameService
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -15,7 +17,7 @@ import java.security.Principal
 
 @RestController
 @RequestMapping("/api")
-class GameController(private val gameService: GameService) {
+class GameController(private val gameService: GameService, private val playerAccountRepository: PlayerAccountRepository) {
 
     @PostMapping("/seasons/{seasonId}/games")
     @PreAuthorize("@leagueService.isLeagueAdmin(#seasonId, principal.username)")
@@ -24,7 +26,7 @@ class GameController(private val gameService: GameService) {
         @RequestBody game: Game,
         principal: Principal
     ): ResponseEntity<Game> {
-        val newGame = gameService.createGame(seasonId, game, principal.name.toLong())
+        val newGame = gameService.createGame(seasonId, game, playerAccountRepository.findByEmail(principal.name)?.id ?: throw AccessDeniedException("Player not found"))
         return ResponseEntity.ok(newGame)
     }
 
@@ -35,7 +37,7 @@ class GameController(private val gameService: GameService) {
         @RequestBody results: List<GameResult>,
         principal: Principal
     ): ResponseEntity<List<GameResult>> {
-        val savedResults = gameService.recordGameResults(gameId, results, principal.name.toLong())
+        val savedResults = gameService.recordGameResults(gameId, results, playerAccountRepository.findByEmail(principal.name)?.id ?: throw AccessDeniedException("Player not found"))
         return ResponseEntity.ok(savedResults)
     }
 
