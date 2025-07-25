@@ -85,7 +85,24 @@ class StandingsService(
         }
 
         // Sort by total points (descending), then alphabetically by player name
-        return playerScores.values.sortedWith(compareByDescending<PlayerStandingsDto> { it.totalPoints }
+        val sortedStandings = playerScores.values.sortedWith(compareByDescending<PlayerStandingsDto> { it.totalPoints }
             .thenBy { it.playerName })
+
+        // Assign ranks, handling ties
+        var rank = 1
+        var lastPoints: BigDecimal? = null
+        var playersAtSameRank = 1
+        sortedStandings.forEachIndexed { index, standing ->
+            if (lastPoints != null && standing.totalPoints < lastPoints!!) {
+                rank += playersAtSameRank
+                playersAtSameRank = 1
+            } else if (lastPoints != null && standing.totalPoints == lastPoints) {
+                playersAtSameRank++
+            }
+            standing.rank = rank
+            lastPoints = standing.totalPoints
+        }
+
+        return sortedStandings
     }
 }

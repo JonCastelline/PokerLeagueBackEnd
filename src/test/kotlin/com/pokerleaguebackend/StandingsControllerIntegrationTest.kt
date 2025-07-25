@@ -195,11 +195,39 @@ class StandingsControllerIntegrationTest {
             .andExpect(jsonPath("$[0].totalKills").value(1))
             .andExpect(jsonPath("$[0].totalBounties").value(1))
             .andExpect(jsonPath("$[0].gamesPlayed").value(2))
+            .andExpect(jsonPath("$[0].rank").value(1))
             .andExpect(jsonPath("$[1].playerName").value("Regular User"))
             .andExpect(jsonPath("$[1].totalPoints").value(BigDecimal("18.0")))
             .andExpect(jsonPath("$[1].totalKills").value(1))
             .andExpect(jsonPath("$[1].totalBounties").value(0))
             .andExpect(jsonPath("$[1].gamesPlayed").value(2))
+            .andExpect(jsonPath("$[1].rank").value(2))
+    }
+
+    @Test
+    fun `getStandingsForSeason should handle ties in rank`() {
+        // Given
+        val game1 = gameRepository.save(Game(
+            gameName = "Game 1",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+        gameResultRepository.saveAll(listOf(
+            GameResult(game = game1, player = adminMembership, place = 1, kills = 0, bounties = 0, bountyPlacedOnPlayer = null),
+            GameResult(game = game1, player = regularMembership, place = 1, kills = 0, bounties = 0, bountyPlacedOnPlayer = null)
+        ))
+
+        // When & Then
+        mockMvc.perform(get("/api/seasons/${testSeason.id}/standings")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].playerName").value("Admin User"))
+            .andExpect(jsonPath("$[0].totalPoints").value(BigDecimal("10.0")))
+            .andExpect(jsonPath("$[0].rank").value(1))
+            .andExpect(jsonPath("$[1].playerName").value("Regular User"))
+            .andExpect(jsonPath("$[1].totalPoints").value(BigDecimal("10.0")))
+            .andExpect(jsonPath("$[1].rank").value(1))
     }
 
     @Test
@@ -222,8 +250,10 @@ class StandingsControllerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].playerName").value("Admin User"))
             .andExpect(jsonPath("$[0].totalPoints").value(BigDecimal("13.0")))
+            .andExpect(jsonPath("$[0].rank").value(1))
             .andExpect(jsonPath("$[1].playerName").value("Regular User"))
             .andExpect(jsonPath("$[1].totalPoints").value(BigDecimal("7.0")))
+            .andExpect(jsonPath("$[1].rank").value(2))
     }
 
     @Test
@@ -239,15 +269,6 @@ class StandingsControllerIntegrationTest {
         mockMvc.perform(get("/api/seasons/${testSeason.id}/standings")
             .header("Authorization", "Bearer $nonMemberToken"))
             .andExpect(status().isForbidden())
-        // val result = mockMvc.perform(get("/api/seasons/${testSeason.id}/standings")
-        //     .header("Authorization", "Bearer $nonMemberToken"))
-        //     .andReturn()
-
-        // val responseContent = result.response.contentAsString
-        // val responseJson = objectMapper.readTree(responseContent) // Now you can inspect responseJson in the debugger
-
-        // You can still assert status if you want:
-        //assertEquals(403, result.response.status)
     }
 
     @Test
@@ -258,9 +279,11 @@ class StandingsControllerIntegrationTest {
             .andExpect(jsonPath("$[0].playerName").value("Admin User"))
             .andExpect(jsonPath("$[0].totalPoints").value(BigDecimal("0.0")))
             .andExpect(jsonPath("$[0].gamesPlayed").value(0))
+            .andExpect(jsonPath("$[0].rank").value(1))
             .andExpect(jsonPath("$[1].playerName").value("Regular User"))
             .andExpect(jsonPath("$[1].totalPoints").value(BigDecimal("0.0")))
             .andExpect(jsonPath("$[1].gamesPlayed").value(0))
+            .andExpect(jsonPath("$[1].rank").value(1))
     }
 
     @Test
@@ -286,7 +309,9 @@ class StandingsControllerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].playerName").value("Admin User"))
             .andExpect(jsonPath("$[0].totalPoints").value(BigDecimal("13.0")))
+            .andExpect(jsonPath("$[0].rank").value(1))
             .andExpect(jsonPath("$[1].playerName").value("Regular User"))
             .andExpect(jsonPath("$[1].totalPoints").value(BigDecimal("7.0")))
+            .andExpect(jsonPath("$[1].rank").value(2))
     }
 }
