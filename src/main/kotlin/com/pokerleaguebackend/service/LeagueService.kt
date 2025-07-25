@@ -138,8 +138,7 @@ class LeagueService(
     fun isLeagueMember(seasonId: Long, username: String): Boolean {
         val season = seasonRepository.findById(seasonId).orElse(null) ?: return false
         val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
-        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerAccount.id)
-        return membership != null
+        return leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerAccount.id) != null
     }
 
     fun isLeagueAdmin(seasonId: Long, username: String): Boolean {
