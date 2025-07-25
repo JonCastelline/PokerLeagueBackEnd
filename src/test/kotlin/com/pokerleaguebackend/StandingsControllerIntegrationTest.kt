@@ -205,8 +205,11 @@ class StandingsControllerIntegrationTest {
     }
 
     @Test
-    fun `getStandingsForSeason should handle ties in rank`() {
+    fun `getStandingsForSeason should handle ties in rank and subsequent rank`() {
         // Given
+        val thirdUser = playerAccountRepository.save(PlayerAccount(firstName = "Third", lastName = "User", email = "third@example.com", password = passwordEncoder.encode("password")))
+        val thirdMembership = leagueMembershipRepository.save(LeagueMembership(playerAccount = thirdUser, league = testLeague, playerName = "Third User", role = UserRole.PLAYER))
+
         val game1 = gameRepository.save(Game(
             gameName = "Game 1",
             gameDate = Date(),
@@ -215,19 +218,60 @@ class StandingsControllerIntegrationTest {
         ))
         gameResultRepository.saveAll(listOf(
             GameResult(game = game1, player = adminMembership, place = 1, kills = 0, bounties = 0, bountyPlacedOnPlayer = null),
-            GameResult(game = game1, player = regularMembership, place = 1, kills = 0, bounties = 0, bountyPlacedOnPlayer = null)
+            GameResult(game = game1, player = regularMembership, place = 1, kills = 0, bounties = 0, bountyPlacedOnPlayer = null),
+            GameResult(game = game1, player = thirdMembership, place = 3, kills = 0, bounties = 0, bountyPlacedOnPlayer = null)
         ))
 
         // When & Then
         mockMvc.perform(get("/api/seasons/${testSeason.id}/standings")
             .header("Authorization", "Bearer $adminToken"))
             .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3))
             .andExpect(jsonPath("$[0].playerName").value("Admin User"))
             .andExpect(jsonPath("$[0].totalPoints").value(BigDecimal("10.0")))
             .andExpect(jsonPath("$[0].rank").value(1))
             .andExpect(jsonPath("$[1].playerName").value("Regular User"))
             .andExpect(jsonPath("$[1].totalPoints").value(BigDecimal("10.0")))
             .andExpect(jsonPath("$[1].rank").value(1))
+            .andExpect(jsonPath("$[2].playerName").value("Third User"))
+            .andExpect(jsonPath("$[2].totalPoints").value(BigDecimal("5.0")))
+            .andExpect(jsonPath("$[2].rank").value(3))
+    }
+
+    @Test
+    fun `getStandingsForSeason should handle multiple players tied and subsequent rank`() {
+        // Given
+        val thirdUser = playerAccountRepository.save(PlayerAccount(firstName = "Third", lastName = "User", email = "third@example.com", password = passwordEncoder.encode("password")))
+        val thirdMembership = leagueMembershipRepository.save(LeagueMembership(playerAccount = thirdUser, league = testLeague, playerName = "Third User", role = UserRole.PLAYER))
+        val fourthUser = playerAccountRepository.save(PlayerAccount(firstName = "Fourth", lastName = "User", email = "fourth@example.com", password = passwordEncoder.encode("password")))
+        val fourthMembership = leagueMembershipRepository.save(LeagueMembership(playerAccount = fourthUser, league = testLeague, playerName = "Fourth User", role = UserRole.PLAYER))
+
+        val game1 = gameRepository.save(Game(
+            gameName = "Game 1",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+        gameResultRepository.saveAll(listOf(
+            GameResult(game = game1, player = adminMembership, place = 1, kills = 0, bounties = 0, bountyPlacedOnPlayer = null),
+            GameResult(game = game1, player = regularMembership, place = 2, kills = 0, bounties = 0, bountyPlacedOnPlayer = null),
+            GameResult(game = game1, player = thirdMembership, place = 2, kills = 0, bounties = 0, bountyPlacedOnPlayer = null),
+            GameResult(game = game1, player = fourthMembership, place = 4, kills = 0, bounties = 0, bountyPlacedOnPlayer = null)
+        ))
+
+        // When & Then
+        mockMvc.perform(get("/api/seasons/${testSeason.id}/standings")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(4))
+            .andExpect(jsonPath("$[0].playerName").value("Admin User"))
+            .andExpect(jsonPath("$[0].rank").value(1))
+            .andExpect(jsonPath("$[1].playerName").value("Regular User"))
+            .andExpect(jsonPath("$[1].rank").value(2))
+            .andExpect(jsonPath("$[2].playerName").value("Third User"))
+            .andExpect(jsonPath("$[2].rank").value(2))
+            .andExpect(jsonPath("$[3].playerName").value("Fourth User"))
+            .andExpect(jsonPath("$[3].rank").value(4))
     }
 
     @Test
