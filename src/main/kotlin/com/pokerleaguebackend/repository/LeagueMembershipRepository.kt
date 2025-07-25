@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository
 interface LeagueMembershipRepository : JpaRepository<LeagueMembership, Long> {
     fun findByLeagueIdAndPlayerAccountId(leagueId: Long, playerAccountId: Long): LeagueMembership?
     fun findAllByPlayerAccountId(playerAccountId: Long): List<LeagueMembership>
+    fun findAllByLeagueId(leagueId: Long): List<LeagueMembership>
 }

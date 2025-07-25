@@ -10,6 +10,7 @@ import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 import org.springframework.transaction.annotation.Transactional
