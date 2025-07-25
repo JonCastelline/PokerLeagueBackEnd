@@ -10,6 +10,7 @@ import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 import org.springframework.transaction.annotation.Transactional
@@ -137,7 +138,8 @@ class LeagueService(
     fun isLeagueMember(seasonId: Long, username: String): Boolean {
         val season = seasonRepository.findById(seasonId).orElse(null) ?: return false
         val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
-        return leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerAccount.id) != null
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerAccount.id)
+        return membership != null
     }
 
     fun isLeagueAdmin(seasonId: Long, username: String): Boolean {
