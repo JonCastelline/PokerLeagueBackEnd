@@ -68,7 +68,7 @@ class SeasonControllerIntegrationTest {
         adminUser = playerAccountRepository.save(PlayerAccount(
             firstName = "Admin",
             lastName = "User",
-            email = "admin@test.com",
+            email = "seasoncontrollerintegrationtest-admin@test.com",
             password = passwordEncoder.encode("password")
         ))
         adminToken = jwtTokenProvider.generateToken(adminUser.email)

@@ -87,7 +87,7 @@ class LeagueSettingsControllerIntegrationTest {
         adminUser = playerAccountRepository.save(PlayerAccount(
             firstName = "Admin",
             lastName = "User",
-            email = "admin@example.com",
+            email = "leaguesettingscontrollerintegrationtest-admin@example.com",
             password = passwordEncoder.encode("password")
         ))
         adminToken = jwtTokenProvider.generateToken(adminUser.email)
@@ -95,7 +95,7 @@ class LeagueSettingsControllerIntegrationTest {
         regularUser = playerAccountRepository.save(PlayerAccount(
             firstName = "Regular",
             lastName = "User",
-            email = "regular@example.com",
+            email = "leaguesettingscontrollerintegrationtest-regular@example.com",
             password = passwordEncoder.encode("password")
         ))
         regularUserToken = jwtTokenProvider.generateToken(regularUser.email)
