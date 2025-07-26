@@ -16,6 +16,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.whenever
 import java.util.Optional
@@ -120,6 +121,6 @@ class LeagueServiceTest {
             )
         }
 
-        org.junit.jupiter.api.Assertions.assertEquals("A league can only have one owner. Transfer ownership first.", exception.message)
+        assertEquals("A league can only have one owner. Transfer ownership first.", exception.message)
     }
 }

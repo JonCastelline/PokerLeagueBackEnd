@@ -153,8 +153,7 @@ class LeagueService(
     }
 
     fun getLeagueMembers(leagueId: Long, requestingPlayerAccountId: Long): List<LeagueMembershipDto> {
-        val requestingMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, requestingPlayerAccountId)
-            ?: throw AccessDeniedException("Player is not a member of this league.")
+        getLeagueMembership(leagueId, requestingPlayerAccountId)
 
         val memberships = leagueMembershipRepository.findAllByLeagueId(leagueId)
         return memberships.map {
@@ -168,6 +167,11 @@ class LeagueService(
         }
     }
 
+    private fun authorizeLeagueMembershipAccess(leagueId: Long, playerAccountId: Long) {
+        leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerAccountId)
+            ?: throw AccessDeniedException("Player is not a member of this league.")
+    }
+
     @Transactional
     fun updateLeagueMembershipRole(
         leagueId: Long,
@@ -176,49 +180,12 @@ class LeagueService(
         newIsOwner: Boolean,
         requestingPlayerAccountId: Long
     ): LeagueMembershipDto {
-        val requestingMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, requestingPlayerAccountId)
-            ?: throw AccessDeniedException("Player is not a member of this league.")
+        val targetMembership = validateAndAuthorizeRoleUpdate(
+            leagueId, targetLeagueMembershipId, newIsOwner, requestingPlayerAccountId
+        )
 
-        var targetMembership = leagueMembershipRepository.findById(targetLeagueMembershipId)
-            .orElseThrow { IllegalArgumentException("League membership not found.") }
-
-        if (targetMembership.league.id != leagueId) {
-            throw IllegalArgumentException("League membership does not belong to the specified league.")
-        }
-
-        // Authorization checks
-        if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
-            throw AccessDeniedException("Only admins or owners can manage roles.")
-        }
-
-        // If requesting user is an Admin (not owner), check league settings
-        if (!requestingMembership.isOwner && requestingMembership.role == UserRole.ADMIN) {
-            var latestSeason = seasonRepository.findTopByLeagueIdOrderByStartDateDesc(leagueId)
-                ?: throw IllegalStateException("No season found for this league.")
-            var leagueSettings = leagueSettingsRepository.findBySeasonId(latestSeason.id)
-                ?: throw IllegalStateException("No league settings found for the latest season.")
-
-            if (!leagueSettings.nonOwnerAdminsCanManageRoles) {
-                throw AccessDeniedException("Non-owner admins are not permitted to manage roles in this league.")
-            }
-        }
-
-        // Prevent owner from revoking their own owner status (unless transferring)
-        if (targetMembership.isOwner && !newIsOwner && targetMembership.id == requestingMembership.id) {
-            throw IllegalArgumentException("An owner cannot revoke their own owner status directly. Use transfer ownership.")
-        }
-
-        // Prevent non-owners from setting isOwner to true
-        if (newIsOwner && !requestingMembership.isOwner) {
-            throw AccessDeniedException("Only the owner can set a member as owner.")
-        }
-
-        // If setting newIsOwner to true, ensure no other owner exists
         if (newIsOwner) {
-            val currentOwner = leagueMembershipRepository.findByLeagueIdAndIsOwner(leagueId, true)
-            if (currentOwner != null && currentOwner.id != targetMembership.id) {
-                throw IllegalStateException("A league can only have one owner. Transfer ownership first.")
-            }
+            ensureSingleOwner(leagueId, targetMembership)
             targetMembership.role = UserRole.ADMIN // Owner is always an Admin
         } else {
             targetMembership.role = newRole
@@ -233,6 +200,74 @@ class LeagueService(
             role = updatedMembership.role,
             isOwner = updatedMembership.isOwner
         )
+    }
+
+    private fun validateAndAuthorizeRoleUpdate(
+        leagueId: Long,
+        targetLeagueMembershipId: Long,
+        newIsOwner: Boolean,
+        requestingPlayerAccountId: Long
+    ): LeagueMembership {
+        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
+        val targetMembership = getTargetLeagueMembership(targetLeagueMembershipId, leagueId)
+
+        authorizeRoleManagement(requestingMembership, leagueId)
+        validateOwnerStatusChange(requestingMembership, newIsOwner)
+        validateSelfRevocation(requestingMembership, targetMembership, newIsOwner)
+
+        return targetMembership
+    }
+
+    private fun getLeagueMembership(leagueId: Long, playerAccountId: Long): LeagueMembership {
+        return leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerAccountId)
+            ?: throw AccessDeniedException("Player is not a member of this league.")
+    }
+
+    private fun getTargetLeagueMembership(targetLeagueMembershipId: Long, leagueId: Long): LeagueMembership {
+        val targetMembership = leagueMembershipRepository.findById(targetLeagueMembershipId)
+            .orElseThrow { IllegalArgumentException("League membership not found.") }
+        if (targetMembership.league.id != leagueId) {
+            throw IllegalArgumentException("League membership does not belong to the specified league.")
+        }
+        return targetMembership
+    }
+
+    private fun authorizeRoleManagement(requestingMembership: LeagueMembership, leagueId: Long) {
+        requestingMembership.let {
+            if (!it.isOwner && it.role != UserRole.ADMIN) {
+                throw AccessDeniedException("Only admins or owners can manage roles.")
+            }
+
+            if (!it.isOwner && it.role == UserRole.ADMIN) {
+                val latestSeason = seasonRepository.findTopByLeagueIdOrderByStartDateDesc(leagueId)
+                    ?: throw IllegalStateException("No season found for this league.")
+                val leagueSettings = leagueSettingsRepository.findBySeasonId(latestSeason.id)
+                    ?: throw IllegalStateException("No league settings found for the latest season.")
+
+                if (!leagueSettings.nonOwnerAdminsCanManageRoles) {
+                    throw AccessDeniedException("Non-owner admins are not permitted to manage roles in this league.")
+                }
+            }
+        }
+    }
+
+    private fun validateOwnerStatusChange(requestingMembership: LeagueMembership, newIsOwner: Boolean) {
+        if (newIsOwner && !requestingMembership.isOwner) {
+            throw AccessDeniedException("Only the owner can set a member as owner.")
+        }
+    }
+
+    private fun validateSelfRevocation(requestingMembership: LeagueMembership, targetMembership: LeagueMembership, newIsOwner: Boolean) {
+        if (targetMembership.isOwner && !newIsOwner && targetMembership.id == requestingMembership.id) {
+            throw IllegalArgumentException("An owner cannot revoke their own owner status directly. Use transfer ownership.")
+        }
+    }
+
+    private fun ensureSingleOwner(leagueId: Long, targetMembership: LeagueMembership) {
+        val currentOwner = leagueMembershipRepository.findByLeagueIdAndIsOwner(leagueId, true)
+        if (currentOwner != null && currentOwner.id != targetMembership.id) {
+            throw IllegalStateException("A league can only have one owner. Transfer ownership first.")
+        }
     }
 
     @Transactional
@@ -266,16 +301,14 @@ class LeagueService(
             throw IllegalArgumentException("Cannot transfer ownership to yourself.")
         }
 
-        // New owner must be an Admin
-        if (newOwnerMembership.role != UserRole.ADMIN) {
-            throw IllegalArgumentException("The new owner must be an Admin in the league.")
-        }
+        
 
         // Revoke current owner's status
         currentOwnerMembership.isOwner = false
         leagueMembershipRepository.save(currentOwnerMembership)
 
         // Grant new owner's status
+        newOwnerMembership.role = UserRole.ADMIN // Automatically promote to Admin
         newOwnerMembership.isOwner = true
         val updatedNewOwnerMembership = leagueMembershipRepository.save(newOwnerMembership)
 

@@ -1,7 +1,10 @@
 package com.pokerleaguebackend
 
 import com.pokerleaguebackend.controller.payload.CreateLeagueRequest
+import com.pokerleaguebackend.controller.payload.JoinLeagueRequest
+import com.pokerleaguebackend.model.BountyOnLeaderAbsenceRule
 import com.pokerleaguebackend.model.PlayerAccount
+import com.pokerleaguebackend.model.LeagueSettings
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
@@ -16,6 +19,7 @@ import com.pokerleaguebackend.service.LeagueService
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -115,7 +119,7 @@ class LeagueMembershipManagementIntegrationTest {
         ownerMembershipId = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(testLeagueId!!, ownerUser.id)!!.id
 
         // Add admin user to the league
-        val joinAdminLeagueRequest = com.pokerleaguebackend.controller.payload.JoinLeagueRequest(inviteCode = leagueRepository.findById(testLeagueId!!).get().inviteCode)
+        val joinAdminLeagueRequest = JoinLeagueRequest(inviteCode = leagueRepository.findById(testLeagueId!!).get().inviteCode)
         mockMvc.perform(post("/api/leagues/join")
             .header("Authorization", "Bearer $adminToken")
             .contentType(MediaType.APPLICATION_JSON)
@@ -124,7 +128,7 @@ class LeagueMembershipManagementIntegrationTest {
         adminMembershipId = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(testLeagueId!!, adminUser.id)!!.id
 
         // Add member user to the league
-        val joinMemberLeagueRequest = com.pokerleaguebackend.controller.payload.JoinLeagueRequest(inviteCode = leagueRepository.findById(testLeagueId!!).get().inviteCode)
+        val joinMemberLeagueRequest = JoinLeagueRequest(inviteCode = leagueRepository.findById(testLeagueId!!).get().inviteCode)
         mockMvc.perform(post("/api/leagues/join")
             .header("Authorization", "Bearer $memberToken")
             .contentType(MediaType.APPLICATION_JSON)
@@ -141,14 +145,14 @@ class LeagueMembershipManagementIntegrationTest {
         ))
 
         // Create default league settings for the season
-        leagueSettingsRepository.save(com.pokerleaguebackend.model.LeagueSettings(
+        leagueSettingsRepository.save(LeagueSettings(
             season = testSeason,
             trackKills = false,
             trackBounties = false,
             killPoints = java.math.BigDecimal("0.0"),
             bountyPoints = java.math.BigDecimal("0.0"),
             durationSeconds = 1200,
-            bountyOnLeaderAbsenceRule = com.pokerleaguebackend.model.BountyOnLeaderAbsenceRule.NO_BOUNTY,
+            bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NO_BOUNTY,
             enableAttendancePoints = false,
             attendancePoints = java.math.BigDecimal("0.0"),
             startingStack = 1500,
@@ -170,11 +174,11 @@ class LeagueMembershipManagementIntegrationTest {
             .header("Authorization", "Bearer $ownerToken"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(3))
-            .andExpect(jsonPath("$[?(@.playerAccountId == ${ownerUser.id})].role").value("ADMIN"))
+                        .andExpect(jsonPath("$[?(@.playerAccountId == ${ownerUser.id})].role").value(UserRole.ADMIN.toString()))
             .andExpect(jsonPath("$[?(@.playerAccountId == ${ownerUser.id})].isOwner").value(true))
-            .andExpect(jsonPath("$[?(@.playerAccountId == ${adminUser.id})].role").value("ADMIN"))
+            .andExpect(jsonPath("$[?(@.playerAccountId == ${adminUser.id})].role").value(UserRole.ADMIN.toString()))
             .andExpect(jsonPath("$[?(@.playerAccountId == ${adminUser.id})].isOwner").value(false))
-            .andExpect(jsonPath("$[?(@.playerAccountId == ${memberUser.id})].role").value("PLAYER"))
+                        .andExpect(jsonPath("$[?(@.playerAccountId == ${memberUser.id})].role").value(UserRole.PLAYER.toString()))
             .andExpect(jsonPath("$[?(@.playerAccountId == ${memberUser.id})].isOwner").value(false))
     }
 
@@ -250,7 +254,7 @@ class LeagueMembershipManagementIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.role").value("ADMIN"))
+            .andExpect(jsonPath("$.role").value(UserRole.ADMIN.toString()))
             .andExpect(jsonPath("$.isOwner").value(false))
 
         val updatedMembership = leagueMembershipRepository.findById(memberMembershipId!!).get()
@@ -298,14 +302,15 @@ class LeagueMembershipManagementIntegrationTest {
     }
 
     @Test
-    fun `owner should not be able to transfer ownership to a non-admin member`() {
+    fun `owner should be able to transfer ownership to a non-admin member`() {
         val request = TransferLeagueOwnershipRequest(newOwnerLeagueMembershipId = memberMembershipId!!)
         mockMvc.perform(put("/api/leagues/${testLeagueId!!}/transfer-ownership")
             .header("Authorization", "Bearer $ownerToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("The new owner must be an Admin in the league."))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.isOwner").value(true))
+            .andExpect(jsonPath("$.role").value(UserRole.ADMIN.toString()))
     }
 
     @Test
@@ -333,7 +338,7 @@ class LeagueMembershipManagementIntegrationTest {
     fun `should not allow setting a second owner directly`() {
         val targetMembership = leagueMembershipRepository.findById(adminMembershipId!!).get()
 
-        val exception = org.junit.jupiter.api.Assertions.assertThrows(IllegalStateException::class.java) {
+        val exception = assertThrows(IllegalStateException::class.java) {
             leagueService.updateLeagueMembershipRole(
                 leagueId = testLeagueId!!,
                 targetLeagueMembershipId = targetMembership.id,
