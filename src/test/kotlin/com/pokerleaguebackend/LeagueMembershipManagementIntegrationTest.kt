@@ -119,7 +119,7 @@ class LeagueMembershipManagementIntegrationTest {
         ownerMembershipId = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(testLeagueId!!, ownerUser.id)!!.id
 
         // Add admin user to the league
-        val joinAdminLeagueRequest = JoinLeagueRequest(inviteCode = leagueRepository.findById(testLeagueId!!).get().inviteCode)
+        val joinAdminLeagueRequest = JoinLeagueRequest(inviteCode = leagueRepository.findById(testLeagueId!!).get().inviteCode!!)
         mockMvc.perform(post("/api/leagues/join")
             .header("Authorization", "Bearer $adminToken")
             .contentType(MediaType.APPLICATION_JSON)
@@ -128,7 +128,7 @@ class LeagueMembershipManagementIntegrationTest {
         adminMembershipId = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(testLeagueId!!, adminUser.id)!!.id
 
         // Add member user to the league
-        val joinMemberLeagueRequest = JoinLeagueRequest(inviteCode = leagueRepository.findById(testLeagueId!!).get().inviteCode)
+        val joinMemberLeagueRequest = JoinLeagueRequest(inviteCode = leagueRepository.findById(testLeagueId!!).get().inviteCode!!)
         mockMvc.perform(post("/api/leagues/join")
             .header("Authorization", "Bearer $memberToken")
             .contentType(MediaType.APPLICATION_JSON)
@@ -341,10 +341,10 @@ class LeagueMembershipManagementIntegrationTest {
         val exception = assertThrows(IllegalStateException::class.java) {
             leagueService.updateLeagueMembershipRole(
                 leagueId = testLeagueId!!,
-                targetLeagueMembershipId = targetMembership.id,
+                targetLeagueMembershipId = targetMembership.id!!,
                 newRole = UserRole.ADMIN,
                 newIsOwner = true,
-                requestingPlayerAccountId = ownerUser.id
+                requestingPlayerAccountId = ownerUser.id!!
             )
         }
         assertEquals("A league can only have one owner. Transfer ownership first.", exception.message)

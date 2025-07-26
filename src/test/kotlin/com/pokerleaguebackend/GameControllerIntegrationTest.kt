@@ -102,22 +102,23 @@ class GameControllerIntegrationTest {
 
         testLeague = leagueRepository.save(League(
             leagueName = "Test League",
-            inviteCode = "test-invite-code",
-            expirationDate = Date()
+            inviteCode = "test-invite-code"
         ))
 
         adminMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = adminUser,
             league = testLeague,
             playerName = "Admin User",
-            role = UserRole.ADMIN
+            role = UserRole.ADMIN,
+            isOwner = true
         ))
 
         regularMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = regularUser,
             league = testLeague,
             playerName = "Regular User",
-            role = UserRole.PLAYER
+            role = UserRole.PLAYER,
+            isOwner = false
         ))
 
         testSeason = seasonRepository.save(Season(

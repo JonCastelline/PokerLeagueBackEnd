@@ -152,6 +152,15 @@ class LeagueService(
         return membership?.role == UserRole.ADMIN || membership?.isOwner == true
     }
 
+    fun isLeagueAdminByLeagueId(leagueId: Long, username: String): Boolean {
+        println("isLeagueAdminByLeagueId called with leagueId: $leagueId, username: $username")
+        val playerAccount = playerAccountRepository.findByEmail(username) ?: run { println("PlayerAccount not found for username: $username"); return false }
+        println("Found playerAccount: ${playerAccount.email}, id: ${playerAccount.id}")
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerAccount.id) ?: run { println("LeagueMembership not found for leagueId: $leagueId, playerAccountId: ${playerAccount.id}"); return false }
+        println("Found membership: role=${membership.role}, isOwner=${membership.isOwner}")
+        return membership.role == UserRole.ADMIN || membership.isOwner == true
+    }
+
     fun getLeagueMembers(leagueId: Long, requestingPlayerAccountId: Long): List<LeagueMembershipDto> {
         getLeagueMembership(leagueId, requestingPlayerAccountId)
 
