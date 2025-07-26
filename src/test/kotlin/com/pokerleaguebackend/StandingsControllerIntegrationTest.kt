@@ -101,7 +101,7 @@ class StandingsControllerIntegrationTest {
         adminUser = playerAccountRepository.save(PlayerAccount(
             firstName = "Admin",
             lastName = "User",
-            email = "admin@example.com",
+            email = "standingscontrollerintegrationtest-admin@example.com",
             password = passwordEncoder.encode("password")
         ))
         adminToken = jwtTokenProvider.generateToken(adminUser.email)
@@ -109,7 +109,7 @@ class StandingsControllerIntegrationTest {
         regularUser = playerAccountRepository.save(PlayerAccount(
             firstName = "Regular",
             lastName = "User",
-            email = "regular@example.com",
+            email = "standingscontrollerintegrationtest-regular@example.com",
             password = passwordEncoder.encode("password")
         ))
         regularUserToken = jwtTokenProvider.generateToken(regularUser.email)
@@ -305,7 +305,7 @@ class StandingsControllerIntegrationTest {
         val nonMember = playerAccountRepository.save(PlayerAccount(
             firstName = "Non",
             lastName = "Member",
-            email = "nonmember@example.com",
+            email = "standingscontrollerintegrationtest-nonmember@example.com",
             password = passwordEncoder.encode("password")
         ))
         val nonMemberToken = jwtTokenProvider.generateToken(nonMember.email)

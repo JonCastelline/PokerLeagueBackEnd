@@ -27,7 +27,7 @@ class AuthControllerIntegrationTest {
 
     @Test
     fun `should register a new user and then log in`() {
-        val uniqueEmail = "test.user" + System.currentTimeMillis() + "@example.com"
+        val uniqueEmail = "authcontrollerintegrationtest-test.user" + System.currentTimeMillis() + "@example.com"
         val signUpRequest = SignUpRequest(
             firstName = "Test",
             lastName = "User",

@@ -89,19 +89,19 @@ class LeagueMembershipManagementIntegrationTest {
 
         // Create owner user
         ownerUser = playerAccountRepository.save(
-            PlayerAccount(firstName = "Owner", lastName = "User", email = "owner@example.com", password = passwordEncoder.encode("password"))
+            PlayerAccount(firstName = "Owner", lastName = "User", email = "leaguemembershipmanagementintegrationtest-owner@example.com", password = passwordEncoder.encode("password"))
         )
         ownerToken = jwtTokenProvider.generateToken(ownerUser.email)
 
         // Create admin user
         adminUser = playerAccountRepository.save(
-            PlayerAccount(firstName = "Admin", lastName = "User", email = "admin@example.com", password = passwordEncoder.encode("password"))
+            PlayerAccount(firstName = "Admin", lastName = "User", email = "leaguemembershipmanagementintegrationtest-admin@example.com", password = passwordEncoder.encode("password"))
         )
         adminToken = jwtTokenProvider.generateToken(adminUser.email)
 
         // Create member user
         memberUser = playerAccountRepository.save(
-            PlayerAccount(firstName = "Member", lastName = "User", email = "member@example.com", password = passwordEncoder.encode("password"))
+            PlayerAccount(firstName = "Member", lastName = "User", email = "leaguemembershipmanagementintegrationtest-member@example.com", password = passwordEncoder.encode("password"))
         )
         memberToken = jwtTokenProvider.generateToken(memberUser.email)
 

@@ -66,7 +66,7 @@ class LeagueControllerIntegrationTest {
         val user = PlayerAccount(
             firstName = "Test",
             lastName = "User",
-            email = "test.user@example.com",
+            email = "leageucontrollerintegrationtest-test.user@example.com",
             password = passwordEncoder.encode("password"),
         )
         testUser = playerAccountRepository.save(user)
@@ -129,7 +129,7 @@ class LeagueControllerIntegrationTest {
         val newUser = PlayerAccount(
             firstName = "Expired",
             lastName = "Joiner",
-            email = "expired.joiner@example.com",
+            email = "leaguecontrollerintegrationtest-expired.joiner@example.com",
             password = passwordEncoder.encode("password")
         )
         val savedNewUser = playerAccountRepository.save(newUser)
@@ -166,7 +166,7 @@ class LeagueControllerIntegrationTest {
         val newUser = PlayerAccount(
             firstName = "New",
             lastName = "Player",
-            email = "new.player@example.com",
+            email = "leaguecontrollerintegrationtest-new.player@example.com",
             password = passwordEncoder.encode("password")
         )
         val savedNewUser = playerAccountRepository.save(newUser)
@@ -207,7 +207,7 @@ class LeagueControllerIntegrationTest {
         val newUser = PlayerAccount(
             firstName = "Non",
             lastName = "Member",
-            email = "non.member@example.com",
+            email = "leaguecontrollerintegrationtest-non.member@example.com",
             password = passwordEncoder.encode("password")
         )
         val savedNewUser = playerAccountRepository.save(newUser)
@@ -242,7 +242,7 @@ class LeagueControllerIntegrationTest {
         val newUser = PlayerAccount(
             firstName = "Another",
             lastName = "Player",
-            email = "another.player@example.com",
+            email = "leaguecontrollerintegrationtest-another.player@example.com",
             password = passwordEncoder.encode("password")
         )
         val savedNewUser = playerAccountRepository.save(newUser)
@@ -298,7 +298,7 @@ class LeagueControllerIntegrationTest {
         val newUser = PlayerAccount(
             firstName = "Non",
             lastName = "Admin",
-            email = "non.admin@example.com",
+            email = "leaguecontrollerintegrationtest-non.admin@example.com",
             password = passwordEncoder.encode("password")
         )
         val savedNewUser = playerAccountRepository.save(newUser)
