@@ -206,7 +206,7 @@ class LeagueMembershipManagementIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.role").value("ADMIN"))
+            .andExpect(jsonPath("$.role").value(UserRole.ADMIN.toString()))
             .andExpect(jsonPath("$.isOwner").value(false))
 
         val updatedMembership = leagueMembershipRepository.findById(memberMembershipId!!).get()
