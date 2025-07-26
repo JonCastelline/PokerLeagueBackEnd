@@ -13,6 +13,7 @@ data class LeagueSettingsDto(
     val enableAttendancePoints: Boolean,
     val attendancePoints: BigDecimal,
     val startingStack: Int,
+    val nonOwnerAdminsCanManageRoles: Boolean,
     val blindLevels: List<BlindLevelDto>,
     val placePoints: List<PlacePointDto>
 )

@@ -37,6 +37,7 @@ data class LeagueSettings(
     var enableAttendancePoints: Boolean = false,
     var attendancePoints: BigDecimal = BigDecimal.ZERO,
     var startingStack: Int = 1500,
+    var nonOwnerAdminsCanManageRoles: Boolean = false,
 
     @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
     @JsonManagedReference
