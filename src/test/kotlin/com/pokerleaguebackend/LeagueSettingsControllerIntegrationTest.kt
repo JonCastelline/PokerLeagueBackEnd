@@ -137,7 +137,8 @@ class LeagueSettingsControllerIntegrationTest {
             bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NO_BOUNTY,
             enableAttendancePoints = false,
             attendancePoints = BigDecimal("0.0"),
-            startingStack = 1500
+            startingStack = 1500,
+            nonOwnerAdminsCanManageRoles = false
         ))
     }
 
@@ -149,6 +150,7 @@ class LeagueSettingsControllerIntegrationTest {
             .andExpect(jsonPath("$.trackKills").value(true))
             .andExpect(jsonPath("$.blindLevels").isEmpty())
             .andExpect(jsonPath("$.placePoints").isEmpty())
+            .andExpect(jsonPath("$.nonOwnerAdminsCanManageRoles").value(false))
     }
 
     @Test
@@ -179,6 +181,7 @@ class LeagueSettingsControllerIntegrationTest {
             enableAttendancePoints = false,
             attendancePoints = BigDecimal("0.0"),
             startingStack = 2000,
+            nonOwnerAdminsCanManageRoles = true,
             blindLevels = listOf(
                 BlindLevelDto(level = 1, smallBlind = 25, bigBlind = 50),
                 BlindLevelDto(level = 2, smallBlind = 50, bigBlind = 100)
@@ -235,6 +238,7 @@ class LeagueSettingsControllerIntegrationTest {
             enableAttendancePoints = false,
             attendancePoints = BigDecimal("0.0"),
             startingStack = 2000,
+            nonOwnerAdminsCanManageRoles = false,
             blindLevels = emptyList(),
             placePoints = emptyList()
         )
@@ -267,6 +271,7 @@ class LeagueSettingsControllerIntegrationTest {
             enableAttendancePoints = false,
             attendancePoints = BigDecimal("0.0"),
             startingStack = 2000,
+            nonOwnerAdminsCanManageRoles = false,
             blindLevels = emptyList(),
             placePoints = emptyList()
         )

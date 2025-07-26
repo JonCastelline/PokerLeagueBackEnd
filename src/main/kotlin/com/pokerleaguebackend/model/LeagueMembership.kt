@@ -29,5 +29,6 @@ data class LeagueMembership(
 
     val playerName: String,
     @Enumerated(EnumType.STRING)
-    val role: UserRole
+    var role: UserRole,
+    var isOwner: Boolean = false
 )
