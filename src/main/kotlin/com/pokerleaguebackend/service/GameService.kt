@@ -61,4 +61,8 @@ class GameService(
     fun getGameHistory(seasonId: Long): List<Game> {
         return gameRepository.findAllBySeasonId(seasonId)
     }
+
+    fun getScheduledGames(seasonId: Long): List<Game> {
+        return gameRepository.findAllBySeasonIdAndScheduledDateIsNotNull(seasonId)
+    }
 }

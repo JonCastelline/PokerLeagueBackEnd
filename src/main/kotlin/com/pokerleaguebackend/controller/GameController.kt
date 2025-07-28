@@ -54,4 +54,11 @@ class GameController(private val gameService: GameService, private val playerAcc
         val games = gameService.getGameHistory(seasonId)
         return ResponseEntity.ok(games)
     }
+
+    @GetMapping("/seasons/{seasonId}/scheduled-games")
+    @PreAuthorize("@leagueService.isLeagueMember(#seasonId, principal.username)")
+    fun getScheduledGames(@PathVariable seasonId: Long): ResponseEntity<List<Game>> {
+        val games = gameService.getScheduledGames(seasonId)
+        return ResponseEntity.ok(games)
+    }
 }
