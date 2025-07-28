@@ -92,7 +92,7 @@ class StandingsService(
         var rank = 1
         var lastPoints: BigDecimal? = null
         var playersAtSameRank = 1
-        sortedStandings.forEachIndexed { index, standing ->
+        sortedStandings.forEachIndexed { _, standing ->
             if (lastPoints != null && standing.totalPoints < lastPoints!!) {
                 rank += playersAtSameRank
                 playersAtSameRank = 1

@@ -20,6 +20,7 @@ data class Game(
     val gameName: String,
     val gameDate: Date,
     val gameTime: Time,
+    val scheduledDate: Date? = null,
 
     @ManyToOne
     @JoinColumn(name = "season_id")
