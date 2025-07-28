@@ -12,6 +12,8 @@ import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -102,7 +104,7 @@ class LeagueHomeContentControllerIntegrationTest {
 
     @Test
     fun `getLeagueHomeContent should return content when it exists`() {
-        val content = leagueHomeContentRepository.save(LeagueHomeContent(league = testLeague, content = "Welcome to the league!", lastUpdated = java.util.Date()))
+        leagueHomeContentRepository.save(LeagueHomeContent(league = testLeague, content = "Welcome to the league!", lastUpdated = java.util.Date()))
 
         mockMvc.perform(get("/api/leagues/${testLeague.id}/home-content")
             .header("Authorization", "Bearer $adminToken"))
@@ -124,8 +126,8 @@ class LeagueHomeContentControllerIntegrationTest {
         leagueHomeContentService.updateLeagueHomeContent(testLeague.id, contentDto.content)
 
         val savedContent = leagueHomeContentRepository.findByLeagueId(testLeague.id)
-        org.junit.jupiter.api.Assertions.assertNotNull(savedContent)
-        org.junit.jupiter.api.Assertions.assertEquals("New content", savedContent?.content)
+        assertNotNull(savedContent)
+        assertEquals("New content", savedContent?.content)
     }
 
     @Test
@@ -136,8 +138,8 @@ class LeagueHomeContentControllerIntegrationTest {
         leagueHomeContentService.updateLeagueHomeContent(testLeague.id, contentDto.content)
 
         val savedContent = leagueHomeContentRepository.findByLeagueId(testLeague.id)
-        org.junit.jupiter.api.Assertions.assertNotNull(savedContent)
-        org.junit.jupiter.api.Assertions.assertEquals("Updated content", savedContent?.content)
+        assertNotNull(savedContent)
+        assertEquals("Updated content", savedContent?.content)
     }
 
     @Test
