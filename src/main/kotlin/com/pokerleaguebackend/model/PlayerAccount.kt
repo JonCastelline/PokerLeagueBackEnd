@@ -20,6 +20,7 @@ data class PlayerAccount(
     @Column(unique = true)
     val email: String,
 
+    @Column(length = 100)
     val password: String,
     val paid: Boolean = false
 )
