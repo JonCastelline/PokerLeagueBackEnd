@@ -32,17 +32,21 @@ class AuthController(
 
     @PostMapping("/signin")
     fun authenticateUser(@Valid @RequestBody loginRequest: LoginRequest): ResponseEntity<*> {
-        val authentication = authenticationManager.authenticate(
-            UsernamePasswordAuthenticationToken(
-                loginRequest.email,
-                loginRequest.password
+        try {
+            val authentication = authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken(
+                    loginRequest.email,
+                    loginRequest.password
+                )
             )
-        )
 
-        SecurityContextHolder.getContext().authentication = authentication
+            SecurityContextHolder.getContext().authentication = authentication
 
-        val jwt = tokenProvider.generateToken(authentication)
-        return ResponseEntity.ok(JwtAuthenticationResponse(jwt))
+            val jwt = tokenProvider.generateToken(authentication)
+            return ResponseEntity.ok(JwtAuthenticationResponse(jwt))
+        } catch (ex: Exception) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse(false, "Invalid email or password"))
+        }
     }
 
     @PostMapping("/signup")
