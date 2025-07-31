@@ -24,8 +24,9 @@ import org.springframework.web.bind.annotation.RestController
 class LeagueController(private val leagueService: LeagueService) {
 
     @PostMapping
-    fun createLeague(@RequestBody createLeagueRequest: CreateLeagueRequest): ResponseEntity<League> {
-        val createdLeague = leagueService.createLeague(createLeagueRequest.leagueName, createLeagueRequest.creatorId)
+    fun createLeague(@RequestBody createLeagueRequest: CreateLeagueRequest, @AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<League> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val createdLeague = leagueService.createLeague(createLeagueRequest.leagueName, playerAccount.id)
         return ResponseEntity.ok(createdLeague)
     }
 
