@@ -18,7 +18,6 @@ import java.util.UUID
 
 import org.springframework.transaction.annotation.Transactional
 
-import jakarta.persistence.EntityManager
 import java.util.Date
 import java.util.Calendar
 
@@ -29,12 +28,12 @@ class LeagueService(
     private val playerAccountRepository: PlayerAccountRepository,
     private val gameRepository: GameRepository,
     private val seasonRepository: SeasonRepository,
-    private val leagueSettingsRepository: LeagueSettingsRepository,
-    private val entityManager: EntityManager
+    private val leagueSettingsRepository: LeagueSettingsRepository
 ) {
 
     @Transactional
     fun createLeague(leagueName: String, creatorId: Long): League {
+        println("LeagueService.createLeague: creatorId = $creatorId")
         val creator = playerAccountRepository.findById(creatorId)
             .orElseThrow { IllegalArgumentException("Creator not found") }
 
@@ -46,8 +45,6 @@ class LeagueService(
 
         val league = League(leagueName = leagueName, inviteCode = inviteCode, expirationDate = expirationDate)
         val savedLeague = leagueRepository.save(league)
-        entityManager.flush()
-        entityManager.clear()
 
         val membership = LeagueMembership(
             playerAccount = creator,

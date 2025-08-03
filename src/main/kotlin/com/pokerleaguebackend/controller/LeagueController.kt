@@ -1,13 +1,14 @@
 package com.pokerleaguebackend.controller
 
-import com.pokerleaguebackend.security.UserPrincipal
-import com.pokerleaguebackend.controller.payload.CreateLeagueRequest
-import com.pokerleaguebackend.controller.payload.JoinLeagueRequest
-import com.pokerleaguebackend.payload.LeagueMembershipDto
-import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
-import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
 import com.pokerleaguebackend.model.League
+import com.pokerleaguebackend.payload.CreateLeagueRequest
+import com.pokerleaguebackend.payload.JoinLeagueRequest
+import com.pokerleaguebackend.payload.LeagueMembershipDto
+import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
+import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
+import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.LeagueService
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
@@ -27,7 +28,7 @@ class LeagueController(private val leagueService: LeagueService) {
     fun createLeague(@RequestBody createLeagueRequest: CreateLeagueRequest, @AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<League> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
         val createdLeague = leagueService.createLeague(createLeagueRequest.leagueName, playerAccount.id)
-        return ResponseEntity.ok(createdLeague)
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdLeague)
     }
 
     @PostMapping("/join")
