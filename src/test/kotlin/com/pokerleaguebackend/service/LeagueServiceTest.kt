@@ -1,60 +1,95 @@
-
 package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
-import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
+import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
-import org.junit.jupiter.api.Assertions.assertEquals
+import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.mockito.kotlin.any
-import org.mockito.kotlin.mock
-import org.mockito.kotlin.verify
-import org.mockito.kotlin.whenever
+import org.junit.jupiter.api.assertThrows
+import org.mockito.InjectMocks
+import org.mockito.Mock
+import org.mockito.Mockito.`when`
+import org.mockito.MockitoAnnotations
+import java.util.Date
 import java.util.Optional
 
 class LeagueServiceTest {
 
-    private val leagueRepository: LeagueRepository = mock()
-    private val leagueMembershipRepository: LeagueMembershipRepository = mock()
-    private val playerAccountRepository: PlayerAccountRepository = mock()
-    private val gameRepository: GameRepository = mock()
-    private val seasonRepository: SeasonRepository = mock()
-    private val leagueSettingsRepository: LeagueSettingsRepository = mock()
+    @Mock
+    private lateinit var leagueRepository: LeagueRepository
 
+    @Mock
+    private lateinit var leagueMembershipRepository: LeagueMembershipRepository
+
+    @Mock
+    private lateinit var playerAccountRepository: PlayerAccountRepository
+
+    @Mock
+    private lateinit var gameRepository: GameRepository
+
+    @Mock
+    private lateinit var seasonRepository: SeasonRepository
+
+    @Mock
+    private lateinit var leagueSettingsRepository: LeagueSettingsRepository
+
+    @InjectMocks
     private lateinit var leagueService: LeagueService
 
     @BeforeEach
-    fun setUp() {
-        leagueService = LeagueService(
-            leagueRepository,
-            leagueMembershipRepository,
-            playerAccountRepository,
-            gameRepository,
-            seasonRepository,
-            leagueSettingsRepository
-        )
+    fun setup() {
+        MockitoAnnotations.openMocks(this)
     }
 
     @Test
-    fun `createLeague should create and save a new league and membership`() {
-        val creator = PlayerAccount(id = 1L, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
-        val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")
+    fun `isLeagueMember should return true for a member`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date())
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, playerName = "Test User")
 
-        whenever(playerAccountRepository.findById(1L)).thenReturn(Optional.of(creator))
-        whenever(leagueRepository.save(any<League>())).thenReturn(league)
+        `when`(seasonRepository.findById(1)).thenReturn(Optional.of(season))
+        `when`(playerAccountRepository.findByEmail("test@test.com")).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 1)).thenReturn(membership)
 
-        val result = leagueService.createLeague("Test League", 1L)
+        assertTrue(leagueService.isLeagueMember(1, "test@test.com"))
+    }
 
-        assertEquals("Test League", result.leagueName)
-        verify(leagueRepository).save(any<League>())
-        verify(leagueMembershipRepository).save(any<LeagueMembership>())
+    @Test
+    fun `isLeagueMember should return false for a non-member`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date())
+
+        `when`(seasonRepository.findById(1)).thenReturn(Optional.of(season))
+        `when`(playerAccountRepository.findByEmail("test@test.com")).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 1)).thenReturn(null)
+
+        assertFalse(leagueService.isLeagueMember(1, "test@test.com"))
+    }
+
+    @Test
+    fun `updateLeagueMembershipRole should throw IllegalStateException if setting a second owner`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
+        val ownerMembership = LeagueMembership(id = 1, playerAccount = playerAccount, league = league, role = UserRole.ADMIN, isOwner = true, playerName = "Owner")
+        val targetMembership = LeagueMembership(id = 2, playerAccount = PlayerAccount(id = 2, firstName = "Target", lastName = "User", email = "target@test.com", password = "password"), league = league, role = UserRole.PLAYER, playerName = "Target User")
+
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 1)).thenReturn(ownerMembership)
+        `when`(leagueMembershipRepository.findById(2)).thenReturn(Optional.of(targetMembership))
+        `when`(leagueMembershipRepository.findByLeagueIdAndIsOwner(1, true)).thenReturn(ownerMembership)
+
+        assertThrows<IllegalStateException> {
+            leagueService.updateLeagueMembershipRole(1, 2, UserRole.ADMIN, true, 1)
+        }
     }
 }

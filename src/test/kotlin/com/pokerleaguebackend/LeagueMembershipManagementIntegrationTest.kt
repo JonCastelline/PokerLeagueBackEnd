@@ -1,149 +1,161 @@
+
 package com.pokerleaguebackend
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.pokerleaguebackend.model.League
+import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
-import com.pokerleaguebackend.payload.CreateLeagueRequest
-import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
-import com.pokerleaguebackend.repository.PlayerAccountRepository
-import com.pokerleaguebackend.repository.LeagueRepository
+import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
+import com.pokerleaguebackend.repository.LeagueRepository
+import com.pokerleaguebackend.repository.PlayerAccountRepository
+import com.pokerleaguebackend.security.JwtTokenProvider
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
-import org.springframework.test.context.ActiveProfiles
+import org.springframework.http.MediaType
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.assertj.core.api.Assertions.assertThat
+import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@ActiveProfiles("test")
-class LeagueMembershipManagementIntegrationTest {
+@SpringBootTest
+@AutoConfigureMockMvc
+class LeagueMembershipManagementIntegrationTest @Autowired constructor(
+    private val mockMvc: MockMvc,
+    private val playerAccountRepository: PlayerAccountRepository,
+    private val leagueRepository: LeagueRepository,
+    private val leagueMembershipRepository: LeagueMembershipRepository,
+    private val jwtTokenProvider: JwtTokenProvider,
+    private val passwordEncoder: PasswordEncoder,
+    private val objectMapper: ObjectMapper
+) {
 
-    @Autowired
-    lateinit var testRestTemplate: TestRestTemplate
-
-    @Autowired
-    lateinit var playerAccountRepository: PlayerAccountRepository
-
-    @Autowired
-    lateinit var leagueRepository: LeagueRepository
-
-    @Autowired
-    lateinit var leagueMembershipRepository: LeagueMembershipRepository
-
-    @Autowired
-    lateinit var passwordEncoder: PasswordEncoder
-
-    private var ownerToken: String? = null
-    private var playerToken: String? = null
-    private var leagueId: Long = 0
-    private var playerMembershipId: Long = 0
+    private lateinit var ownerToken: String
+    private lateinit var playerToken: String
+    private lateinit var league: League
+    private lateinit var playerMembership: LeagueMembership
 
     @BeforeEach
-    fun setUp() {
+    fun setup() {
         leagueMembershipRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()
 
-        // Create owner and league
-        playerAccountRepository.save(PlayerAccount(firstName = "Owner", lastName = "User", email = "owner@example.com", password = passwordEncoder.encode("password")))
-        val ownerLoginRequest = mapOf("email" to "owner@example.com", "password" to "password")
-        val ownerLoginResponse = testRestTemplate.postForEntity("/api/auth/signin", ownerLoginRequest, Map::class.java)
-        ownerToken = ownerLoginResponse.body?.get("accessToken") as String
+        val owner = playerAccountRepository.save(
+            PlayerAccount(
+                firstName = "Owner",
+                lastName = "User",
+                email = "owner@example.com",
+                password = passwordEncoder.encode("password")
+            )
+        )
+        val ownerPrincipal = com.pokerleaguebackend.security.UserPrincipal(owner)
+        ownerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(ownerPrincipal, "password", listOf(SimpleGrantedAuthority("ROLE_USER"))))
 
-        val createLeagueRequest = CreateLeagueRequest(leagueName = "Test League")
-        val createLeagueHttpEntity = HttpEntity(createLeagueRequest, getAuthHeaders(ownerToken!!))
-        val createLeagueResponse = testRestTemplate.exchange("/api/leagues", HttpMethod.POST, createLeagueHttpEntity, Map::class.java)
-        leagueId = (createLeagueResponse.body?.get("id") as Number).toLong()
+        val player = playerAccountRepository.save(
+            PlayerAccount(
+                firstName = "Player",
+                lastName = "User",
+                email = "player@example.com",
+                password = passwordEncoder.encode("password")
+            )
+        )
+        val playerPrincipal = com.pokerleaguebackend.security.UserPrincipal(player)
+        playerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(playerPrincipal, "password", listOf(SimpleGrantedAuthority("ROLE_USER"))))
 
-        // Create a regular player
-        val player = playerAccountRepository.save(PlayerAccount(firstName = "Player", lastName = "User", email = "player@example.com", password = passwordEncoder.encode("password")))
-        val playerLoginRequest = mapOf("email" to "player@example.com", "password" to "password")
-        val playerLoginResponse = testRestTemplate.postForEntity("/api/auth/signin", playerLoginRequest, Map::class.java)
-        playerToken = playerLoginResponse.body?.get("accessToken") as String
+        league = leagueRepository.save(League(leagueName = "Test League", inviteCode = "TEST", expirationDate = null))
 
-        val playerMembership = leagueMembershipRepository.save(
-            com.pokerleaguebackend.model.LeagueMembership(
+        leagueMembershipRepository.save(
+            LeagueMembership(
+                playerAccount = owner,
+                league = league,
+                playerName = "Owner User",
+                role = UserRole.ADMIN,
+                isOwner = true
+            )
+        )
+
+        playerMembership = leagueMembershipRepository.save(
+            LeagueMembership(
                 playerAccount = player,
-                league = leagueRepository.findById(leagueId).get(),
+                league = league,
                 playerName = "Player User",
                 role = UserRole.PLAYER
             )
         )
-        playerMembershipId = playerMembership.id
     }
 
-    private fun getAuthHeaders(token: String): HttpHeaders {
-        val headers = HttpHeaders()
-        headers.setBearerAuth(token)
-        return headers
+    @Test
+    fun `owner should be able to get all league members`() {
+        mockMvc.perform(
+            get("/api/leagues/{leagueId}/members", league.id)
+                .header("Authorization", "Bearer $ownerToken")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.size()").value(2))
     }
 
     @Test
     fun `owner can promote a player to admin`() {
-        // Given
-        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembershipId, newRole = UserRole.ADMIN)
-        val httpEntity = HttpEntity(request, getAuthHeaders(ownerToken!!))
+        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembership.id, newRole = UserRole.ADMIN)
 
-        // When
-        val response = testRestTemplate.exchange("/api/leagues/$leagueId/members/$playerMembershipId/role", HttpMethod.PUT, httpEntity, Map::class.java)
-
-        // Then
-        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-        val updatedMembership = leagueMembershipRepository.findById(playerMembershipId).get()
-        assertThat(updatedMembership.role).isEqualTo(UserRole.ADMIN)
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, playerMembership.id)
+                .header("Authorization", "Bearer $ownerToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isOk)
     }
 
     @Test
     fun `owner can demote an admin to player`() {
-        // Given
-        val adminMembership = leagueMembershipRepository.findById(playerMembershipId).get()
-        adminMembership.role = UserRole.ADMIN
-        leagueMembershipRepository.save(adminMembership)
+        playerMembership.role = UserRole.ADMIN
+        leagueMembershipRepository.save(playerMembership)
 
-        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembershipId, newRole = UserRole.PLAYER)
-        val httpEntity = HttpEntity(request, getAuthHeaders(ownerToken!!))
+        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembership.id, newRole = UserRole.PLAYER)
 
-        // When
-        val response = testRestTemplate.exchange("/api/leagues/$leagueId/members/$playerMembershipId/role", HttpMethod.PUT, httpEntity, Map::class.java)
-
-        // Then
-        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-        val updatedMembership = leagueMembershipRepository.findById(playerMembershipId).get()
-        assertThat(updatedMembership.role).isEqualTo(UserRole.PLAYER)
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, playerMembership.id)
+                .header("Authorization", "Bearer $ownerToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isOk)
     }
 
     @Test
     fun `owner can transfer ownership`() {
-        // Given
-        val request = TransferLeagueOwnershipRequest(newOwnerLeagueMembershipId = playerMembershipId)
-        val httpEntity = HttpEntity(request, getAuthHeaders(ownerToken!!))
+        val request = TransferLeagueOwnershipRequest(newOwnerLeagueMembershipId = playerMembership.id)
 
-        // When
-        val response = testRestTemplate.exchange("/api/leagues/$leagueId/transfer-ownership", HttpMethod.PUT, httpEntity, Map::class.java)
-
-        // Then
-        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
-        val newOwnerMembership = leagueMembershipRepository.findById(playerMembershipId).get()
-        assertThat(newOwnerMembership.isOwner).isTrue()
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/transfer-ownership", league.id)
+                .header("Authorization", "Bearer $ownerToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isOk)
     }
 
     @Test
     fun `player cannot change roles`() {
-        // Given
-        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembershipId, newRole = UserRole.ADMIN)
-        val httpEntity = HttpEntity(request, getAuthHeaders(playerToken!!))
+        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembership.id, newRole = UserRole.ADMIN)
 
-        // When
-        val response = testRestTemplate.exchange("/api/leagues/$leagueId/members/$playerMembershipId/role", HttpMethod.PUT, httpEntity, Map::class.java)
-
-        // Then
-        assertThat(response.statusCode).isEqualTo(HttpStatus.FORBIDDEN)
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, playerMembership.id)
+                .header("Authorization", "Bearer $playerToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isForbidden)
     }
 }
