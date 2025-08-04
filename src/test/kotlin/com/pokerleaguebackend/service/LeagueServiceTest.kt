@@ -92,4 +92,5 @@ class LeagueServiceTest {
             leagueService.updateLeagueMembershipRole(1, 2, UserRole.ADMIN, true, 1)
         }
     }
-}
+
+    }

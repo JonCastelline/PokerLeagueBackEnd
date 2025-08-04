@@ -20,6 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
+import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
@@ -36,7 +38,9 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
     private val leagueMembershipRepository: LeagueMembershipRepository,
     private val jwtTokenProvider: JwtTokenProvider,
     private val passwordEncoder: PasswordEncoder,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val seasonRepository: SeasonRepository,
+    private val leagueSettingsRepository: LeagueSettingsRepository
 ) {
 
     private lateinit var ownerToken: String
@@ -47,6 +51,8 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
     @BeforeEach
     fun setup() {
         leagueMembershipRepository.deleteAll()
+        leagueSettingsRepository.deleteAll()
+        seasonRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()
 
@@ -92,7 +98,35 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
                 role = UserRole.PLAYER
             )
         )
+
+        val admin = playerAccountRepository.save(
+            PlayerAccount(
+                firstName = "Admin",
+                lastName = "User",
+                email = "admin@example.com",
+                password = passwordEncoder.encode("password")
+            )
+        )
+        val adminPrincipal = com.pokerleaguebackend.security.UserPrincipal(admin)
+        adminToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(adminPrincipal, "password", listOf(SimpleGrantedAuthority("ROLE_USER"))))
+
+        adminMembership = leagueMembershipRepository.save(
+            LeagueMembership(
+                playerAccount = admin,
+                league = league,
+                playerName = "Admin User",
+                role = UserRole.ADMIN,
+                isOwner = false
+            )
+        )
+
+        // Create a season and default settings for the league
+        val season = seasonRepository.save(com.pokerleaguebackend.model.Season(seasonName = "Test Season", league = league, startDate = java.util.Date(), endDate = java.util.Date()))
+        leagueSettingsRepository.save(com.pokerleaguebackend.model.LeagueSettings(season = season, nonOwnerAdminsCanManageRoles = false))
     }
+
+    private lateinit var adminToken: String
+    private lateinit var adminMembership: LeagueMembership
 
     @Test
     fun `owner should be able to get all league members`() {
@@ -101,7 +135,7 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
                 .header("Authorization", "Bearer $ownerToken")
         )
             .andExpect(status().isOk)
-            .andExpect(jsonPath("$.size()").value(2))
+            .andExpect(jsonPath("$.size()").value(3))
     }
 
     @Test
@@ -157,5 +191,134 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
                 .content(objectMapper.writeValueAsString(request))
         )
             .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `admin should not be able to change a member's role to admin if nonOwnerAdminsCanManageRoles is false`() {
+        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembership.id, newRole = UserRole.ADMIN)
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, playerMembership.id)
+                .header("Authorization", "Bearer $adminToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `admin should be able to change a member's role to admin if nonOwnerAdminsCanManageRoles is true`() {
+        // Update league settings to allow non-owner admins to manage roles
+        val season = seasonRepository.findTopByLeagueIdOrderByStartDateDesc(league.id)!!
+        val settings = leagueSettingsRepository.findBySeasonId(season.id)!!
+        settings.nonOwnerAdminsCanManageRoles = true
+        leagueSettingsRepository.save(settings)
+
+        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembership.id, newRole = UserRole.ADMIN)
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, playerMembership.id)
+                .header("Authorization", "Bearer $adminToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `admin should not be able to transfer ownership`() {
+        val request = TransferLeagueOwnershipRequest(newOwnerLeagueMembershipId = playerMembership.id)
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/transfer-ownership", league.id)
+                .header("Authorization", "Bearer $adminToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `member should be able to get all league members`() {
+        mockMvc.perform(
+            get("/api/leagues/{leagueId}/members", league.id)
+                .header("Authorization", "Bearer $playerToken")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.size()").value(3))
+    }
+
+    @Test
+    fun `owner cannot revoke their own owner status directly`() {
+        val ownerMembership = leagueMembershipRepository.findByLeagueIdAndIsOwner(league.id, true)!!
+        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = ownerMembership.id, newRole = UserRole.ADMIN, newIsOwner = false)
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, ownerMembership.id)
+                .header("Authorization", "Bearer $ownerToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should not allow setting a second owner directly`() {
+        val newOwnerAccount = playerAccountRepository.save(
+            PlayerAccount(
+                firstName = "New",
+                lastName = "Owner",
+                email = "newowner@example.com",
+                password = passwordEncoder.encode("password")
+            )
+        )
+        val newOwnerMembership = leagueMembershipRepository.save(
+            LeagueMembership(
+                playerAccount = newOwnerAccount,
+                league = league,
+                playerName = "New Owner",
+                role = UserRole.PLAYER
+            )
+        )
+
+        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = newOwnerMembership.id, newRole = UserRole.ADMIN, newIsOwner = true)
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, newOwnerMembership.id)
+                .header("Authorization", "Bearer $ownerToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isForbidden())
+    }
+
+    @Test
+    fun `owner should be able to transfer ownership to a non-admin member`() {
+        val newOwnerAccount = playerAccountRepository.save(
+            PlayerAccount(
+                firstName = "New",
+                lastName = "Owner",
+                email = "newowner2@example.com",
+                password = passwordEncoder.encode("password")
+            )
+        )
+        val newOwnerMembership = leagueMembershipRepository.save(
+            LeagueMembership(
+                playerAccount = newOwnerAccount,
+                league = league,
+                playerName = "New Owner 2",
+                role = UserRole.PLAYER
+            )
+        )
+
+        val request = TransferLeagueOwnershipRequest(newOwnerLeagueMembershipId = newOwnerMembership.id)
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/transfer-ownership", league.id)
+                .header("Authorization", "Bearer $ownerToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request))
+        )
+            .andExpect(status().isOk)
     }
 }

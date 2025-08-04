@@ -18,6 +18,8 @@ import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import com.pokerleaguebackend.service.LeagueService
+import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 
 import org.springframework.test.web.servlet.MockMvc
@@ -34,7 +36,9 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     private val leagueRepository: LeagueRepository,
     private val jwtTokenProvider: JwtTokenProvider,
     private val leagueService: LeagueService,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val seasonRepository: SeasonRepository,
+    private val leagueSettingsRepository: LeagueSettingsRepository
 ) {
 
     private var testPlayer: PlayerAccount? = null
@@ -44,6 +48,8 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     fun setup() {
         // Clear all previous data
         leagueMembershipRepository.deleteAll()
+        leagueSettingsRepository.deleteAll()
+        seasonRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()
 
