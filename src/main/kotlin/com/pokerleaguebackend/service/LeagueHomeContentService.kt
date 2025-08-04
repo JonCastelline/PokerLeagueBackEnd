@@ -22,19 +22,24 @@ class LeagueHomeContentService @Autowired constructor(
     }
 
     @Transactional
-    fun updateLeagueHomeContent(leagueId: Long, content: String): LeagueHomeContent {
+    fun updateLeagueHomeContent(leagueId: Long, content: String, logoImageUrl: String?): LeagueHomeContent {
         val league = leagueRepository.findById(leagueId)
             .orElseThrow { IllegalArgumentException("League not found") }
 
         var leagueHomeContent = leagueHomeContentRepository.findByLeagueId(leagueId)
 
         if (leagueHomeContent == null) {
-            leagueHomeContent = LeagueHomeContent(league = league, content = content, lastUpdated = Date())
+            leagueHomeContent = LeagueHomeContent(
+                league = league,
+                content = content,
+                logoImageUrl = logoImageUrl,
+                lastUpdated = Date()
+            )
         } else {
             leagueHomeContent.content = content
+            leagueHomeContent.logoImageUrl = logoImageUrl
             leagueHomeContent.lastUpdated = Date()
         }
-        val savedContent = leagueHomeContentRepository.save(leagueHomeContent)
-        return savedContent
+        return leagueHomeContentRepository.save(leagueHomeContent)
     }
 }

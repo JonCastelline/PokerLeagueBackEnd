@@ -131,30 +131,32 @@ class LeagueHomeContentControllerIntegrationTest {
 
     @Test
     fun `updateLeagueHomeContent should create content when it does not exist`() {
-        val contentDto = LeagueHomeContentDto("New content")
+        val contentDto = LeagueHomeContentDto("New content", "http://example.com/logo.png")
 
-        leagueHomeContentService.updateLeagueHomeContent(testLeague.id, contentDto.content)
+        leagueHomeContentService.updateLeagueHomeContent(testLeague.id, contentDto.content, contentDto.logoImageUrl)
 
         val savedContent = leagueHomeContentRepository.findByLeagueId(testLeague.id)
         assertNotNull(savedContent)
         assertEquals("New content", savedContent?.content)
+        assertEquals("http://example.com/logo.png", savedContent?.logoImageUrl)
     }
 
     @Test
     fun `updateLeagueHomeContent should update content when it exists`() {
-        leagueHomeContentRepository.save(LeagueHomeContent(id = testLeague.id, league = testLeague, content = "Old content", lastUpdated = java.util.Date()))
-        val contentDto = LeagueHomeContentDto("Updated content")
+        leagueHomeContentRepository.save(LeagueHomeContent(id = testLeague.id, league = testLeague, content = "Old content", logoImageUrl = "http://example.com/old_logo.png", lastUpdated = java.util.Date()))
+        val contentDto = LeagueHomeContentDto("Updated content", "http://example.com/new_logo.png")
 
-        leagueHomeContentService.updateLeagueHomeContent(testLeague.id, contentDto.content)
+        leagueHomeContentService.updateLeagueHomeContent(testLeague.id, contentDto.content, contentDto.logoImageUrl)
 
         val savedContent = leagueHomeContentRepository.findByLeagueId(testLeague.id)
         assertNotNull(savedContent)
         assertEquals("Updated content", savedContent?.content)
+        assertEquals("http://example.com/new_logo.png", savedContent?.logoImageUrl)
     }
 
     @Test
     fun `updateLeagueHomeContent should return 403 for non-admin`() {
-        val contentDto = LeagueHomeContentDto("Unauthorized content")
+        val contentDto = LeagueHomeContentDto("Unauthorized content", "http://example.com/logo.png")
         mockMvc.perform(put("/api/leagues/${testLeague.id}/home-content")
             .header("Authorization", "Bearer $nonAdminToken")
             .contentType(MediaType.APPLICATION_JSON)

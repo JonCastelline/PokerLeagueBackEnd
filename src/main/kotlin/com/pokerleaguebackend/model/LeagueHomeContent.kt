@@ -24,6 +24,9 @@ data class LeagueHomeContent(
     @Column(columnDefinition = "TEXT")
     var content: String,
 
+    @Column(name = "logo_image_url")
+    var logoImageUrl: String? = null,
+
     @Column(name = "last_updated")
     var lastUpdated: Date
 )
