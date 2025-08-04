@@ -40,7 +40,7 @@ class LeagueHomeContentController @Autowired constructor(
         if (!leagueService.isLeagueAdmin(leagueId, playerAccount.email)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
-        val updatedContent = leagueHomeContentService.updateLeagueHomeContent(leagueId, leagueHomeContentDto.content)
+        val updatedContent = leagueHomeContentService.updateLeagueHomeContent(leagueId, leagueHomeContentDto.content, leagueHomeContentDto.logoImageUrl)
         return ResponseEntity.ok(updatedContent)
     }
 }
