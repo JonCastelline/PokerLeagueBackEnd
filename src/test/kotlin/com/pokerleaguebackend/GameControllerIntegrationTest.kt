@@ -13,6 +13,7 @@ import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
+import com.pokerleaguebackend.repository.LeagueSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
 import org.junit.jupiter.api.BeforeEach
@@ -52,6 +53,9 @@ class GameControllerIntegrationTest {
     private lateinit var seasonRepository: SeasonRepository
 
     @Autowired
+    private lateinit var leagueSettingsRepository: com.pokerleaguebackend.repository.LeagueSettingsRepository
+
+    @Autowired
     private lateinit var leagueMembershipRepository: LeagueMembershipRepository
 
     @Autowired
@@ -80,6 +84,7 @@ class GameControllerIntegrationTest {
         gameResultRepository.deleteAll()
         gameRepository.deleteAll()
         leagueMembershipRepository.deleteAll()
+        leagueSettingsRepository.deleteAll()
         seasonRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()

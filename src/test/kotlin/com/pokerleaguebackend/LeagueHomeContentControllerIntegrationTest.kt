@@ -7,6 +7,8 @@ import com.pokerleaguebackend.model.LeagueHomeContent
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.payload.LeagueHomeContentDto
+import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.repository.LeagueHomeContentRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
@@ -53,6 +55,12 @@ class LeagueHomeContentControllerIntegrationTest {
     private lateinit var leagueHomeContentRepository: LeagueHomeContentRepository
 
     @Autowired
+    private lateinit var seasonRepository: com.pokerleaguebackend.repository.SeasonRepository
+
+    @Autowired
+    private lateinit var leagueSettingsRepository: com.pokerleaguebackend.repository.LeagueSettingsRepository
+
+    @Autowired
     private lateinit var leagueHomeContentService: com.pokerleaguebackend.service.LeagueHomeContentService
 
     @Autowired
@@ -74,6 +82,8 @@ class LeagueHomeContentControllerIntegrationTest {
     fun setup() {
         leagueHomeContentRepository.deleteAll()
         leagueMembershipRepository.deleteAll()
+        leagueSettingsRepository.deleteAll()
+        seasonRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()
 

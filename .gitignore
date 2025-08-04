@@ -39,3 +39,8 @@ out/
 application.log
 application.properties
 test_output.log
+
+# Custom properties files
+application-dev.properties
+application-prod.properties
+application-test.properties
