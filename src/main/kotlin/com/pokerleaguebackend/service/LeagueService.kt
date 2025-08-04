@@ -132,7 +132,7 @@ class LeagueService(
         val game = gameRepository.findById(gameId).orElse(null) ?: return false
         val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(game.season.league.id, playerAccount.id)
-        return membership?.role == UserRole.ADMIN
+        return membership?.role == UserRole.ADMIN || membership?.isOwner == true
     }
 
     fun isLeagueMember(seasonId: Long, username: String): Boolean {
@@ -141,7 +141,13 @@ class LeagueService(
         return leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerAccount.id) != null
     }
 
-    fun isLeagueAdmin(seasonId: Long, username: String): Boolean {
+    fun isLeagueAdminByLeagueId(leagueId: Long, username: String): Boolean {
+        val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerAccount.id)
+        return membership?.role == UserRole.ADMIN || membership?.isOwner == true
+    }
+
+    fun isLeagueAdminBySeason(seasonId: Long, username: String): Boolean {
         val season = seasonRepository.findById(seasonId).orElse(null) ?: return false
         val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerAccount.id)

@@ -37,7 +37,7 @@ class LeagueHomeContentController @Autowired constructor(
         @AuthenticationPrincipal userDetails: UserDetails
     ): ResponseEntity<LeagueHomeContent> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
-        if (!leagueService.isLeagueAdmin(leagueId, playerAccount.email)) {
+        if (!leagueService.isLeagueAdminByLeagueId(leagueId, playerAccount.email)) {
             return ResponseEntity(HttpStatus.FORBIDDEN)
         }
         val updatedContent = leagueHomeContentService.updateLeagueHomeContent(leagueId, leagueHomeContentDto.content, leagueHomeContentDto.logoImageUrl)
