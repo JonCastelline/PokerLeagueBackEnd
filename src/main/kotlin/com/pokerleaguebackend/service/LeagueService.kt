@@ -33,7 +33,6 @@ class LeagueService(
 
     @Transactional
     fun createLeague(leagueName: String, creatorId: Long): League {
-        println("LeagueService.createLeague: creatorId = $creatorId")
         val creator = playerAccountRepository.findById(creatorId)
             .orElseThrow { IllegalArgumentException("Creator not found") }
 

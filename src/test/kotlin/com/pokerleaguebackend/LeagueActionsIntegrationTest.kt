@@ -19,6 +19,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.ActiveProfiles
+import com.pokerleaguebackend.model.UserRole
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -80,7 +81,7 @@ class LeagueActionsIntegrationTest {
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, testUser!!.id)
         assertThat(membership).isNotNull
         assertThat(membership!!.isOwner).isTrue()
-        assertThat(membership.role.name).isEqualTo("ADMIN")
+        assertThat(membership.role).isEqualTo(UserRole.ADMIN)
     }
 
     @Test
@@ -147,7 +148,7 @@ class LeagueActionsIntegrationTest {
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(newLeagueId, testUser!!.id)
         assertThat(membership).isNotNull
         assertThat(membership!!.isOwner).isFalse()
-        assertThat(membership.role.name).isEqualTo("PLAYER")
+        assertThat(membership.role).isEqualTo(UserRole.PLAYER)
     }
 
     @Test
