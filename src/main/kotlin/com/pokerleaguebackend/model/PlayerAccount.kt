@@ -21,6 +21,6 @@ data class PlayerAccount(
     val email: String,
 
     @Column(length = 100)
-    val password: String,
+    var password: String? = null,
     val paid: Boolean = false
 )

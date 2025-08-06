@@ -46,7 +46,7 @@ class LeagueController(private val leagueService: LeagueService) {
     }
 
     @GetMapping
-    fun getLeaguesForPlayer(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<List<League>> {
+    fun getLeaguesForPlayer(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<List<com.pokerleaguebackend.payload.LeagueDto>> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
         val leagues = leagueService.getLeaguesForPlayer(playerAccount.id)
         return ResponseEntity.ok(leagues)

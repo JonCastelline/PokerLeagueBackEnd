@@ -8,7 +8,7 @@ class UserPrincipal(val playerAccount: PlayerAccount) : UserDetails {
 
     override fun getAuthorities(): Collection<GrantedAuthority> = emptyList()
 
-    override fun getPassword(): String = playerAccount.password
+    override fun getPassword(): String = playerAccount.password ?: ""
 
     override fun getUsername(): String = playerAccount.email
 

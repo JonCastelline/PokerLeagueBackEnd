@@ -1,6 +1,4 @@
 
-package com.pokerleaguebackend.controller
-
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
@@ -27,7 +25,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-@SpringBootTest
+@SpringBootTest(classes = [com.pokerleaguebackend.PokerLeagueBackendApplication::class])
 @AutoConfigureMockMvc
 class LeagueControllerIntegrationTest @Autowired constructor(
     private val mockMvc: MockMvc,

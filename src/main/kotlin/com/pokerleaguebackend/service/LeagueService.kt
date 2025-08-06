@@ -96,9 +96,17 @@ class LeagueService(
         return league
     }
 
-    fun getLeaguesForPlayer(playerId: Long): List<League> {
+    fun getLeaguesForPlayer(playerId: Long): List<com.pokerleaguebackend.payload.LeagueDto> {
         val memberships = leagueMembershipRepository.findAllByPlayerAccountId(playerId)
-        return memberships.map { it.league }
+        return memberships.map { 
+            com.pokerleaguebackend.payload.LeagueDto(
+                id = it.league.id,
+                leagueName = it.league.leagueName,
+                inviteCode = it.league.inviteCode,
+                isOwner = it.isOwner,
+                role = it.role
+            )
+        }
     }
 
     @Transactional
