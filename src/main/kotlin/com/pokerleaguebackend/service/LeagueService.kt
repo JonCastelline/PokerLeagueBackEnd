@@ -5,6 +5,7 @@ import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.payload.LeagueMembershipDto
+import com.pokerleaguebackend.payload.LeagueDto
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -96,7 +97,7 @@ class LeagueService(
         return league
     }
 
-    fun getLeaguesForPlayer(playerId: Long): List<com.pokerleaguebackend.payload.LeagueDto> {
+    fun getLeaguesForPlayer(playerId: Long): List<LeagueDto> {
         val memberships = leagueMembershipRepository.findAllByPlayerAccountId(playerId)
         return memberships.map { 
             com.pokerleaguebackend.payload.LeagueDto(
