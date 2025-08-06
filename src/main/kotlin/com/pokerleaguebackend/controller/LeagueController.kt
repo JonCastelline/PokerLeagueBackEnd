@@ -4,6 +4,7 @@ import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.payload.CreateLeagueRequest
 import com.pokerleaguebackend.payload.JoinLeagueRequest
 import com.pokerleaguebackend.payload.LeagueMembershipDto
+import com.pokerleaguebackend.payload.LeagueDto
 import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
 import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.security.UserPrincipal
@@ -46,7 +47,7 @@ class LeagueController(private val leagueService: LeagueService) {
     }
 
     @GetMapping
-    fun getLeaguesForPlayer(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<List<League>> {
+    fun getLeaguesForPlayer(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<List<LeagueDto>> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
         val leagues = leagueService.getLeaguesForPlayer(playerAccount.id)
         return ResponseEntity.ok(leagues)

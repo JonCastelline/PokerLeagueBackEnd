@@ -5,6 +5,7 @@ import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.payload.LeagueMembershipDto
+import com.pokerleaguebackend.payload.LeagueDto
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -96,9 +97,17 @@ class LeagueService(
         return league
     }
 
-    fun getLeaguesForPlayer(playerId: Long): List<League> {
+    fun getLeaguesForPlayer(playerId: Long): List<LeagueDto> {
         val memberships = leagueMembershipRepository.findAllByPlayerAccountId(playerId)
-        return memberships.map { it.league }
+        return memberships.map { 
+            com.pokerleaguebackend.payload.LeagueDto(
+                id = it.league.id,
+                leagueName = it.league.leagueName,
+                inviteCode = it.league.inviteCode,
+                isOwner = it.isOwner,
+                role = it.role
+            )
+        }
     }
 
     @Transactional
