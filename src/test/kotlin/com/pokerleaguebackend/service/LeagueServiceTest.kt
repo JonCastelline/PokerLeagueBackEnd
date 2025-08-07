@@ -42,6 +42,9 @@ class LeagueServiceTest {
     @Mock
     private lateinit var leagueSettingsRepository: LeagueSettingsRepository
 
+    @Mock
+    private lateinit var leagueHomeContentRepository: com.pokerleaguebackend.repository.LeagueHomeContentRepository
+
     @InjectMocks
     private lateinit var leagueService: LeagueService
 

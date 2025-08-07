@@ -12,6 +12,7 @@ import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.LeagueHomeContentRepository
 import com.pokerleaguebackend.exception.DuplicatePlayerException
 import com.pokerleaguebackend.exception.LeagueNotFoundException
 import org.springframework.security.access.AccessDeniedException
@@ -31,7 +32,8 @@ class LeagueService(
     private val playerAccountRepository: PlayerAccountRepository,
     private val gameRepository: GameRepository,
     private val seasonRepository: SeasonRepository,
-    private val leagueSettingsRepository: LeagueSettingsRepository
+    private val leagueSettingsRepository: LeagueSettingsRepository,
+    private val leagueHomeContentRepository: LeagueHomeContentRepository
 ) {
 
     @Transactional
@@ -101,13 +103,15 @@ class LeagueService(
 
     fun getLeaguesForPlayer(playerId: Long): List<LeagueDto> {
         val memberships = leagueMembershipRepository.findAllByPlayerAccountId(playerId)
-        return memberships.map { 
+        return memberships.map { membership ->
+            val leagueHomeContent = leagueHomeContentRepository.findByLeagueId(membership.league.id)
             com.pokerleaguebackend.payload.LeagueDto(
-                id = it.league.id,
-                leagueName = it.league.leagueName,
-                inviteCode = it.league.inviteCode,
-                isOwner = it.isOwner,
-                role = it.role
+                id = membership.league.id,
+                leagueName = membership.league.leagueName,
+                inviteCode = membership.league.inviteCode,
+                isOwner = membership.isOwner,
+                role = membership.role,
+                logoImageUrl = leagueHomeContent?.logoImageUrl
             )
         }
     }
