@@ -12,6 +12,8 @@ import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.exception.DuplicatePlayerException
+import com.pokerleaguebackend.exception.LeagueNotFoundException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.slf4j.LoggerFactory
@@ -170,10 +172,11 @@ class LeagueService(
         return memberships.map {
             LeagueMembershipDto(
                 id = it.id,
-                playerAccountId = it.playerAccount.id,
+                playerAccountId = it.playerAccount?.id,
                 playerName = it.playerName,
                 role = it.role,
-                isOwner = it.isOwner
+                isOwner = it.isOwner,
+                email = it.playerAccount?.email
             )
         }
     }
@@ -206,10 +209,11 @@ class LeagueService(
         val updatedMembership = leagueMembershipRepository.save(targetMembership)
         return LeagueMembershipDto(
             id = updatedMembership.id,
-            playerAccountId = updatedMembership.playerAccount.id,
+            playerAccountId = updatedMembership.playerAccount?.id,
             playerName = updatedMembership.playerName,
             role = updatedMembership.role,
-            isOwner = updatedMembership.isOwner
+            isOwner = updatedMembership.isOwner,
+            email = updatedMembership.playerAccount?.email
         )
     }
 
@@ -231,14 +235,14 @@ class LeagueService(
 
     private fun getLeagueMembership(leagueId: Long, playerAccountId: Long): LeagueMembership {
         return leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerAccountId)
-            ?: throw AccessDeniedException("Player is not a member of this league.")
+            ?: throw LeagueNotFoundException("Player is not a member of this league.")
     }
 
     private fun getTargetLeagueMembership(targetLeagueMembershipId: Long, leagueId: Long): LeagueMembership {
         val targetMembership = leagueMembershipRepository.findById(targetLeagueMembershipId)
-            .orElseThrow { IllegalArgumentException("League membership not found.") }
+            .orElseThrow { LeagueNotFoundException("League membership not found.") }
         if (targetMembership.league.id != leagueId) {
-            throw IllegalArgumentException("League membership does not belong to the specified league.")
+            throw LeagueNotFoundException("League membership does not belong to the specified league.")
         }
         return targetMembership
     }
@@ -325,10 +329,46 @@ class LeagueService(
 
         return LeagueMembershipDto(
             id = updatedNewOwnerMembership.id,
-            playerAccountId = updatedNewOwnerMembership.playerAccount.id,
+            playerAccountId = updatedNewOwnerMembership.playerAccount?.id,
             playerName = updatedNewOwnerMembership.playerName,
             role = updatedNewOwnerMembership.role,
-            isOwner = updatedNewOwnerMembership.isOwner
+            isOwner = updatedNewOwnerMembership.isOwner,
+            email = updatedNewOwnerMembership.playerAccount?.email
+        )
+    }
+
+    @Transactional
+    fun addUnregisteredPlayer(leagueId: Long, playerName: String, requestingPlayerAccountId: Long): LeagueMembershipDto {
+        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
+        if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
+            throw AccessDeniedException("Only admins or owners can add unregistered players.")
+        }
+
+        // Check for existing unregistered player with the same name in this league
+        val existingUnregisteredPlayer = leagueMembershipRepository.findByLeagueIdAndPlayerNameAndPlayerAccountIsNull(leagueId, playerName)
+        if (existingUnregisteredPlayer != null) {
+            throw DuplicatePlayerException("An unregistered player with this name already exists in this league.")
+        }
+
+        val league = leagueRepository.findById(leagueId)
+            .orElseThrow { LeagueNotFoundException("League not found.") }
+
+        val newMembership = LeagueMembership(
+            playerAccount = null, // This is the key for unregistered players
+            league = league,
+            playerName = playerName,
+            role = UserRole.PLAYER,
+            isOwner = false
+        )
+        val savedMembership = leagueMembershipRepository.save(newMembership)
+
+        return LeagueMembershipDto(
+            id = savedMembership.id,
+            playerAccountId = null, // No player account for unregistered players
+            playerName = savedMembership.playerName,
+            role = savedMembership.role,
+            isOwner = savedMembership.isOwner,
+            email = null
         )
     }
 }

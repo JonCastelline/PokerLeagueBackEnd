@@ -146,4 +146,88 @@ class LeagueControllerIntegrationTest @Autowired constructor(
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.inviteCode").value(org.hamcrest.Matchers.not(oldInviteCode)))
     }
+
+    @Test
+    fun `should allow admin to add an unregistered player`() {
+        val league = leagueService.createLeague("Admin League", testPlayer!!.id)
+        val requestBody = mapOf("playerName" to "Unregistered Player 1")
+
+        mockMvc.perform(
+            post("/api/leagues/{leagueId}/members/unregistered", league.id)
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestBody))
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.playerName").value("Unregistered Player 1"))
+            .andExpect(jsonPath("$.playerAccountId").doesNotExist())
+    }
+
+    @Test
+    fun `should prevent non-admin from adding an unregistered player`() {
+        val league = leagueService.createLeague("Admin League", testPlayer!!.id)
+
+        // Create a non-admin player
+        val nonAdminPlayer = PlayerAccount(
+            firstName = "Non",
+            lastName = "Admin",
+            email = "non.admin@example.com",
+            password = "password"
+        )
+        playerAccountRepository.save(nonAdminPlayer)
+        leagueService.joinLeague(league.inviteCode, nonAdminPlayer.id)
+
+        val nonAdminAuthorities = listOf(SimpleGrantedAuthority("ROLE_USER"))
+        val nonAdminUserPrincipal = com.pokerleaguebackend.security.UserPrincipal(nonAdminPlayer)
+        val nonAdminAuthentication = UsernamePasswordAuthenticationToken(nonAdminUserPrincipal, "password", nonAdminAuthorities)
+        val nonAdminToken = jwtTokenProvider.generateToken(nonAdminAuthentication)
+
+        val requestBody = mapOf("playerName" to "Unregistered Player 2")
+
+        mockMvc.perform(
+            post("/api/leagues/{leagueId}/members/unregistered", league.id)
+                .header("Authorization", "Bearer $nonAdminToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestBody))
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `should prevent adding duplicate unregistered player name in the same league`() {
+        val league = leagueService.createLeague("Admin League", testPlayer!!.id)
+        val requestBody = mapOf("playerName" to "Duplicate Player")
+
+        // Add first unregistered player
+        mockMvc.perform(
+            post("/api/leagues/{leagueId}/members/unregistered", league.id)
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestBody))
+        )
+            .andExpect(status().isCreated)
+
+        // Attempt to add duplicate
+        mockMvc.perform(
+            post("/api/leagues/{leagueId}/members/unregistered", league.id)
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestBody))
+        )
+            .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should return 404 when adding unregistered player to non-existent league`() {
+        val requestBody = mapOf("playerName" to "Non Existent Player")
+        val nonExistentLeagueId = 9999L
+
+        mockMvc.perform(
+            post("/api/leagues/{leagueId}/members/unregistered", nonExistentLeagueId)
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestBody))
+        )
+            .andExpect(status().isNotFound)
+    }
 }

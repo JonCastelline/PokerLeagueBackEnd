@@ -5,10 +5,13 @@ import com.pokerleaguebackend.payload.CreateLeagueRequest
 import com.pokerleaguebackend.payload.JoinLeagueRequest
 import com.pokerleaguebackend.payload.LeagueMembershipDto
 import com.pokerleaguebackend.payload.LeagueDto
+import com.pokerleaguebackend.payload.AddUnregisteredPlayerRequest
 import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
 import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.LeagueService
+import com.pokerleaguebackend.exception.DuplicatePlayerException
+import com.pokerleaguebackend.exception.LeagueNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -98,5 +101,26 @@ class LeagueController(private val leagueService: LeagueService) {
             playerAccount.id
         )
         return ResponseEntity.ok(updatedMembership)
+    }
+
+    @PostMapping("/{leagueId}/members/unregistered")
+    fun addUnregisteredPlayer(
+        @PathVariable leagueId: Long,
+        @RequestBody request: AddUnregisteredPlayerRequest,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<LeagueMembershipDto> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        return try {
+            val newMembership = leagueService.addUnregisteredPlayer(
+                leagueId,
+                request.playerName,
+                playerAccount.id
+            )
+            ResponseEntity.status(HttpStatus.CREATED).body(newMembership)
+        } catch (e: LeagueNotFoundException) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+        } catch (e: DuplicatePlayerException) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+        }
     }
 }
