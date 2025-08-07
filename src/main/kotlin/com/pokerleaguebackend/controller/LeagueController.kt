@@ -5,6 +5,7 @@ import com.pokerleaguebackend.payload.CreateLeagueRequest
 import com.pokerleaguebackend.payload.JoinLeagueRequest
 import com.pokerleaguebackend.payload.LeagueMembershipDto
 import com.pokerleaguebackend.payload.LeagueDto
+import com.pokerleaguebackend.payload.AddUnregisteredPlayerRequest
 import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
 import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.security.UserPrincipal
@@ -98,5 +99,20 @@ class LeagueController(private val leagueService: LeagueService) {
             playerAccount.id
         )
         return ResponseEntity.ok(updatedMembership)
+    }
+
+    @PostMapping("/{leagueId}/members/unregistered")
+    fun addUnregisteredPlayer(
+        @PathVariable leagueId: Long,
+        @RequestBody request: AddUnregisteredPlayerRequest,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<LeagueMembershipDto> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val newMembership = leagueService.addUnregisteredPlayer(
+            leagueId,
+            request.playerName,
+            playerAccount.id
+        )
+        return ResponseEntity.status(HttpStatus.CREATED).body(newMembership)
     }
 }

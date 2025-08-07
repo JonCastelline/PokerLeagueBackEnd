@@ -20,8 +20,8 @@ data class LeagueMembership(
     val id: Long = 0,
 
     @ManyToOne
-    @JoinColumn(name = "player_account_id")
-    val playerAccount: PlayerAccount,
+    @JoinColumn(name = "player_account_id", nullable = true)
+    val playerAccount: PlayerAccount?,
 
     @ManyToOne
     @JoinColumn(name = "league_id")
