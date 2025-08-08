@@ -4,6 +4,7 @@ import com.pokerleaguebackend.payload.ApiResponse
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.payload.JwtAuthenticationResponse
 import com.pokerleaguebackend.payload.LoginRequest
+import com.pokerleaguebackend.payload.LoginResponse
 import com.pokerleaguebackend.payload.SignUpRequest
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
@@ -43,7 +44,10 @@ class AuthController(
             SecurityContextHolder.getContext().authentication = authentication
 
             val jwt = tokenProvider.generateToken(authentication)
-            return ResponseEntity.ok(JwtAuthenticationResponse(jwt))
+            val userPrincipal = authentication.principal as com.pokerleaguebackend.security.UserPrincipal
+            val playerAccount = userPrincipal.playerAccount
+
+            return ResponseEntity.ok(LoginResponse(jwt, playerAccount.firstName, playerAccount.lastName))
         } catch (ex: Exception) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse(false, "Invalid email or password"))
         }
