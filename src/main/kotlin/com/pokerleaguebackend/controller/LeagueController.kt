@@ -103,6 +103,13 @@ class LeagueController(private val leagueService: LeagueService) {
         return ResponseEntity.ok(updatedMembership)
     }
 
+    @GetMapping("/{leagueId}/standings")
+    fun getStandings(@PathVariable leagueId: Long, @AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<Any> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val standings = leagueService.getStandings(leagueId, playerAccount.id)
+        return ResponseEntity.ok(standings)
+    }
+
     @PostMapping("/{leagueId}/members/unregistered")
     fun addUnregisteredPlayer(
         @PathVariable leagueId: Long,

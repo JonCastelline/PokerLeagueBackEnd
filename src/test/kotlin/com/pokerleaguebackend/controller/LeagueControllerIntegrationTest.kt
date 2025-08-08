@@ -218,6 +218,19 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     }
 
     @Test
+    fun `should get standings for a league if the player is a member`() {
+        // Create a league and add the player to it
+        val league = leagueService.createLeague("Standings League", testPlayer!!.id)
+
+        mockMvc.perform(
+            get("/api/leagues/{leagueId}/standings", league.id)
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.size()").value(0)) // Expecting an empty list for now
+    }
+
+    @Test
     fun `should return 404 when adding unregistered player to non-existent league`() {
         val requestBody = mapOf("playerName" to "Non Existent Player")
         val nonExistentLeagueId = 9999L

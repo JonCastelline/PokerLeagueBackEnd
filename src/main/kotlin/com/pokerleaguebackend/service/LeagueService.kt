@@ -6,6 +6,7 @@ import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.payload.LeagueMembershipDto
 import com.pokerleaguebackend.payload.LeagueDto
+import com.pokerleaguebackend.payload.StandingsDto
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -339,6 +340,12 @@ class LeagueService(
             isOwner = updatedNewOwnerMembership.isOwner,
             email = updatedNewOwnerMembership.playerAccount?.email
         )
+    }
+
+    fun getStandings(leagueId: Long, requestingPlayerAccountId: Long): List<StandingsDto> {
+        authorizeLeagueMembershipAccess(leagueId, requestingPlayerAccountId)
+        // TODO: Implement actual standings calculation
+        return emptyList()
     }
 
     @Transactional
