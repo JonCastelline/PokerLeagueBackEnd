@@ -42,10 +42,17 @@ dependencies {
 	implementation 'org.junit.jupiter:junit-jupiter'
 	testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine'
 	implementation 'org.postgresql:postgresql:42.2.24'
+	testImplementation("org.testcontainers:junit-jupiter:1.19.8")
+	testImplementation("org.testcontainers:postgresql:1.19.8")
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+// Uncomment the following lines to enable detailed test logging
+//	testLogging {
+//		events "passed", "skipped", "failed"
+//		showStandardStreams = true
+//	}
 }
 
 sourceSets {
