@@ -48,7 +48,7 @@ class SeasonService @Autowired constructor(
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerId)
             ?: throw AccessDeniedException("Player is not a member of this league")
 
-        if (membership.role != com.pokerleaguebackend.model.UserRole.ADMIN && !membership.isOwner) {
+        if (membership.role != UserRole.ADMIN && !membership.isOwner) {
             throw AccessDeniedException("Only an admin or owner can finalize a season")
         }
 

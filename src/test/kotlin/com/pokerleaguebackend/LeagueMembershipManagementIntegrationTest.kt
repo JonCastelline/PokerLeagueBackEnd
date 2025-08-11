@@ -77,7 +77,7 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
                 isOwner = true
             )
         )
-        val ownerPrincipal = com.pokerleaguebackend.security.UserPrincipal(owner, listOf(ownerMembership))
+        val ownerPrincipal = UserPrincipal(owner, listOf(ownerMembership))
         ownerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(ownerPrincipal, "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.authority))))
 
         val player = playerAccountRepository.save(

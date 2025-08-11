@@ -22,7 +22,7 @@ class UserPrincipal(
             }
         }
         // Add a general role for easier checking if the user is an admin of ANY league
-        if (memberships.any { it.role == com.pokerleaguebackend.model.UserRole.ADMIN }) {
+        if (memberships.any { it.role == UserRole.ADMIN }) {
             authorities.add(SimpleGrantedAuthority(SecurityRole.ADMIN.authority))
         }
         if (memberships.any { it.isOwner }) {
