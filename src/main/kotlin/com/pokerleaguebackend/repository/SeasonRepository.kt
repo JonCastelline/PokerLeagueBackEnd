@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface SeasonRepository : JpaRepository<Season, Long> {
     fun findTopByLeagueIdOrderByStartDateDesc(leagueId: Long): Season?
+    fun findAllByLeagueId(leagueId: Long): List<Season>
 }

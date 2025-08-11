@@ -17,6 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.test.context.support.WithMockUser
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -71,7 +73,6 @@ class SeasonControllerIntegrationTest {
             email = "seasoncontrollerintegrationtest-admin@test.com",
             password = passwordEncoder.encode("password")
         ))
-        adminToken = jwtTokenProvider.generateToken(adminUser.email)
 
         testLeague = leagueRepository.save(League(
             leagueName = "Test League",
@@ -79,12 +80,17 @@ class SeasonControllerIntegrationTest {
             expirationDate = Date()
         ))
 
-        leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
+        val adminMembership = leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
             playerAccount = adminUser,
             league = testLeague,
             playerName = "Admin User",
-            role = UserRole.ADMIN
+            role = UserRole.ADMIN,
+            isOwner = true
         ))
+
+        val adminPrincipal = com.pokerleaguebackend.security.UserPrincipal(adminUser, listOf(adminMembership))
+        val authentication = UsernamePasswordAuthenticationToken(adminPrincipal, "password", adminPrincipal.authorities)
+        adminToken = jwtTokenProvider.generateToken(authentication)
     }
 
     @Test
@@ -98,6 +104,7 @@ class SeasonControllerIntegrationTest {
         )
 
         mockMvc.perform(post("/api/leagues/{leagueId}/seasons", testLeague.id)
+            .header("Authorization", "Bearer $adminToken")
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(season)))
             .andExpect(status().isOk())
