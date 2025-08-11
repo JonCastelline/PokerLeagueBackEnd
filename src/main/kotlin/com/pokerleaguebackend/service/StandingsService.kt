@@ -22,12 +22,22 @@ class StandingsService(
     private val leagueMembershipRepository: LeagueMembershipRepository
 ) {
 
+    fun getStandingsForLatestSeason(leagueId: Long): List<PlayerStandingsDto> {
+        val latestSeason = seasonRepository.findTopByLeagueIdOrderByStartDateDesc(leagueId)
+            ?: return emptyList()
+
+        return getStandingsForSeason(latestSeason.id)
+    }
+
     fun getStandingsForSeason(seasonId: Long): List<PlayerStandingsDto> {
-        val season = seasonRepository.findById(seasonId)
-            .orElseThrow { IllegalArgumentException("Season not found") }
+        val seasonOptional = seasonRepository.findById(seasonId)
+        if (!seasonOptional.isPresent) {
+            return emptyList()
+        }
+        val season = seasonOptional.get()
 
         val leagueSettings = leagueSettingsRepository.findBySeasonId(seasonId)
-            ?: throw IllegalStateException("League settings not found for season")
+            ?: return emptyList()
 
         val gamesInSeason = gameRepository.findAllBySeasonId(seasonId)
         val allGameResults = gamesInSeason.flatMap { gameResultRepository.findAllByGameId(it.id) }
