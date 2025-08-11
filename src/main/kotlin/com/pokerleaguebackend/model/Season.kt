@@ -19,6 +19,7 @@ data class Season(
     val seasonName: String,
     val startDate: Date,
     val endDate: Date,
+    var isFinalized: Boolean = false,
 
     @ManyToOne
     @JoinColumn(name = "league_id")

@@ -4,6 +4,7 @@ import com.pokerleaguebackend.model.LeagueSettings
 import com.pokerleaguebackend.payload.LeagueSettingsDto
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.LeagueSettingsService
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -21,6 +22,8 @@ class LeagueSettingsController(
     private val leagueSettingsService: LeagueSettingsService
 ) {
 
+    private val logger = LoggerFactory.getLogger(LeagueSettingsController::class.java)
+
     @GetMapping
     fun getLeagueSettings(
         @PathVariable seasonId: Long,
@@ -31,6 +34,7 @@ class LeagueSettingsController(
             val settings = leagueSettingsService.getLeagueSettings(seasonId, playerAccount.id)
             ResponseEntity.ok(settings)
         } catch (e: IllegalStateException) {
+            logger.error("Caught IllegalStateException while fetching league settings for seasonId: $seasonId", e)
             ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("message" to e.message))
         }
     }
@@ -46,6 +50,7 @@ class LeagueSettingsController(
             val updatedSettings = leagueSettingsService.updateLeagueSettings(seasonId, playerAccount.id, settingsDto)
             ResponseEntity.ok(updatedSettings)
         } catch (e: IllegalStateException) {
+            logger.error("Caught IllegalStateException while updating league settings for seasonId: $seasonId", e)
             ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("message" to e.message))
         }
     }

@@ -62,7 +62,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
 
         // Generate a token for the test player
         val authorities = listOf(SimpleGrantedAuthority("ROLE_USER"))
-        val userPrincipal = com.pokerleaguebackend.security.UserPrincipal(testPlayer!!)
+        val userPrincipal = com.pokerleaguebackend.security.UserPrincipal(testPlayer!!, emptyList())
         val authentication = UsernamePasswordAuthenticationToken(userPrincipal, "password", authorities)
         token = jwtTokenProvider.generateToken(authentication)
     }
@@ -178,7 +178,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         leagueService.joinLeague(league.inviteCode, nonAdminPlayer.id)
 
         val nonAdminAuthorities = listOf(SimpleGrantedAuthority("ROLE_USER"))
-        val nonAdminUserPrincipal = com.pokerleaguebackend.security.UserPrincipal(nonAdminPlayer)
+        val nonAdminUserPrincipal = com.pokerleaguebackend.security.UserPrincipal(nonAdminPlayer, emptyList())
         val nonAdminAuthentication = UsernamePasswordAuthenticationToken(nonAdminUserPrincipal, "password", nonAdminAuthorities)
         val nonAdminToken = jwtTokenProvider.generateToken(nonAdminAuthentication)
 
