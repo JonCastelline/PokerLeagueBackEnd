@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.SeasonRepository

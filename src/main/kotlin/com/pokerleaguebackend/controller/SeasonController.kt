@@ -8,7 +8,12 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 import java.util.NoSuchElementException
 
 @RestController
@@ -19,7 +24,6 @@ class SeasonController @Autowired constructor(private val seasonService: SeasonS
     fun createSeason(
         @PathVariable leagueId: Long,
         @RequestBody season: Season,
-        @AuthenticationPrincipal userDetails: UserPrincipal
     ): ResponseEntity<*> {
         // Authorization is handled in the service layer
         return try {
@@ -60,7 +64,6 @@ class SeasonController @Autowired constructor(private val seasonService: SeasonS
 
     @PostMapping("/{seasonId}/finalize")
     fun finalizeSeason(
-        @PathVariable leagueId: Long, // Keep for consistency, though seasonId is primary
         @PathVariable seasonId: Long,
         @AuthenticationPrincipal userDetails: UserPrincipal
     ): ResponseEntity<*> {

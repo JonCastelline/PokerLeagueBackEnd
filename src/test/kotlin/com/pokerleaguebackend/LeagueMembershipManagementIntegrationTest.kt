@@ -12,6 +12,8 @@ import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
+import com.pokerleaguebackend.security.SecurityRole
+import com.pokerleaguebackend.security.UserPrincipal
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -76,7 +78,7 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
             )
         )
         val ownerPrincipal = com.pokerleaguebackend.security.UserPrincipal(owner, listOf(ownerMembership))
-        ownerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(ownerPrincipal, "password", listOf(SimpleGrantedAuthority("ROLE_USER"))))
+        ownerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(ownerPrincipal, "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.authority))))
 
         val player = playerAccountRepository.save(
             PlayerAccount(
@@ -95,7 +97,7 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
             )
         )
         val playerPrincipal = com.pokerleaguebackend.security.UserPrincipal(player, listOf(playerMembership))
-        playerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(playerPrincipal, "password", listOf(SimpleGrantedAuthority("ROLE_USER"))))
+        playerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(playerPrincipal, "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.authority))))
 
         val admin = playerAccountRepository.save(
             PlayerAccount(
@@ -115,7 +117,7 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
             )
         )
         val adminPrincipal = com.pokerleaguebackend.security.UserPrincipal(admin, listOf(adminMembership))
-        adminToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(adminPrincipal, "password", listOf(SimpleGrantedAuthority("ROLE_USER"))))
+        adminToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(adminPrincipal, "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.authority))))
 
         // Create a season and default settings for the league
         val season = seasonRepository.save(com.pokerleaguebackend.model.Season(seasonName = "Test Season", league = league, startDate = java.util.Date(), endDate = java.util.Date()))
