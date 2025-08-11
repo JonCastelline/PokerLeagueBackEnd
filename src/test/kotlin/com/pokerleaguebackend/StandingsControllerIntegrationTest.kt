@@ -331,6 +331,49 @@ class StandingsControllerIntegrationTest {
     }
 
     @Test
+    fun `getStandingsForLatestSeason should return correct standings for admin`() {
+        // Given
+        val game1 = gameRepository.save(Game(
+            gameName = "Game 1",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+        gameResultRepository.saveAll(listOf(
+            GameResult(game = game1, player = adminMembership, place = 1, kills = 1, bounties = 1, bountyPlacedOnPlayer = regularMembership),
+            GameResult(game = game1, player = regularMembership, place = 2, kills = 0, bounties = 0, bountyPlacedOnPlayer = null)
+        ))
+
+        val game2 = gameRepository.save(Game(
+            gameName = "Game 2",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+        gameResultRepository.saveAll(listOf(
+            GameResult(game = game2, player = regularMembership, place = 1, kills = 1, bounties = 0, bountyPlacedOnPlayer = adminMembership),
+            GameResult(game = game2, player = adminMembership, place = 2, kills = 0, bounties = 0, bountyPlacedOnPlayer = null)
+        ))
+
+        // When & Then
+        mockMvc.perform(get("/api/leagues/${testLeague.id}/standings")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[0].playerName").value("Admin User"))
+            .andExpect(jsonPath("$[0].totalPoints").value(BigDecimal("20.0")))
+            .andExpect(jsonPath("$[0].totalKills").value(1))
+            .andExpect(jsonPath("$[0].totalBounties").value(1))
+            .andExpect(jsonPath("$[0].gamesPlayed").value(2))
+            .andExpect(jsonPath("$[0].rank").value(1))
+            .andExpect(jsonPath("$[1].playerName").value("Regular User"))
+            .andExpect(jsonPath("$[1].totalPoints").value(BigDecimal("18.0")))
+            .andExpect(jsonPath("$[1].totalKills").value(1))
+            .andExpect(jsonPath("$[1].totalBounties").value(0))
+            .andExpect(jsonPath("$[1].gamesPlayed").value(2))
+            .andExpect(jsonPath("$[1].rank").value(2))
+    }
+
+    @Test
     fun `getStandingsForSeason should handle no attendance points`() {
         // Given
         testLeagueSettings.enableAttendancePoints = false

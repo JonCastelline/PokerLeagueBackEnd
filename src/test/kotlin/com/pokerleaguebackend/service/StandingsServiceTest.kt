@@ -1,0 +1,179 @@
+package com.pokerleaguebackend.service
+
+import com.pokerleaguebackend.model.Game
+import com.pokerleaguebackend.model.GameResult
+import com.pokerleaguebackend.model.League
+import com.pokerleaguebackend.model.LeagueMembership
+import com.pokerleaguebackend.model.LeagueSettings
+import com.pokerleaguebackend.model.PlacePoint
+import com.pokerleaguebackend.model.PlayerAccount
+import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.payload.PlayerStandingsDto
+import com.pokerleaguebackend.repository.GameRepository
+import com.pokerleaguebackend.repository.GameResultRepository
+import com.pokerleaguebackend.repository.LeagueMembershipRepository
+import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.SeasonRepository
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.InjectMocks
+import org.mockito.Mock
+import org.mockito.Spy
+import org.mockito.junit.jupiter.MockitoExtension
+import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
+import java.math.BigDecimal
+import java.sql.Time
+import java.util.Date
+import java.util.Optional
+
+@ExtendWith(MockitoExtension::class)
+class StandingsServiceTest {
+
+    @Mock
+    private lateinit var seasonRepository: SeasonRepository
+
+    @Mock
+    private lateinit var gameRepository: GameRepository
+
+    @Mock
+    private lateinit var gameResultRepository: GameResultRepository
+
+    @Mock
+    private lateinit var leagueSettingsRepository: LeagueSettingsRepository
+
+    @Mock
+    private lateinit var leagueMembershipRepository: LeagueMembershipRepository
+
+    @Spy
+    @InjectMocks
+    private lateinit var standingsService: StandingsService
+
+    @Test
+    fun `getStandingsForLatestSeason calls getStandingsForSeason with latest season`() {
+        val leagueId = 1L
+        val latestSeason = Season(id = 1L, seasonName = "Latest Season", league = mock(), startDate = Date(), endDate = Date())
+        whenever(seasonRepository.findTopByLeagueIdOrderByStartDateDesc(leagueId)).thenReturn(latestSeason)
+        doReturn(emptyList<PlayerStandingsDto>()).whenever(standingsService).getStandingsForSeason(latestSeason.id)
+
+        standingsService.getStandingsForLatestSeason(leagueId)
+
+        verify(standingsService).getStandingsForSeason(latestSeason.id)
+    }
+
+    @Test
+    fun `getStandingsForLatestSeason when no seasons returns empty list`() {
+        val leagueId = 1L
+        whenever(seasonRepository.findTopByLeagueIdOrderByStartDateDesc(leagueId)).thenReturn(null)
+
+        val result = standingsService.getStandingsForLatestSeason(leagueId)
+
+        assertEquals(emptyList<Any>(), result)
+    }
+
+    @Test
+    fun `getStandingsForSeason calculates points, sorts, and ranks correctly`() {
+        // Given
+        val seasonId = 1L
+        val leagueId = 1L
+        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val leagueSettings = LeagueSettings(
+            id = 1L,
+            season = season,
+            killPoints = BigDecimal("1.0"),
+            bountyPoints = BigDecimal("5.0"),
+            enableAttendancePoints = true,
+            attendancePoints = BigDecimal("2.0")
+        )
+        leagueSettings.placePoints.addAll(listOf(
+            PlacePoint(place = 1, points = BigDecimal("10.0"), leagueSettings = leagueSettings),
+            PlacePoint(place = 2, points = BigDecimal("7.0"), leagueSettings = leagueSettings)
+        ))
+
+        val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
+        val player2 = PlayerAccount(id = 2L, email = "player2@example.com", password = "password", firstName = "Player", lastName = "Two")
+        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, playerName = "Player One", role = UserRole.PLAYER)
+        val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, playerName = "Player Two", role = UserRole.PLAYER)
+
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val gameResults = listOf(
+            GameResult(game = game1, player = membership1, place = 1, kills = 2, bounties = 1, bountyPlacedOnPlayer = null),
+            GameResult(game = game1, player = membership2, place = 2, kills = 1, bounties = 0, bountyPlacedOnPlayer = null)
+        )
+
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
+        whenever(leagueSettingsRepository.findBySeasonId(seasonId)).thenReturn(leagueSettings)
+        whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
+        whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
+        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1, membership2))
+
+        // When
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        // Then
+        assertEquals(2, result.size)
+
+        // Player 1: 10 (place) + 2*1 (kills) + 1*5 (bounty) = 17
+        assertEquals("Player One", result[0].playerName)
+        assertEquals(BigDecimal("17.0"), result[0].totalPoints)
+        assertEquals(1, result[0].rank)
+
+        // Player 2: 7 (place) + 1*1 (kill) = 8
+        assertEquals("Player Two", result[1].playerName)
+        assertEquals(BigDecimal("8.0"), result[1].totalPoints)
+        assertEquals(2, result[1].rank)
+    }
+
+    @Test
+    fun `getStandingsForSeason when no games played returns players with zero scores`() {
+        val seasonId = 1L
+        val leagueId = 1L
+        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val leagueSettings = LeagueSettings(id = 1L, season = season)
+        val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
+        val player2 = PlayerAccount(id = 2L, email = "player2@example.com", password = "password", firstName = "Player", lastName = "Two")
+        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, playerName = "Player One", role = UserRole.PLAYER)
+        val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, playerName = "Player Two", role = UserRole.PLAYER)
+
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
+        whenever(leagueSettingsRepository.findBySeasonId(seasonId)).thenReturn(leagueSettings)
+        whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(emptyList())
+        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1, membership2))
+
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        assertEquals(2, result.size)
+        assertEquals(BigDecimal.ZERO, result[0].totalPoints)
+        assertEquals(BigDecimal.ZERO, result[1].totalPoints)
+    }
+
+    @Test
+    fun `getStandingsForSeason when league settings not found returns empty list`() {
+        val seasonId = 1L
+        val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
+        whenever(leagueSettingsRepository.findBySeasonId(seasonId)).thenReturn(null)
+
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        assertEquals(emptyList<PlayerStandingsDto>(), result)
+    }
+
+    @Test
+    fun `getStandingsForSeason when season not found returns empty list`() {
+        val seasonId = 1L
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.empty())
+
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        assertEquals(emptyList<Any>(), result)
+    }
+}
