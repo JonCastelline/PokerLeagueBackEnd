@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.payload.CreateSeasonRequest
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
@@ -20,10 +21,15 @@ class SeasonService @Autowired constructor(
 
     private val logger = LoggerFactory.getLogger(SeasonService::class.java)
 
-    fun createSeason(leagueId: Long, season: Season): Season {
-        logger.info("Attempting to create season for leagueId: {} with season: {}", leagueId, season)
+    fun createSeason(leagueId: Long, createSeasonRequest: CreateSeasonRequest): Season {
+        logger.info("Attempting to create season for leagueId: {} with request: {}", leagueId, createSeasonRequest)
         val league = leagueRepository.findById(leagueId).orElseThrow { NoSuchElementException("League not found with ID: $leagueId") }
-        season.league = league
+        val season = Season(
+            seasonName = createSeasonRequest.seasonName,
+            startDate = createSeasonRequest.startDate,
+            endDate = createSeasonRequest.endDate,
+            league = league
+        )
         return seasonRepository.save(season)
     }
 

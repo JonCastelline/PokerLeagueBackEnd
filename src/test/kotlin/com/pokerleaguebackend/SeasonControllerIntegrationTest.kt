@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.payload.CreateSeasonRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -96,17 +97,16 @@ class SeasonControllerIntegrationTest {
     @Test
     @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
     fun `createSeason should create a new season with default settings`() {
-        val season = Season(
+        val createSeasonRequest = CreateSeasonRequest(
             seasonName = "2025 Season",
             startDate = Date(),
-            endDate = Date(),
-            league = testLeague
+            endDate = Date()
         )
 
         mockMvc.perform(post("/api/leagues/{leagueId}/seasons", testLeague.id)
             .header("Authorization", "Bearer $adminToken")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(season)))
+            .content(objectMapper.writeValueAsString(createSeasonRequest)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.seasonName").value("2025 Season"))
     }

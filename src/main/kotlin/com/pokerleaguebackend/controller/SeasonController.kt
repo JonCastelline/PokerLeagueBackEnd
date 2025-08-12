@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.payload.CreateSeasonRequest
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.SeasonService
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,11 +24,11 @@ class SeasonController @Autowired constructor(private val seasonService: SeasonS
     @PostMapping
     fun createSeason(
         @PathVariable leagueId: Long,
-        @RequestBody season: Season,
+        @RequestBody createSeasonRequest: CreateSeasonRequest,
     ): ResponseEntity<*> {
         // Authorization is handled in the service layer
         return try {
-            val newSeason = seasonService.createSeason(leagueId, season)
+            val newSeason = seasonService.createSeason(leagueId, createSeasonRequest)
             ResponseEntity.ok(newSeason)
         } catch (e: AccessDeniedException) {
             ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("message" to e.message))
