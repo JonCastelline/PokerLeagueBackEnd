@@ -12,5 +12,6 @@ class League(
     var id: Long = 0,
     var leagueName: String? = null,
     var inviteCode: String,
-    var expirationDate: java.util.Date? = null
+    var expirationDate: java.util.Date? = null,
+    var nonOwnerAdminsCanManageRoles: Boolean = false
 )

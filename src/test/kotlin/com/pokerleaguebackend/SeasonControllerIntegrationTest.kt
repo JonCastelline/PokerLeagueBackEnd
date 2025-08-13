@@ -28,6 +28,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.security.UserPrincipal
 import java.util.Date
 
 @SpringBootTest
@@ -65,6 +66,7 @@ class SeasonControllerIntegrationTest {
     private lateinit var adminUser: PlayerAccount
     private lateinit var adminToken: String
     private lateinit var testLeague: League
+    private lateinit var adminPrincipal: UserPrincipal
 
     @BeforeEach
     fun setup() {
@@ -94,7 +96,7 @@ class SeasonControllerIntegrationTest {
             isOwner = true
         ))
 
-        val adminPrincipal = com.pokerleaguebackend.security.UserPrincipal(adminUser, listOf(adminMembership))
+        adminPrincipal = UserPrincipal(adminUser, listOf(adminMembership))
         val authentication = UsernamePasswordAuthenticationToken(adminPrincipal, "password", adminPrincipal.authorities)
         adminToken = jwtTokenProvider.generateToken(authentication)
     }
@@ -129,7 +131,7 @@ class SeasonControllerIntegrationTest {
         seasonRepository.save(activeSeason)
 
         mockMvc.perform(get("/api/leagues/{leagueId}/seasons/active", testLeague.id)
-            .header("Authorization", "Bearer $adminToken"))
+            .with(user(adminPrincipal))) // Explicitly set the user principal
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.seasonName").value("Active Season"))
     }

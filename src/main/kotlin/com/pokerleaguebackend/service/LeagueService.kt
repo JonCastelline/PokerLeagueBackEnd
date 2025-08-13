@@ -23,6 +23,7 @@ import java.util.UUID
 import org.springframework.transaction.annotation.Transactional
 
 import java.util.Date
+import com.pokerleaguebackend.payload.LeagueSettingsResponse
 import java.util.Calendar
 
 @Service
@@ -71,6 +72,30 @@ class LeagueService(
             }
         }
         return null
+    }
+
+    fun getLeagueSettings(leagueId: Long, requestingPlayerAccountId: Long): LeagueSettingsResponse {
+        val league = leagueRepository.findById(leagueId)
+            .orElseThrow { LeagueNotFoundException("League not found.") }
+        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
+        if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
+            throw AccessDeniedException("Only admins or owners can view league settings.")
+        }
+        return LeagueSettingsResponse(nonOwnerAdminsCanManageRoles = league.nonOwnerAdminsCanManageRoles)
+    }
+
+    @Transactional
+    fun updateLeagueSettings(leagueId: Long, nonOwnerAdminsCanManageRoles: Boolean, requestingPlayerAccountId: Long): LeagueSettingsResponse {
+        val league = leagueRepository.findById(leagueId)
+            .orElseThrow { LeagueNotFoundException("League not found.") }
+        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
+        if (!requestingMembership.isOwner) { // Only owner can change this setting
+            throw AccessDeniedException("Only the owner can update this league setting.")
+        }
+
+        league.nonOwnerAdminsCanManageRoles = nonOwnerAdminsCanManageRoles
+        leagueRepository.save(league)
+        return LeagueSettingsResponse(nonOwnerAdminsCanManageRoles = league.nonOwnerAdminsCanManageRoles)
     }
 
     @Transactional
