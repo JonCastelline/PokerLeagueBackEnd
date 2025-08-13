@@ -18,7 +18,6 @@ import com.pokerleaguebackend.security.JwtTokenProvider
 import org.hamcrest.Matchers.hasSize
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -225,7 +224,7 @@ class LeagueSettingsControllerIntegrationTest {
         assertEquals(1, fetchedSettings?.blindLevels?.get(0)?.level)
         assertEquals(2, fetchedSettings?.placePoints?.size)
         assertEquals(1, fetchedSettings?.placePoints?.get(0)?.place)
-        assertTrue(fetchedSettings?.nonOwnerAdminsCanManageRoles == true)
+        assertEquals(true, fetchedSettings?.nonOwnerAdminsCanManageRoles)
     }
 
     @Test
