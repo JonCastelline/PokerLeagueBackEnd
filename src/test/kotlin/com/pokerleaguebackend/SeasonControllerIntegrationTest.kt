@@ -7,7 +7,7 @@ import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.payload.CreateSeasonRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
-import com.pokerleaguebackend.repository.LeagueSettingsRepository // Add this import
+import com.pokerleaguebackend.repository.LeagueSettingsRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
@@ -51,7 +51,7 @@ class SeasonControllerIntegrationTest {
     private lateinit var seasonRepository: SeasonRepository
 
     @Autowired
-    private lateinit var leagueSettingsRepository: LeagueSettingsRepository // Inject leagueSettingsRepository
+    private lateinit var leagueSettingsRepository: LeagueSettingsRepository
 
     @Autowired
     private lateinit var leagueMembershipRepository: LeagueMembershipRepository
@@ -138,7 +138,7 @@ class SeasonControllerIntegrationTest {
     @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
     fun `should return 404 if no active season found`() {
         // Ensure no active seasons exist for testLeague
-        leagueSettingsRepository.deleteAll() // Delete related settings first
+        leagueSettingsRepository.deleteAll()
         seasonRepository.deleteAll()
 
         mockMvc.perform(get("/api/leagues/{leagueId}/seasons/active", testLeague.id)
