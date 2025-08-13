@@ -56,6 +56,16 @@ class LeagueController(private val leagueService: LeagueService) {
         return ResponseEntity.ok(leagues)
     }
 
+    @GetMapping("/{leagueId}/members/me")
+    fun getMyLeagueMembership(
+        @PathVariable leagueId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<LeagueMembershipDto> {
+        val requestingPlayerAccount = (userDetails as UserPrincipal).playerAccount
+        val membership = leagueService.getLeagueMembershipForPlayer(leagueId, requestingPlayerAccount.id)
+        return ResponseEntity.ok(membership)
+    }
+
     @PostMapping("/{leagueId}/refresh-invite")
     fun refreshInviteCode(@PathVariable leagueId: Long, @AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<League> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount

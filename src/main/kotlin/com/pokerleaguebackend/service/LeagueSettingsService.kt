@@ -58,6 +58,7 @@ class LeagueSettingsService(
         existingSettings.enableAttendancePoints = settingsDto.enableAttendancePoints
         existingSettings.attendancePoints = settingsDto.attendancePoints
         existingSettings.startingStack = settingsDto.startingStack
+        existingSettings.nonOwnerAdminsCanManageRoles = settingsDto.nonOwnerAdminsCanManageRoles
 
         // Update blind levels
         existingSettings.blindLevels.clear()
