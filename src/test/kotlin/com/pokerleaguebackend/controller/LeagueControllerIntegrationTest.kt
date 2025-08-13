@@ -19,6 +19,8 @@ import com.pokerleaguebackend.service.LeagueService
 import com.pokerleaguebackend.repository.LeagueSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
 
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
@@ -112,6 +114,67 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.leagueName").value("My League"))
+    }
+
+    @Test
+    fun `should get league membership for the authenticated player`() {
+        // Create a league and add the player to it (as a member)
+        val league = leagueService.createLeague("Test Membership League", testPlayer!!.id)
+
+        mockMvc.perform(
+            get("/api/leagues/{leagueId}/members/me", league.id) // Changed endpoint to /members/me
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.id").isNumber)
+            .andExpect(jsonPath("$.playerAccountId").value(testPlayer!!.id))
+            .andExpect(jsonPath("$.playerName").value("${testPlayer!!.firstName} ${testPlayer!!.lastName}"))
+            .andExpect(jsonPath("$.role").value("ADMIN")) // testPlayer is admin by default when creating league
+            .andExpect(jsonPath("$.isOwner").value(true))
+            .andExpect(jsonPath("$.email").value(testPlayer!!.email))
+    }
+
+    @Test
+    fun `should promote player to admin and verify role`() {
+        // Create owner (Admin A)
+        val ownerPlayer = PlayerAccount(firstName = "Owner", lastName = "A", email = "owner.a@example.com", password = "password")
+        playerAccountRepository.save(ownerPlayer)
+        val ownerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(com.pokerleaguebackend.security.UserPrincipal(ownerPlayer, emptyList()), "password", listOf(SimpleGrantedAuthority("ROLE_USER"))))
+
+        // Create a league with Owner A
+        val league = leagueService.createLeague("Test Promote League", ownerPlayer.id)
+
+        // Create player B
+        val playerB = PlayerAccount(firstName = "Player", lastName = "B", email = "player.b@example.com", password = "password")
+        playerAccountRepository.save(playerB)
+        leagueService.joinLeague(league.inviteCode, playerB.id) // Player B joins as PLAYER
+
+        // Get Player B's membership ID
+        val playerBMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerB.id)
+            ?: throw IllegalStateException("Player B membership not found.")
+
+        // Owner A promotes Player B to Admin
+        val updateRoleRequest = UpdateLeagueMembershipRoleRequest(
+            leagueMembershipId = playerBMembership.id,
+            newRole = com.pokerleaguebackend.model.UserRole.ADMIN,
+            newIsOwner = false
+        )
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, playerBMembership.id)
+                .header("Authorization", "Bearer $ownerToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRoleRequest))
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.role").value("ADMIN"))
+
+        // Verify Player B's role in the database
+        val updatedPlayerBMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerB.id)
+            ?: throw IllegalStateException("Updated Player B membership not found.")
+
+        org.junit.jupiter.api.Assertions.assertEquals(com.pokerleaguebackend.model.UserRole.ADMIN, updatedPlayerBMembership.role)
+        org.junit.jupiter.api.Assertions.assertFalse(updatedPlayerBMembership.isOwner)
     }
 
     @Test

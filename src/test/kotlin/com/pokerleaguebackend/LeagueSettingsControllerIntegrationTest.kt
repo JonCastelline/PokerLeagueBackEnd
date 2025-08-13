@@ -224,6 +224,7 @@ class LeagueSettingsControllerIntegrationTest {
         assertEquals(1, fetchedSettings?.blindLevels?.get(0)?.level)
         assertEquals(2, fetchedSettings?.placePoints?.size)
         assertEquals(1, fetchedSettings?.placePoints?.get(0)?.place)
+        assertEquals(true, fetchedSettings?.nonOwnerAdminsCanManageRoles)
     }
 
     @Test

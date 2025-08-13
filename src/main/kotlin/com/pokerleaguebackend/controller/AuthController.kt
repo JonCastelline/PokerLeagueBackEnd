@@ -47,7 +47,7 @@ class AuthController(
             val userPrincipal = authentication.principal as com.pokerleaguebackend.security.UserPrincipal
             val playerAccount = userPrincipal.playerAccount
 
-            return ResponseEntity.ok(LoginResponse(jwt, playerAccount.firstName, playerAccount.lastName))
+            return ResponseEntity.ok(LoginResponse(jwt, playerAccount.id, playerAccount.firstName, playerAccount.lastName))
         } catch (ex: Exception) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse(false, "Invalid email or password"))
         }

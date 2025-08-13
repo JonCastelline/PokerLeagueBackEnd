@@ -116,6 +116,20 @@ class LeagueService(
         }
     }
 
+    fun getLeagueMembershipForPlayer(leagueId: Long, playerAccountId: Long): LeagueMembershipDto {
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerAccountId)
+            ?: throw AccessDeniedException("Player is not a member of this league or league not found.")
+
+        return LeagueMembershipDto(
+            id = membership.id,
+            playerAccountId = membership.playerAccount?.id,
+            playerName = membership.playerName,
+            role = membership.role,
+            isOwner = membership.isOwner,
+            email = membership.playerAccount?.email
+        )
+    }
+
     @Transactional
     fun refreshInviteCode(leagueId: Long, playerId: Long): League {
         val league = leagueRepository.findById(leagueId)
