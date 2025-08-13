@@ -7,6 +7,7 @@ import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.payload.CreateSeasonRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
+import com.pokerleaguebackend.repository.LeagueSettingsRepository // Add this import
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
@@ -21,6 +22,7 @@ import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
@@ -47,6 +49,9 @@ class SeasonControllerIntegrationTest {
 
     @Autowired
     private lateinit var seasonRepository: SeasonRepository
+
+    @Autowired
+    private lateinit var leagueSettingsRepository: LeagueSettingsRepository // Inject leagueSettingsRepository
 
     @Autowired
     private lateinit var leagueMembershipRepository: LeagueMembershipRepository
@@ -109,5 +114,36 @@ class SeasonControllerIntegrationTest {
             .content(objectMapper.writeValueAsString(createSeasonRequest)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.seasonName").value("2025 Season"))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `should get active season for league`() {
+        // Create an active season
+        val activeSeason = Season(
+            seasonName = "Active Season",
+            startDate = Date(System.currentTimeMillis() - 100000), // Started recently
+            endDate = Date(System.currentTimeMillis() + 100000), // Ends in future
+            league = testLeague
+        )
+        seasonRepository.save(activeSeason)
+
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/active", testLeague.id)
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.seasonName").value("Active Season"))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `should return 404 if no active season found`() {
+        // Ensure no active seasons exist for testLeague
+        leagueSettingsRepository.deleteAll() // Delete related settings first
+        seasonRepository.deleteAll()
+
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/active", testLeague.id)
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("No active season found for this league"))
     }
 }

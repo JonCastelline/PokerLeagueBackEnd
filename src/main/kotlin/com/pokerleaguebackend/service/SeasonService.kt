@@ -3,6 +3,8 @@ package com.pokerleaguebackend.service
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.payload.CreateSeasonRequest
 import com.pokerleaguebackend.model.UserRole
+import java.math.BigDecimal
+import java.util.Date
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.SeasonRepository
@@ -45,6 +47,18 @@ class SeasonService @Autowired constructor(
 
         return seasonRepository.findTopByLeagueIdOrderByStartDateDesc(leagueId)
             ?: throw NoSuchElementException("No seasons found for this league")
+    }
+
+    fun findActiveSeason(leagueId: Long, playerId: Long): Season? {
+        leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerId)
+            ?: throw AccessDeniedException("Player is not a member of this league")
+
+        val currentDate = Date()
+        val activeSeasons = seasonRepository.findByLeagueIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(
+            leagueId, currentDate, currentDate
+        )
+
+        return activeSeasons.firstOrNull() // Return the first active season found, or null if none
     }
 
     fun finalizeSeason(seasonId: Long, playerId: Long): Season {
