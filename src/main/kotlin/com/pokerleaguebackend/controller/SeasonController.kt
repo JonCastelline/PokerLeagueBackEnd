@@ -63,6 +63,23 @@ class SeasonController @Autowired constructor(private val seasonService: SeasonS
         }
     }
 
+    @GetMapping("/active")
+    fun getActiveSeason(
+        @PathVariable leagueId: Long,
+        @AuthenticationPrincipal userDetails: UserPrincipal
+    ): ResponseEntity<*> {
+        return try {
+            val season = seasonService.findActiveSeason(leagueId, userDetails.playerAccount.id)
+            if (season != null) {
+                ResponseEntity.ok(season)
+            } else {
+                ResponseEntity.status(HttpStatus.NOT_FOUND).body(mapOf("message" to "No active season found for this league"))
+            }
+        } catch (e: AccessDeniedException) {
+            ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("message" to e.message))
+        }
+    }
+
     @PostMapping("/{seasonId}/finalize")
     fun finalizeSeason(
         @PathVariable seasonId: Long,
