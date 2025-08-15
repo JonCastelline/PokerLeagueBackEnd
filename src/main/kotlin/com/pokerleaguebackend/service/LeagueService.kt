@@ -17,7 +17,6 @@ import com.pokerleaguebackend.exception.DuplicatePlayerException
 import com.pokerleaguebackend.exception.LeagueNotFoundException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
-import org.slf4j.LoggerFactory
 import java.util.UUID
 
 import org.springframework.transaction.annotation.Transactional
@@ -132,7 +131,7 @@ class LeagueService(
         val memberships = leagueMembershipRepository.findAllByPlayerAccountId(playerId)
         return memberships.map { membership ->
             val leagueHomeContent = leagueHomeContentRepository.findByLeagueId(membership.league.id)
-            com.pokerleaguebackend.payload.LeagueDto(
+            LeagueDto(
                 id = membership.league.id,
                 leagueName = membership.league.leagueName,
                 inviteCode = membership.league.inviteCode,
