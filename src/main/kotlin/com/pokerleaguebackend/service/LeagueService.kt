@@ -57,7 +57,7 @@ class LeagueService(
             playerName = "${creator.firstName} ${creator.lastName}",
             role = UserRole.ADMIN,
             isOwner = true,
-            isActive = true // Added
+            isActive = true
         )
         leagueMembershipRepository.save(membership)
 
