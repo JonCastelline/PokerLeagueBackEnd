@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import com.pokerleaguebackend.payload.LeagueSettingsResponse
+import com.pokerleaguebackend.payload.UpdateLeagueSettingsRequest
+import com.pokerleaguebackend.payload.UpdateLeagueMembershipStatusRequest
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -80,6 +83,13 @@ class LeagueController(private val leagueService: LeagueService) {
         return ResponseEntity.ok(members)
     }
 
+    @GetMapping("/{leagueId}/members/active")
+    fun getActiveLeagueMembers(@PathVariable leagueId: Long, @AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<List<LeagueMembershipDto>> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val members = leagueService.getActiveLeagueMembers(leagueId, playerAccount.id)
+        return ResponseEntity.ok(members)
+    }
+
     @PutMapping("/{leagueId}/members/{leagueMembershipId}/role")
     fun updateLeagueMembershipRole(
         @PathVariable leagueId: Long,
@@ -113,6 +123,23 @@ class LeagueController(private val leagueService: LeagueService) {
         return ResponseEntity.ok(updatedMembership)
     }
 
+    @PutMapping("/{leagueId}/members/{leagueMembershipId}/status")
+    fun updateLeagueMembershipStatus(
+        @PathVariable leagueId: Long,
+        @PathVariable leagueMembershipId: Long,
+        @RequestBody request: UpdateLeagueMembershipStatusRequest,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<LeagueMembershipDto> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val updatedMembership = leagueService.updateLeagueMembershipStatus(
+            leagueId,
+            leagueMembershipId,
+            request.isActive,
+            playerAccount.id
+        )
+        return ResponseEntity.ok(updatedMembership)
+    }
+
     @PostMapping("/{leagueId}/members/unregistered")
     fun addUnregisteredPlayer(
         @PathVariable leagueId: Long,
@@ -132,5 +159,30 @@ class LeagueController(private val leagueService: LeagueService) {
         } catch (e: DuplicatePlayerException) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
+    }
+
+    @GetMapping("/{leagueId}/settings")
+    fun getLeagueSettings(
+        @PathVariable leagueId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<LeagueSettingsResponse> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val settings = leagueService.getLeagueSettings(leagueId, playerAccount.id)
+        return ResponseEntity.ok(settings)
+    }
+
+    @PutMapping("/{leagueId}/settings")
+    fun updateLeagueSettings(
+        @PathVariable leagueId: Long,
+        @RequestBody request: UpdateLeagueSettingsRequest,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<LeagueSettingsResponse> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val updatedSettings = leagueService.updateLeagueSettings(
+            leagueId,
+            request.nonOwnerAdminsCanManageRoles,
+            playerAccount.id
+        )
+        return ResponseEntity.ok(updatedSettings)
     }
 }

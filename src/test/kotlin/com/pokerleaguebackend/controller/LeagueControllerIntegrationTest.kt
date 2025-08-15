@@ -1,9 +1,12 @@
+package com.pokerleaguebackend.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.payload.CreateLeagueRequest
+import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
+import com.pokerleaguebackend.payload.UpdateLeagueMembershipStatusRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -25,8 +28,6 @@ import com.pokerleaguebackend.repository.LeagueSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
-import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
-
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
@@ -297,5 +298,76 @@ class LeagueControllerIntegrationTest @Autowired constructor(
                 .content(objectMapper.writeValueAsString(requestBody))
         )
             .andExpect(status().isNotFound)
+    }
+
+    @Test
+    fun `should get only active league members from active endpoint`() {
+        val league = leagueService.createLeague("Active Member Test League", testPlayer!!.id)
+
+        // Create an active and an inactive player
+        val activePlayer = PlayerAccount(firstName = "Active", lastName = "Player", email = "active.player@example.com", password = "password")
+        playerAccountRepository.save(activePlayer)
+        leagueService.joinLeague(league.inviteCode, activePlayer.id)
+
+        val inactivePlayer = PlayerAccount(firstName = "Inactive", lastName = "Player", email = "inactive.player@example.com", password = "password")
+        playerAccountRepository.save(inactivePlayer)
+        leagueService.joinLeague(league.inviteCode, inactivePlayer.id)
+        val inactiveMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, inactivePlayer.id)
+            ?: throw IllegalStateException("Inactive Player membership not found.")
+        leagueService.updateLeagueMembershipStatus(league.id, inactiveMembership.id, false, testPlayer!!.id)
+
+        mockMvc.perform(
+            get("/api/leagues/{leagueId}/members/active", league.id)
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.size()").value(2)) // Owner and active player
+            .andExpect(jsonPath("$[0].playerName").value("Test Player"))
+            .andExpect(jsonPath("$[1].playerName").value("Active Player"))
+    }
+
+    @Test
+    fun `should get all league members`() {
+        val league = leagueService.createLeague("All Member Test League", testPlayer!!.id)
+
+        // Create an active and an inactive player
+        val activePlayer = PlayerAccount(firstName = "Active", lastName = "Player", email = "active.player@example.com", password = "password")
+        playerAccountRepository.save(activePlayer)
+        leagueService.joinLeague(league.inviteCode, activePlayer.id)
+
+        val inactivePlayer = PlayerAccount(firstName = "Inactive", lastName = "Player", email = "inactive.player@example.com", password = "password")
+        playerAccountRepository.save(inactivePlayer)
+        leagueService.joinLeague(league.inviteCode, inactivePlayer.id)
+        val inactiveMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, inactivePlayer.id)
+            ?: throw IllegalStateException("Inactive Player membership not found.")
+        leagueService.updateLeagueMembershipStatus(league.id, inactiveMembership.id, false, testPlayer!!.id)
+
+        mockMvc.perform(
+            get("/api/leagues/{leagueId}/members", league.id)
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.size()").value(3)) // Owner, active player, and inactive player
+    }
+
+    @Test
+    fun `should update league member status`() {
+        val league = leagueService.createLeague("Update Status Test League", testPlayer!!.id)
+        val playerToUpdate = PlayerAccount(firstName = "ToUpdate", lastName = "Player", email = "toupdate.player@example.com", password = "password")
+        playerAccountRepository.save(playerToUpdate)
+        leagueService.joinLeague(league.inviteCode, playerToUpdate.id)
+        val membershipToUpdate = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerToUpdate.id)
+            ?: throw IllegalStateException("Player to update membership not found.")
+
+        val updateStatusRequest = UpdateLeagueMembershipStatusRequest(isActive = false)
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/status", league.id, membershipToUpdate.id)
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateStatusRequest))
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.isActive").value(false))
     }
 }

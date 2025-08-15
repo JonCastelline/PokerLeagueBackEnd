@@ -16,6 +16,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
+import jakarta.servlet.http.HttpServletResponse
+import jakarta.servlet.http.HttpServletRequest
+import org.springframework.security.web.AuthenticationEntryPoint
+import org.springframework.security.web.access.AccessDeniedHandler
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 
 @Configuration
@@ -28,6 +32,20 @@ class WebSecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFi
     @Bean
     fun authenticationManager(authenticationConfiguration: AuthenticationConfiguration): AuthenticationManager {
         return authenticationConfiguration.authenticationManager
+    }
+
+    @Bean
+    fun jwtAuthenticationEntryPoint(): AuthenticationEntryPoint {
+        return AuthenticationEntryPoint { request, response, authException ->
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
+        }
+    }
+
+    @Bean
+    fun jwtAccessDeniedHandler(): AccessDeniedHandler {
+        return AccessDeniedHandler { request, response, accessDeniedException ->
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden")
+        }
     }
 
     @Bean
@@ -47,6 +65,10 @@ class WebSecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFi
         http
             .csrf { it.disable() }
             .cors { }
+            .exceptionHandling {
+                it.authenticationEntryPoint(jwtAuthenticationEntryPoint())
+                it.accessDeniedHandler(jwtAccessDeniedHandler())
+            }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers(AntPathRequestMatcher("/api/auth/**")).permitAll()

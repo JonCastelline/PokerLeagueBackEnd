@@ -124,14 +124,16 @@ class StandingsControllerIntegrationTest {
             playerAccount = adminUser,
             league = testLeague,
             playerName = "Admin User",
-            role = UserRole.ADMIN
+            role = UserRole.ADMIN,
+            isActive = true
         ))
 
         regularMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = regularUser,
             league = testLeague,
             playerName = "Regular User",
-            role = UserRole.PLAYER
+            role = UserRole.PLAYER,
+            isActive = true
         ))
 
         testSeason = seasonRepository.save(Season(
@@ -242,9 +244,9 @@ class StandingsControllerIntegrationTest {
     fun `getStandingsForSeason should handle multiple players tied and subsequent rank`() {
         // Given
         val thirdUser = playerAccountRepository.save(PlayerAccount(firstName = "Third", lastName = "User", email = "third@example.com", password = passwordEncoder.encode("password")))
-        val thirdMembership = leagueMembershipRepository.save(LeagueMembership(playerAccount = thirdUser, league = testLeague, playerName = "Third User", role = UserRole.PLAYER))
+        val thirdMembership = leagueMembershipRepository.save(LeagueMembership(playerAccount = thirdUser, league = testLeague, playerName = "Third User", role = UserRole.PLAYER, isActive = true))
         val fourthUser = playerAccountRepository.save(PlayerAccount(firstName = "Fourth", lastName = "User", email = "fourth@example.com", password = passwordEncoder.encode("password")))
-        val fourthMembership = leagueMembershipRepository.save(LeagueMembership(playerAccount = fourthUser, league = testLeague, playerName = "Fourth User", role = UserRole.PLAYER))
+        val fourthMembership = leagueMembershipRepository.save(LeagueMembership(playerAccount = fourthUser, league = testLeague, playerName = "Fourth User", role = UserRole.PLAYER, isActive = true))
 
         val game1 = gameRepository.save(Game(
             gameName = "Game 1",

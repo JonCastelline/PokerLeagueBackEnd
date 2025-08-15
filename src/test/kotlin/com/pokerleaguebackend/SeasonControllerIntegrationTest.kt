@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.payload.CreateSeasonRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
@@ -28,11 +29,14 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.security.UserPrincipal
 import java.util.Date
+import org.springframework.test.annotation.DirtiesContext
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class SeasonControllerIntegrationTest {
 
     @Autowired
@@ -65,6 +69,7 @@ class SeasonControllerIntegrationTest {
     private lateinit var adminUser: PlayerAccount
     private lateinit var adminToken: String
     private lateinit var testLeague: League
+    private lateinit var adminPrincipal: UserPrincipal
 
     @BeforeEach
     fun setup() {
@@ -86,15 +91,16 @@ class SeasonControllerIntegrationTest {
             expirationDate = Date()
         ))
 
-        val adminMembership = leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
+        val adminMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = adminUser,
             league = testLeague,
             playerName = "Admin User",
             role = UserRole.ADMIN,
-            isOwner = true
+            isOwner = true,
+            isActive = true
         ))
 
-        val adminPrincipal = com.pokerleaguebackend.security.UserPrincipal(adminUser, listOf(adminMembership))
+        adminPrincipal = UserPrincipal(adminUser, listOf(adminMembership))
         val authentication = UsernamePasswordAuthenticationToken(adminPrincipal, "password", adminPrincipal.authorities)
         adminToken = jwtTokenProvider.generateToken(authentication)
     }
@@ -129,7 +135,7 @@ class SeasonControllerIntegrationTest {
         seasonRepository.save(activeSeason)
 
         mockMvc.perform(get("/api/leagues/{leagueId}/seasons/active", testLeague.id)
-            .header("Authorization", "Bearer $adminToken"))
+            .with(user(adminPrincipal))) // Explicitly set the user principal
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.seasonName").value("Active Season"))
     }
