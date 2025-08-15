@@ -110,14 +110,16 @@ class LeagueSettingsControllerIntegrationTest {
             playerAccount = adminUser,
             league = testLeague,
             playerName = "Admin User",
-            role = UserRole.ADMIN
+            role = UserRole.ADMIN,
+            isActive = true
         ))
 
         leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
             playerAccount = regularUser,
             league = testLeague,
             playerName = "Regular User",
-            role = UserRole.PLAYER
+            role = UserRole.PLAYER,
+            isActive = true
         ))
 
         testSeason = seasonRepository.save(Season(

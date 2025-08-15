@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.payload.CreateSeasonRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
@@ -30,10 +31,12 @@ import org.springframework.transaction.annotation.Transactional
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.security.UserPrincipal
 import java.util.Date
+import org.springframework.test.annotation.DirtiesContext
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class SeasonControllerIntegrationTest {
 
     @Autowired
@@ -88,12 +91,13 @@ class SeasonControllerIntegrationTest {
             expirationDate = Date()
         ))
 
-        val adminMembership = leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
+        val adminMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = adminUser,
             league = testLeague,
             playerName = "Admin User",
             role = UserRole.ADMIN,
-            isOwner = true
+            isOwner = true,
+            isActive = true
         ))
 
         adminPrincipal = UserPrincipal(adminUser, listOf(adminMembership))

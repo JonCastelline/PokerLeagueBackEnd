@@ -56,7 +56,8 @@ class LeagueService(
             league = savedLeague,
             playerName = "${creator.firstName} ${creator.lastName}",
             role = UserRole.ADMIN,
-            isOwner = true
+            isOwner = true,
+            isActive = true // Added
         )
         leagueMembershipRepository.save(membership)
 
@@ -119,7 +120,8 @@ class LeagueService(
             playerAccount = player,
             league = league,
             playerName = "${player.firstName} ${player.lastName}",
-            role = UserRole.PLAYER
+            role = UserRole.PLAYER,
+            isActive = true // Added
         )
         leagueMembershipRepository.save(membership)
 
@@ -151,7 +153,8 @@ class LeagueService(
             playerName = membership.playerName,
             role = membership.role,
             isOwner = membership.isOwner,
-            email = membership.playerAccount?.email
+            email = membership.playerAccount?.email,
+            isActive = membership.isActive
         )
     }
 
@@ -216,7 +219,7 @@ class LeagueService(
     fun getLeagueMembers(leagueId: Long, requestingPlayerAccountId: Long): List<LeagueMembershipDto> {
         getLeagueMembership(leagueId, requestingPlayerAccountId)
 
-        val memberships = leagueMembershipRepository.findAllByLeagueId(leagueId)
+        val memberships = leagueMembershipRepository.findAllByLeagueId(leagueId) // Return all players
         return memberships.map {
             LeagueMembershipDto(
                 id = it.id,
@@ -224,7 +227,25 @@ class LeagueService(
                 playerName = it.playerName,
                 role = it.role,
                 isOwner = it.isOwner,
-                email = it.playerAccount?.email
+                email = it.playerAccount?.email,
+                isActive = it.isActive // Include isActive in DTO
+            )
+        }
+    }
+
+    fun getActiveLeagueMembers(leagueId: Long, requestingPlayerAccountId: Long): List<LeagueMembershipDto> {
+        getLeagueMembership(leagueId, requestingPlayerAccountId)
+
+        val memberships = leagueMembershipRepository.findAllByLeagueIdAndIsActive(leagueId, true) // Filter by isActive
+        return memberships.map {
+            LeagueMembershipDto(
+                id = it.id,
+                playerAccountId = it.playerAccount?.id,
+                playerName = it.playerName,
+                role = it.role,
+                isOwner = it.isOwner,
+                email = it.playerAccount?.email,
+                isActive = it.isActive // Include isActive in DTO
             )
         }
     }
@@ -261,7 +282,8 @@ class LeagueService(
             playerName = updatedMembership.playerName,
             role = updatedMembership.role,
             isOwner = updatedMembership.isOwner,
-            email = updatedMembership.playerAccount?.email
+            email = updatedMembership.playerAccount?.email,
+            isActive = updatedMembership.isActive
         )
     }
 
@@ -381,7 +403,8 @@ class LeagueService(
             playerName = updatedNewOwnerMembership.playerName,
             role = updatedNewOwnerMembership.role,
             isOwner = updatedNewOwnerMembership.isOwner,
-            email = updatedNewOwnerMembership.playerAccount?.email
+            email = updatedNewOwnerMembership.playerAccount?.email,
+            isActive = updatedNewOwnerMembership.isActive // Added
         )
     }
 
@@ -406,7 +429,8 @@ class LeagueService(
             league = league,
             playerName = playerName,
             role = UserRole.PLAYER,
-            isOwner = false
+            isOwner = false,
+            isActive = true // Added
         )
         val savedMembership = leagueMembershipRepository.save(newMembership)
 
@@ -416,7 +440,46 @@ class LeagueService(
             playerName = savedMembership.playerName,
             role = savedMembership.role,
             isOwner = savedMembership.isOwner,
-            email = null
+            email = null,
+            isActive = savedMembership.isActive
+        )
+    }
+
+    @Transactional
+    fun updateLeagueMembershipStatus(
+        leagueId: Long,
+        leagueMembershipId: Long,
+        isActive: Boolean,
+        requestingPlayerAccountId: Long
+    ): LeagueMembershipDto {
+        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
+        if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
+            throw AccessDeniedException("Only admins or owners can update player status.")
+        }
+
+        val targetMembership = leagueMembershipRepository.findById(leagueMembershipId)
+            .orElseThrow { LeagueNotFoundException("League membership not found.") }
+
+        if (targetMembership.league.id != leagueId) {
+            throw LeagueNotFoundException("League membership does not belong to the specified league.")
+        }
+
+        // Prevent owner from disabling themselves
+        if (targetMembership.isOwner && targetMembership.id == requestingMembership.id && !isActive) {
+            throw IllegalArgumentException("An owner cannot disable their own account.")
+        }
+
+        targetMembership.isActive = isActive
+        val updatedMembership = leagueMembershipRepository.save(targetMembership)
+
+        return LeagueMembershipDto(
+            id = updatedMembership.id,
+            playerAccountId = updatedMembership.playerAccount?.id,
+            playerName = updatedMembership.playerName,
+            role = updatedMembership.role,
+            isOwner = updatedMembership.isOwner,
+            email = updatedMembership.playerAccount?.email,
+            isActive = updatedMembership.isActive // Include isActive in DTO
         )
     }
 }
