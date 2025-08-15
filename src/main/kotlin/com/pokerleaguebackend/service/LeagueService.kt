@@ -90,7 +90,7 @@ class LeagueService(
         val league = leagueRepository.findById(leagueId)
             .orElseThrow { LeagueNotFoundException("League not found.") }
         val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
-        if (!requestingMembership.isOwner) { // Only owner can change this setting
+        if (!requestingMembership.isOwner) {
             throw AccessDeniedException("Only the owner can update this league setting.")
         }
 
@@ -121,7 +121,7 @@ class LeagueService(
             league = league,
             playerName = "${player.firstName} ${player.lastName}",
             role = UserRole.PLAYER,
-            isActive = true // Added
+            isActive = true
         )
         leagueMembershipRepository.save(membership)
 
@@ -228,7 +228,7 @@ class LeagueService(
                 role = it.role,
                 isOwner = it.isOwner,
                 email = it.playerAccount?.email,
-                isActive = it.isActive // Include isActive in DTO
+                isActive = it.isActive
             )
         }
     }
@@ -245,7 +245,7 @@ class LeagueService(
                 role = it.role,
                 isOwner = it.isOwner,
                 email = it.playerAccount?.email,
-                isActive = it.isActive // Include isActive in DTO
+                isActive = it.isActive
             )
         }
     }
@@ -404,7 +404,7 @@ class LeagueService(
             role = updatedNewOwnerMembership.role,
             isOwner = updatedNewOwnerMembership.isOwner,
             email = updatedNewOwnerMembership.playerAccount?.email,
-            isActive = updatedNewOwnerMembership.isActive // Added
+            isActive = updatedNewOwnerMembership.isActive
         )
     }
 
@@ -479,7 +479,7 @@ class LeagueService(
             role = updatedMembership.role,
             isOwner = updatedMembership.isOwner,
             email = updatedMembership.playerAccount?.email,
-            isActive = updatedMembership.isActive // Include isActive in DTO
+            isActive = updatedMembership.isActive
         )
     }
 }
