@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
-import com.pokerleaguebackend.payload.UpdateLeagueSettingsRequest
+import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -80,7 +80,7 @@ class LeagueControllerIntegrationTest {
             expirationDate = Date(),
             nonOwnerAdminsCanManageRoles = false // Default value
         ))
-        val ownerMembership = leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
+        val ownerMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = ownerUser,
             league = testLeague,
             playerName = "Owner User",
@@ -96,7 +96,7 @@ class LeagueControllerIntegrationTest {
             email = "admin@test.com",
             password = passwordEncoder.encode("password")
         ))
-        val adminMembership = leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
+        val adminMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = adminUser,
             league = testLeague,
             playerName = "Admin User",
@@ -112,7 +112,7 @@ class LeagueControllerIntegrationTest {
             email = "player@test.com",
             password = passwordEncoder.encode("password")
         ))
-        val playerMembership = leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
+        val playerMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = playerUser,
             league = testLeague,
             playerName = "Player User",
@@ -120,94 +120,5 @@ class LeagueControllerIntegrationTest {
             isOwner = false
         ))
         playerPrincipal = UserPrincipal(playerUser, listOf(playerMembership))
-    }
-
-    // --- GET /api/leagues/{leagueId}/settings Tests ---
-
-    @Test
-    fun `getLeagueSettings should return settings for owner`() {
-        mockMvc.perform(get("/api/leagues/{leagueId}/settings", testLeague.id)
-            .with(user(ownerPrincipal)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.nonOwnerAdminsCanManageRoles").value(false))
-    }
-
-    @Test
-    fun `getLeagueSettings should return settings for admin`() {
-        mockMvc.perform(get("/api/leagues/{leagueId}/settings", testLeague.id)
-            .with(user(adminPrincipal)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.nonOwnerAdminsCanManageRoles").value(false))
-    }
-
-    @Test
-    fun `getLeagueSettings should return 403 for regular player`() {
-        mockMvc.perform(get("/api/leagues/{leagueId}/settings", testLeague.id)
-            .with(user(playerPrincipal)))
-            .andExpect(status().isForbidden())
-    }
-
-    @Test
-    fun `getLeagueSettings should return 401 for unauthenticated user`() {
-        mockMvc.perform(get("/api/leagues/{leagueId}/settings", testLeague.id))
-            .andExpect(status().isUnauthorized())
-    }
-
-    // --- PUT /api/leagues/{leagueId}/settings Tests ---
-
-    @Test
-    fun `updateLeagueSettings should allow owner to update setting`() {
-        val request = UpdateLeagueSettingsRequest(nonOwnerAdminsCanManageRoles = true)
-        mockMvc.perform(put("/api/leagues/{leagueId}/settings", testLeague.id)
-            .with(user(ownerPrincipal))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.nonOwnerAdminsCanManageRoles").value(true))
-
-        // Verify the change is persisted
-        val updatedLeague = leagueRepository.findById(testLeague.id).orElseThrow()
-        assert(updatedLeague.nonOwnerAdminsCanManageRoles == true)
-    }
-
-    @Test
-    fun `updateLeagueSettings should return 403 for admin`() {
-        val request = UpdateLeagueSettingsRequest(nonOwnerAdminsCanManageRoles = true)
-        mockMvc.perform(put("/api/leagues/{leagueId}/settings", testLeague.id)
-            .with(user(adminPrincipal))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isForbidden())
-
-        // Verify the setting is NOT changed
-        val originalLeague = leagueRepository.findById(testLeague.id).orElseThrow()
-        assert(originalLeague.nonOwnerAdminsCanManageRoles == false)
-    }
-
-    @Test
-    fun `updateLeagueSettings should return 403 for regular player`() {
-        val request = UpdateLeagueSettingsRequest(nonOwnerAdminsCanManageRoles = true)
-        mockMvc.perform(put("/api/leagues/{leagueId}/settings", testLeague.id)
-            .with(user(playerPrincipal))
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isForbidden())
-
-        // Verify the setting is NOT changed
-        val originalLeague = leagueRepository.findById(testLeague.id).orElseThrow()
-        assert(originalLeague.nonOwnerAdminsCanManageRoles == false)
-    }
-
-    @Test
-    fun `updateLeagueSettings should return 401 for unauthenticated user`() {
-        val request = UpdateLeagueSettingsRequest(nonOwnerAdminsCanManageRoles = true)
-        mockMvc.perform(put("/api/leagues/{leagueId}/settings", testLeague.id)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isUnauthorized())
-
-        // Verify the setting is NOT changed
-        val originalLeague = leagueRepository.findById(testLeague.id).orElseThrow()
-        assert(originalLeague.nonOwnerAdminsCanManageRoles == false)
     }
 }

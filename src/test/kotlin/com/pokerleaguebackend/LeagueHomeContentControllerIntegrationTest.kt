@@ -1,19 +1,20 @@
 package com.pokerleaguebackend
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.pokerleaguebackend.controller.payload.CreateLeagueRequest
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueHomeContent
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.payload.LeagueHomeContentDto
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
-import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.repository.LeagueHomeContentRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
+import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
+import com.pokerleaguebackend.service.LeagueHomeContentService
+import jakarta.persistence.EntityManager
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
@@ -23,7 +24,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
@@ -55,13 +55,10 @@ class LeagueHomeContentControllerIntegrationTest {
     private lateinit var leagueHomeContentRepository: LeagueHomeContentRepository
 
     @Autowired
-    private lateinit var seasonRepository: com.pokerleaguebackend.repository.SeasonRepository
+    private lateinit var seasonRepository: SeasonRepository
 
     @Autowired
-    private lateinit var leagueSettingsRepository: com.pokerleaguebackend.repository.LeagueSettingsRepository
-
-    @Autowired
-    private lateinit var leagueHomeContentService: com.pokerleaguebackend.service.LeagueHomeContentService
+    private lateinit var leagueHomeContentService: LeagueHomeContentService
 
     @Autowired
     private lateinit var passwordEncoder: PasswordEncoder
@@ -70,7 +67,7 @@ class LeagueHomeContentControllerIntegrationTest {
     private lateinit var jwtTokenProvider: JwtTokenProvider
 
     @Autowired
-    private lateinit var entityManager: jakarta.persistence.EntityManager
+    private lateinit var entityManager: EntityManager
 
     private lateinit var testLeague: League
     private lateinit var adminPlayer: PlayerAccount
@@ -82,10 +79,11 @@ class LeagueHomeContentControllerIntegrationTest {
     fun setup() {
         leagueHomeContentRepository.deleteAll()
         leagueMembershipRepository.deleteAll()
-        leagueSettingsRepository.deleteAll()
         seasonRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()
+        entityManager.flush()
+        entityManager.clear()
 
         adminPlayer = playerAccountRepository.save(PlayerAccount(firstName = "Admin", lastName = "Player", email = "leaguehomecontentcontrollerintegrationtest-admin.player@example.com", password = passwordEncoder.encode("password")))
         nonAdminPlayer = playerAccountRepository.save(PlayerAccount(firstName = "NonAdmin", lastName = "Player", email = "leaguehomecontentcontrollerintegrationtest-nonadmin.player@example.com", password = passwordEncoder.encode("password")))
@@ -95,7 +93,7 @@ class LeagueHomeContentControllerIntegrationTest {
 
         testLeague = leagueRepository.save(League(leagueName = "Test League", inviteCode = "test-invite-code", expirationDate = java.util.Date()))
 
-        leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
+        leagueMembershipRepository.save(LeagueMembership(
             playerAccount = adminPlayer,
             league = testLeague,
             playerName = "Admin Player",
@@ -103,7 +101,7 @@ class LeagueHomeContentControllerIntegrationTest {
             isOwner = true
         ))
 
-        leagueMembershipRepository.save(com.pokerleaguebackend.model.LeagueMembership(
+        leagueMembershipRepository.save(LeagueMembership(
             playerAccount = nonAdminPlayer,
             league = testLeague,
             playerName = "NonAdmin Player",

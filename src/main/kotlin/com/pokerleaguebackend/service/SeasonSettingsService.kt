@@ -2,12 +2,12 @@ package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.BlindLevel
 import com.pokerleaguebackend.model.BountyOnLeaderAbsenceRule
-import com.pokerleaguebackend.model.LeagueSettings
+import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.PlacePoint
 import com.pokerleaguebackend.model.Season
-import com.pokerleaguebackend.payload.LeagueSettingsDto
+import com.pokerleaguebackend.payload.SeasonSettingsDto
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.SeasonSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
@@ -16,25 +16,25 @@ import com.pokerleaguebackend.model.UserRole
 import java.math.BigDecimal
 
 @Service
-class LeagueSettingsService(
-    private val leagueSettingsRepository: LeagueSettingsRepository,
+class SeasonSettingsService(
+    private val seasonSettingsRepository: SeasonSettingsRepository,
     private val seasonRepository: SeasonRepository,
     private val leagueMembershipRepository: LeagueMembershipRepository
 ) {
 
-    fun getLeagueSettings(seasonId: Long, playerId: Long): LeagueSettings {
+    fun getSeasonSettings(seasonId: Long, playerId: Long): SeasonSettings {
         val season = seasonRepository.findById(seasonId)
             .orElseThrow { IllegalArgumentException("Season not found") }
 
         leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, playerId)
             ?: throw AccessDeniedException("Player is not a member of this league")
 
-        return leagueSettingsRepository.findBySeasonId(seasonId)
-            ?: createLeagueSettings(season)
+        return seasonSettingsRepository.findBySeasonId(seasonId)
+            ?: createSeasonSettings(season)
     }
 
     @Transactional
-    fun updateLeagueSettings(seasonId: Long, playerId: Long, settingsDto: LeagueSettingsDto): LeagueSettings {
+    fun updateSeasonSettings(seasonId: Long, playerId: Long, settingsDto: SeasonSettingsDto): SeasonSettings {
         val season = seasonRepository.findById(seasonId)
             .orElseThrow { IllegalArgumentException("Season not found") }
 
@@ -45,8 +45,8 @@ class LeagueSettingsService(
             throw AccessDeniedException("Only admins can update league settings")
         }
 
-        val existingSettings = leagueSettingsRepository.findBySeasonId(seasonId)
-            ?: createLeagueSettings(season)
+        val existingSettings = seasonSettingsRepository.findBySeasonId(seasonId)
+            ?: createSeasonSettings(season)
 
         // Update basic fields
         existingSettings.trackKills = settingsDto.trackKills
@@ -58,7 +58,6 @@ class LeagueSettingsService(
         existingSettings.enableAttendancePoints = settingsDto.enableAttendancePoints
         existingSettings.attendancePoints = settingsDto.attendancePoints
         existingSettings.startingStack = settingsDto.startingStack
-        existingSettings.nonOwnerAdminsCanManageRoles = settingsDto.nonOwnerAdminsCanManageRoles
 
         // Update blind levels
         existingSettings.blindLevels.clear()
@@ -67,7 +66,7 @@ class LeagueSettingsService(
                 level = dto.level,
                 smallBlind = dto.smallBlind,
                 bigBlind = dto.bigBlind,
-                leagueSettings = existingSettings
+                seasonSettings = existingSettings
             )
         }
         existingSettings.blindLevels.addAll(newBlindLevels)
@@ -78,18 +77,18 @@ class LeagueSettingsService(
             PlacePoint(
                 place = dto.place,
                 points = dto.points,
-                leagueSettings = existingSettings
+                seasonSettings = existingSettings
             )
         }
         existingSettings.placePoints.addAll(newPlacePoints)
 
-        return leagueSettingsRepository.save(existingSettings)
+        return seasonSettingsRepository.save(existingSettings)
     }
 
-    private fun createLeagueSettings(season: Season): LeagueSettings {
+    private fun createSeasonSettings(season: Season): SeasonSettings {
         val latestSeason = seasonRepository.findTopByLeagueIdOrderByStartDateDesc(season.league.id)
 
-        val latestSettings = latestSeason?.let { leagueSettingsRepository.findBySeasonId(it.id) }
+        val latestSettings = latestSeason?.let { seasonSettingsRepository.findBySeasonId(it.id) }
 
         if (latestSettings != null) {
             val newSettings = latestSettings.copy(
@@ -99,15 +98,15 @@ class LeagueSettingsService(
                 placePoints = mutableListOf()
             )
 
-            val newBlindLevels = latestSettings.blindLevels.map { it.copy(id = 0, leagueSettings = newSettings) }
-            val newPlacePoints = latestSettings.placePoints.map { it.copy(id = 0, leagueSettings = newSettings) }
+            val newBlindLevels = latestSettings.blindLevels.map { it.copy(id = 0, seasonSettings = newSettings) }
+            val newPlacePoints = latestSettings.placePoints.map { it.copy(id = 0, seasonSettings = newSettings) }
 
             newSettings.blindLevels.addAll(newBlindLevels)
             newSettings.placePoints.addAll(newPlacePoints)
 
-            return leagueSettingsRepository.save(newSettings)
+            return seasonSettingsRepository.save(newSettings)
         } else {
-            val defaultSettings = LeagueSettings(
+            val defaultSettings = SeasonSettings(
                 season = season,
                 trackKills = false,
                 trackBounties = false,
@@ -121,34 +120,34 @@ class LeagueSettingsService(
             )
 
             val defaultPlacePoints = listOf(
-                PlacePoint(place = 1, points = "10.0".toBigDecimal(), leagueSettings = defaultSettings),
-                PlacePoint(place = 2, points = "6.0".toBigDecimal(), leagueSettings = defaultSettings),
-                PlacePoint(place = 3, points = "4.0".toBigDecimal(), leagueSettings = defaultSettings),
-                PlacePoint(place = 4, points = "3.0".toBigDecimal(), leagueSettings = defaultSettings),
-                PlacePoint(place = 5, points = "2.0".toBigDecimal(), leagueSettings = defaultSettings),
-                PlacePoint(place = 6, points = "1.0".toBigDecimal(), leagueSettings = defaultSettings)
+                PlacePoint(place = 1, points = "10.0".toBigDecimal(), seasonSettings = defaultSettings),
+                PlacePoint(place = 2, points = "6.0".toBigDecimal(), seasonSettings = defaultSettings),
+                PlacePoint(place = 3, points = "4.0".toBigDecimal(), seasonSettings = defaultSettings),
+                PlacePoint(place = 4, points = "3.0".toBigDecimal(), seasonSettings = defaultSettings),
+                PlacePoint(place = 5, points = "2.0".toBigDecimal(), seasonSettings = defaultSettings),
+                PlacePoint(place = 6, points = "1.0".toBigDecimal(), seasonSettings = defaultSettings)
             )
 
             val defaultBlindLevels = listOf(
-                BlindLevel(level = 1, smallBlind = 15, bigBlind = 30, leagueSettings = defaultSettings),
-                BlindLevel(level = 2, smallBlind = 20, bigBlind = 40, leagueSettings = defaultSettings),
-                BlindLevel(level = 3, smallBlind = 25, bigBlind = 50, leagueSettings = defaultSettings),
-                BlindLevel(level = 4, smallBlind = 50, bigBlind = 100, leagueSettings = defaultSettings),
-                BlindLevel(level = 5, smallBlind = 75, bigBlind = 150, leagueSettings = defaultSettings),
-                BlindLevel(level = 6, smallBlind = 100, bigBlind = 200, leagueSettings = defaultSettings),
-                BlindLevel(level = 7, smallBlind = 150, bigBlind = 300, leagueSettings = defaultSettings),
-                BlindLevel(level = 8, smallBlind = 200, bigBlind = 400, leagueSettings = defaultSettings),
-                BlindLevel(level = 9, smallBlind = 300, bigBlind = 600, leagueSettings = defaultSettings),
-                BlindLevel(level = 10, smallBlind = 400, bigBlind = 800, leagueSettings = defaultSettings),
-                BlindLevel(level = 11, smallBlind = 500, bigBlind = 1000, leagueSettings = defaultSettings),
-                BlindLevel(level = 12, smallBlind = 700, bigBlind = 1400, leagueSettings = defaultSettings),
-                BlindLevel(level = 13, smallBlind = 1000, bigBlind = 2000, leagueSettings = defaultSettings)
+                BlindLevel(level = 1, smallBlind = 15, bigBlind = 30, seasonSettings = defaultSettings),
+                BlindLevel(level = 2, smallBlind = 20, bigBlind = 40, seasonSettings = defaultSettings),
+                BlindLevel(level = 3, smallBlind = 25, bigBlind = 50, seasonSettings = defaultSettings),
+                BlindLevel(level = 4, smallBlind = 50, bigBlind = 100, seasonSettings = defaultSettings),
+                BlindLevel(level = 5, smallBlind = 75, bigBlind = 150, seasonSettings = defaultSettings),
+                BlindLevel(level = 6, smallBlind = 100, bigBlind = 200, seasonSettings = defaultSettings),
+                BlindLevel(level = 7, smallBlind = 150, bigBlind = 300, seasonSettings = defaultSettings),
+                BlindLevel(level = 8, smallBlind = 200, bigBlind = 400, seasonSettings = defaultSettings),
+                BlindLevel(level = 9, smallBlind = 300, bigBlind = 600, seasonSettings = defaultSettings),
+                BlindLevel(level = 10, smallBlind = 400, bigBlind = 800, seasonSettings = defaultSettings),
+                BlindLevel(level = 11, smallBlind = 500, bigBlind = 1000, seasonSettings = defaultSettings),
+                BlindLevel(level = 12, smallBlind = 700, bigBlind = 1400, seasonSettings = defaultSettings),
+                BlindLevel(level = 13, smallBlind = 1000, bigBlind = 2000, seasonSettings = defaultSettings)
             )
 
             defaultSettings.placePoints.addAll(defaultPlacePoints)
             defaultSettings.blindLevels.addAll(defaultBlindLevels)
 
-            return leagueSettingsRepository.save(defaultSettings)
+            return seasonSettingsRepository.save(defaultSettings)
         }
     }
 }

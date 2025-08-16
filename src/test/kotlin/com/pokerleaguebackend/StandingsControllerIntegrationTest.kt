@@ -5,7 +5,7 @@ import com.pokerleaguebackend.model.Game
 import com.pokerleaguebackend.model.GameResult
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
-import com.pokerleaguebackend.model.LeagueSettings
+import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.PlacePoint
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
@@ -14,7 +14,7 @@ import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.SeasonSettingsRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
@@ -59,7 +59,7 @@ class StandingsControllerIntegrationTest {
     private lateinit var leagueMembershipRepository: LeagueMembershipRepository
 
     @Autowired
-    private lateinit var leagueSettingsRepository: LeagueSettingsRepository
+    private lateinit var seasonSettingsRepository: SeasonSettingsRepository
 
     @Autowired
     private lateinit var gameRepository: GameRepository
@@ -84,14 +84,14 @@ class StandingsControllerIntegrationTest {
     private lateinit var testSeason: Season
     private lateinit var adminMembership: LeagueMembership
     private lateinit var regularMembership: LeagueMembership
-    private lateinit var testLeagueSettings: LeagueSettings
+    private lateinit var testSeasonSettings: SeasonSettings
 
     @BeforeEach
     fun setup() {
         gameResultRepository.deleteAll()
         gameRepository.deleteAll()
         leagueMembershipRepository.deleteAll()
-        leagueSettingsRepository.deleteAll()
+        seasonSettingsRepository.deleteAll()
         seasonRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()
@@ -143,7 +143,7 @@ class StandingsControllerIntegrationTest {
             league = testLeague
         ))
 
-        testLeagueSettings = leagueSettingsRepository.save(LeagueSettings(
+        testSeasonSettings = seasonSettingsRepository.save(SeasonSettings(
             season = testSeason,
             trackKills = true,
             trackBounties = true,
@@ -155,12 +155,12 @@ class StandingsControllerIntegrationTest {
         ))
 
         val placePoints = mutableListOf(
-            PlacePoint(place = 1, points = BigDecimal("10"), leagueSettings = testLeagueSettings),
-            PlacePoint(place = 2, points = BigDecimal("7"), leagueSettings = testLeagueSettings),
-            PlacePoint(place = 3, points = BigDecimal("5"), leagueSettings = testLeagueSettings)
+            PlacePoint(place = 1, points = BigDecimal("10"), seasonSettings = testSeasonSettings),
+            PlacePoint(place = 2, points = BigDecimal("7"), seasonSettings = testSeasonSettings),
+            PlacePoint(place = 3, points = BigDecimal("5"), seasonSettings = testSeasonSettings)
         )
-        testLeagueSettings.placePoints.addAll(placePoints)
-        leagueSettingsRepository.save(testLeagueSettings)
+        testSeasonSettings.placePoints.addAll(placePoints)
+        seasonSettingsRepository.save(testSeasonSettings)
     }
 
     @Test
@@ -378,8 +378,8 @@ class StandingsControllerIntegrationTest {
     @Test
     fun `getStandingsForSeason should handle no attendance points`() {
         // Given
-        testLeagueSettings.enableAttendancePoints = false
-        leagueSettingsRepository.save(testLeagueSettings)
+        testSeasonSettings.enableAttendancePoints = false
+        seasonSettingsRepository.save(testSeasonSettings)
 
         val game1 = gameRepository.save(Game(
             gameName = "Game 1",

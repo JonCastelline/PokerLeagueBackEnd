@@ -11,7 +11,6 @@ import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
 import com.pokerleaguebackend.repository.LeagueHomeContentRepository
 import com.pokerleaguebackend.exception.DuplicatePlayerException
 import com.pokerleaguebackend.exception.LeagueNotFoundException
@@ -22,7 +21,6 @@ import java.util.UUID
 import org.springframework.transaction.annotation.Transactional
 
 import java.util.Date
-import com.pokerleaguebackend.payload.LeagueSettingsResponse
 import java.util.Calendar
 
 @Service
@@ -32,7 +30,6 @@ class LeagueService(
     private val playerAccountRepository: PlayerAccountRepository,
     private val gameRepository: GameRepository,
     private val seasonRepository: SeasonRepository,
-    private val leagueSettingsRepository: LeagueSettingsRepository,
     private val leagueHomeContentRepository: LeagueHomeContentRepository
 ) {
 
@@ -72,30 +69,6 @@ class LeagueService(
             }
         }
         return null
-    }
-
-    fun getLeagueSettings(leagueId: Long, requestingPlayerAccountId: Long): LeagueSettingsResponse {
-        val league = leagueRepository.findById(leagueId)
-            .orElseThrow { LeagueNotFoundException("League not found.") }
-        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
-        if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
-            throw AccessDeniedException("Only admins or owners can view league settings.")
-        }
-        return LeagueSettingsResponse(nonOwnerAdminsCanManageRoles = league.nonOwnerAdminsCanManageRoles)
-    }
-
-    @Transactional
-    fun updateLeagueSettings(leagueId: Long, nonOwnerAdminsCanManageRoles: Boolean, requestingPlayerAccountId: Long): LeagueSettingsResponse {
-        val league = leagueRepository.findById(leagueId)
-            .orElseThrow { LeagueNotFoundException("League not found.") }
-        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
-        if (!requestingMembership.isOwner) {
-            throw AccessDeniedException("Only the owner can update this league setting.")
-        }
-
-        league.nonOwnerAdminsCanManageRoles = nonOwnerAdminsCanManageRoles
-        leagueRepository.save(league)
-        return LeagueSettingsResponse(nonOwnerAdminsCanManageRoles = league.nonOwnerAdminsCanManageRoles)
     }
 
     @Transactional
@@ -323,12 +296,10 @@ class LeagueService(
             }
 
             if (!it.isOwner && it.role == UserRole.ADMIN) {
-                val latestSeason = seasonRepository.findTopByLeagueIdOrderByStartDateDesc(leagueId)
-                    ?: throw IllegalStateException("No season found for this league.")
-                val leagueSettings = leagueSettingsRepository.findBySeasonId(latestSeason.id)
-                    ?: throw IllegalStateException("No league settings found for the latest season.")
+                val league = leagueRepository.findById(leagueId)
+                    .orElseThrow { LeagueNotFoundException("League not found.") }
 
-                if (!leagueSettings.nonOwnerAdminsCanManageRoles) {
+                if (!league.nonOwnerAdminsCanManageRoles) {
                     throw AccessDeniedException("Non-owner admins are not permitted to manage roles in this league.")
                 }
             }

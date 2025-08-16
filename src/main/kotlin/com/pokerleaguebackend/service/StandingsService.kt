@@ -2,12 +2,12 @@ package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.GameResult
 import com.pokerleaguebackend.model.LeagueMembership
-import com.pokerleaguebackend.model.LeagueSettings
+import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.SeasonSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.payload.PlayerStandingsDto
 import org.springframework.stereotype.Service
@@ -18,7 +18,7 @@ class StandingsService(
     private val seasonRepository: SeasonRepository,
     private val gameRepository: GameRepository,
     private val gameResultRepository: GameResultRepository,
-    private val leagueSettingsRepository: LeagueSettingsRepository,
+    private val seasonSettingsRepository: SeasonSettingsRepository,
     private val leagueMembershipRepository: LeagueMembershipRepository
 ) {
 
@@ -36,7 +36,7 @@ class StandingsService(
         }
         val season = seasonOptional.get()
 
-        val leagueSettings = leagueSettingsRepository.findBySeasonId(seasonId)
+        val seasonSettings = seasonSettingsRepository.findBySeasonId(seasonId)
             ?: return emptyList()
 
         val gamesInSeason = gameRepository.findAllBySeasonId(seasonId)
@@ -70,7 +70,7 @@ class StandingsService(
             }
 
             // Calculate points based on place
-            val placePoints = leagueSettings.placePoints.find { it.place == result.place }?.points ?: BigDecimal.ZERO
+            val placePoints = seasonSettings.placePoints.find { it.place == result.place }?.points ?: BigDecimal.ZERO
 
             // Update standings
             standingsDto.totalPoints = standingsDto.totalPoints.add(placePoints)
@@ -82,15 +82,15 @@ class StandingsService(
             }
         }
 
-        // Apply kill and bounty points from league settings
+        // Apply kill and bounty points from season settings
         playerScores.values.forEach { standings ->
             standings.totalPoints = standings.totalPoints
-                .add(leagueSettings.killPoints.multiply(BigDecimal(standings.totalKills)))
-                .add(leagueSettings.bountyPoints.multiply(BigDecimal(standings.totalBounties)))
+                .add(seasonSettings.killPoints.multiply(BigDecimal(standings.totalKills)))
+                .add(seasonSettings.bountyPoints.multiply(BigDecimal(standings.totalBounties)))
 
             // Apply attendance points if enabled
-            if (leagueSettings.enableAttendancePoints) {
-                standings.totalPoints = standings.totalPoints.add(leagueSettings.attendancePoints.multiply(BigDecimal(standings.gamesWithoutPlacePoints)))
+            if (seasonSettings.enableAttendancePoints) {
+                standings.totalPoints = standings.totalPoints.add(seasonSettings.attendancePoints.multiply(BigDecimal(standings.gamesWithoutPlacePoints)))
             }
         }
 
