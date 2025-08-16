@@ -1,5 +1,5 @@
 package com.pokerleaguebackend.payload
 
-data class UpdateLeagueRequest(
+data class LeagueSettingsDto(
     val nonOwnerAdminsCanManageRoles: Boolean
 )

@@ -23,7 +23,7 @@ import org.springframework.transaction.annotation.Transactional
 import java.util.Date
 import java.util.Calendar
 
-import com.pokerleaguebackend.payload.UpdateLeagueRequest
+import com.pokerleaguebackend.payload.LeagueSettingsDto
 
 @Service
 class LeagueService(
@@ -36,7 +36,7 @@ class LeagueService(
 ) {
 
     @Transactional
-    fun updateLeague(leagueId: Long, request: UpdateLeagueRequest, requestingPlayerAccountId: Long): League {
+    fun updateLeague(leagueId: Long, request: LeagueSettingsDto, requestingPlayerAccountId: Long): League {
         val league = leagueRepository.findById(leagueId)
             .orElseThrow { LeagueNotFoundException("League not found.") }
 

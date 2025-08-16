@@ -32,7 +32,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-import com.pokerleaguebackend.payload.UpdateLeagueRequest
+import com.pokerleaguebackend.payload.LeagueSettingsDto
 
 @SpringBootTest(classes = [com.pokerleaguebackend.PokerLeagueBackendApplication::class])
 @AutoConfigureMockMvc
@@ -77,7 +77,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     @Test
     fun `should update league settings for owner`() {
         val league = leagueService.createLeague("Test League", testPlayer!!.id)
-        val updateLeagueRequest = UpdateLeagueRequest(nonOwnerAdminsCanManageRoles = true)
+        val updateLeagueRequest = LeagueSettingsDto(nonOwnerAdminsCanManageRoles = true)
 
         mockMvc.perform(
             put("/api/leagues/{leagueId}", league.id)
@@ -95,7 +95,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         playerAccountRepository.save(ownerPlayer)
 
         val league = leagueService.createLeague("Test League", ownerPlayer.id)
-        val updateLeagueRequest = UpdateLeagueRequest(nonOwnerAdminsCanManageRoles = true)
+        val updateLeagueRequest = LeagueSettingsDto(nonOwnerAdminsCanManageRoles = true)
 
         mockMvc.perform(
             put("/api/leagues/{leagueId}", league.id)
@@ -112,7 +112,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         playerAccountRepository.save(ownerPlayer)
 
         val league = leagueService.createLeague("Test League", ownerPlayer.id)
-        val updateLeagueRequest = UpdateLeagueRequest(nonOwnerAdminsCanManageRoles = true)
+        val updateLeagueRequest = LeagueSettingsDto(nonOwnerAdminsCanManageRoles = true)
 
         val nonMember = PlayerAccount(firstName = "Non", lastName = "Member", email = "non.member@example.com", password = "password")
         playerAccountRepository.save(nonMember)
