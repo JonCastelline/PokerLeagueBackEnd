@@ -1,9 +1,9 @@
 package com.pokerleaguebackend.controller
 
-import com.pokerleaguebackend.model.LeagueSettings
-import com.pokerleaguebackend.payload.LeagueSettingsDto
+import com.pokerleaguebackend.model.SeasonSettings
+import com.pokerleaguebackend.payload.SeasonSettingsDto
 import com.pokerleaguebackend.security.UserPrincipal
-import com.pokerleaguebackend.service.LeagueSettingsService
+import com.pokerleaguebackend.service.SeasonSettingsService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -17,18 +17,18 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/seasons/{seasonId}/settings")
-class LeagueSettingsController(
-    private val leagueSettingsService: LeagueSettingsService
+class SeasonSettingsController(
+    private val seasonSettingsService: SeasonSettingsService
 ) {
 
     @GetMapping
-    fun getLeagueSettings(
+    fun getSeasonSettings(
         @PathVariable seasonId: Long,
         @AuthenticationPrincipal userDetails: UserDetails
     ): ResponseEntity<*> {
         return try {
             val playerAccount = (userDetails as UserPrincipal).playerAccount
-            val settings = leagueSettingsService.getLeagueSettings(seasonId, playerAccount.id)
+            val settings = seasonSettingsService.getSeasonSettings(seasonId, playerAccount.id)
             ResponseEntity.ok(settings)
         } catch (e: IllegalStateException) {
             ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("message" to e.message))
@@ -36,14 +36,14 @@ class LeagueSettingsController(
     }
 
     @PutMapping
-    fun updateLeagueSettings(
+    fun updateSeasonSettings(
         @PathVariable seasonId: Long,
         @AuthenticationPrincipal userDetails: UserDetails,
-        @RequestBody settingsDto: LeagueSettingsDto
+        @RequestBody settingsDto: SeasonSettingsDto
     ): ResponseEntity<*> {
         return try {
             val playerAccount = (userDetails as UserPrincipal).playerAccount
-            val updatedSettings = leagueSettingsService.updateLeagueSettings(seasonId, playerAccount.id, settingsDto)
+            val updatedSettings = seasonSettingsService.updateSeasonSettings(seasonId, playerAccount.id, settingsDto)
             ResponseEntity.ok(updatedSettings)
         } catch (e: IllegalStateException) {
             ResponseEntity.status(HttpStatus.FORBIDDEN).body(mapOf("message" to e.message))

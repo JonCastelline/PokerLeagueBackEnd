@@ -22,7 +22,7 @@ data class BlindLevel(
     val bigBlind: Int,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "league_settings_id")
+    @JoinColumn(name = "season_settings_id")
     @JsonBackReference
-    var leagueSettings: LeagueSettings? = null
+    var seasonSettings: SeasonSettings? = null
 )

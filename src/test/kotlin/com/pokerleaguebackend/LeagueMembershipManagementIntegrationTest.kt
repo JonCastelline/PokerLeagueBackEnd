@@ -6,6 +6,7 @@ import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
 import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
@@ -22,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import java.util.Date
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -41,8 +42,7 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
     private val jwtTokenProvider: JwtTokenProvider,
     private val passwordEncoder: PasswordEncoder,
     private val objectMapper: ObjectMapper,
-    private val seasonRepository: SeasonRepository,
-    private val leagueSettingsRepository: LeagueSettingsRepository
+    private val seasonRepository: SeasonRepository
 ) {
 
     private lateinit var ownerToken: String
@@ -53,7 +53,6 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
     @BeforeEach
     fun setup() {
         leagueMembershipRepository.deleteAll()
-        leagueSettingsRepository.deleteAll()
         seasonRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()
@@ -96,7 +95,7 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
                 role = UserRole.PLAYER
             )
         )
-        val playerPrincipal = com.pokerleaguebackend.security.UserPrincipal(player, listOf(playerMembership))
+        val playerPrincipal = UserPrincipal(player, listOf(playerMembership))
         playerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(playerPrincipal, "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.authority))))
 
         val admin = playerAccountRepository.save(
@@ -116,12 +115,11 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
                 isOwner = false
             )
         )
-        val adminPrincipal = com.pokerleaguebackend.security.UserPrincipal(admin, listOf(adminMembership))
+        val adminPrincipal = UserPrincipal(admin, listOf(adminMembership))
         adminToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(adminPrincipal, "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.authority))))
 
         // Create a season and default settings for the league
-        val season = seasonRepository.save(com.pokerleaguebackend.model.Season(seasonName = "Test Season", league = league, startDate = java.util.Date(), endDate = java.util.Date()))
-        leagueSettingsRepository.save(com.pokerleaguebackend.model.LeagueSettings(season = season, nonOwnerAdminsCanManageRoles = false))
+        seasonRepository.save(Season(seasonName = "Test Season", league = league, startDate = Date(), endDate = Date()))
     }
 
     // These are class-level properties, not local variables
@@ -181,38 +179,6 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
                 .content(objectMapper.writeValueAsString(request))
         )
             .andExpect(status().isForbidden)
-    }
-
-    @Test
-    fun `admin should not be able to change a member's role to admin if nonOwnerAdminsCanManageRoles is false`() {
-        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembership.id, newRole = UserRole.ADMIN)
-
-        mockMvc.perform(
-            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, playerMembership.id)
-                .header("Authorization", "Bearer $adminToken")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request))
-        )
-            .andExpect(status().isForbidden)
-    }
-
-    @Test
-    fun `admin should be able to change a member's role to admin if nonOwnerAdminsCanManageRoles is true`() {
-        // Update league settings to allow non-owner admins to manage roles
-        val season = seasonRepository.findTopByLeagueIdOrderByStartDateDesc(league.id)!!
-        val settings = leagueSettingsRepository.findBySeasonId(season.id)!!
-        settings.nonOwnerAdminsCanManageRoles = true
-        leagueSettingsRepository.save(settings)
-
-        val request = UpdateLeagueMembershipRoleRequest(leagueMembershipId = playerMembership.id, newRole = UserRole.ADMIN)
-
-        mockMvc.perform(
-            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/role", league.id, playerMembership.id)
-                .header("Authorization", "Bearer $adminToken")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request))
-        )
-            .andExpect(status().isOk)
     }
 
     @Test

@@ -4,7 +4,7 @@ import com.pokerleaguebackend.model.Game
 import com.pokerleaguebackend.model.GameResult
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
-import com.pokerleaguebackend.model.LeagueSettings
+import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.PlacePoint
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
@@ -13,7 +13,7 @@ import com.pokerleaguebackend.payload.PlayerStandingsDto
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.SeasonSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -45,7 +45,7 @@ class StandingsServiceTest {
     private lateinit var gameResultRepository: GameResultRepository
 
     @Mock
-    private lateinit var leagueSettingsRepository: LeagueSettingsRepository
+    private lateinit var seasonSettingsRepository: SeasonSettingsRepository
 
     @Mock
     private lateinit var leagueMembershipRepository: LeagueMembershipRepository
@@ -83,7 +83,7 @@ class StandingsServiceTest {
         val leagueId = 1L
         val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val leagueSettings = LeagueSettings(
+        val seasonSettings = SeasonSettings(
             id = 1L,
             season = season,
             killPoints = BigDecimal("1.0"),
@@ -91,9 +91,9 @@ class StandingsServiceTest {
             enableAttendancePoints = true,
             attendancePoints = BigDecimal("2.0")
         )
-        leagueSettings.placePoints.addAll(listOf(
-            PlacePoint(place = 1, points = BigDecimal("10.0"), leagueSettings = leagueSettings),
-            PlacePoint(place = 2, points = BigDecimal("7.0"), leagueSettings = leagueSettings)
+        seasonSettings.placePoints.addAll(listOf(
+            PlacePoint(place = 1, points = BigDecimal("10.0"), seasonSettings = seasonSettings),
+            PlacePoint(place = 2, points = BigDecimal("7.0"), seasonSettings = seasonSettings)
         ))
 
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
@@ -108,7 +108,7 @@ class StandingsServiceTest {
         )
 
         whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
-        whenever(leagueSettingsRepository.findBySeasonId(seasonId)).thenReturn(leagueSettings)
+        whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
         whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
         whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1, membership2))
@@ -136,14 +136,14 @@ class StandingsServiceTest {
         val leagueId = 1L
         val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val leagueSettings = LeagueSettings(id = 1L, season = season)
+        val seasonSettings = SeasonSettings(id = 1L, season = season)
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
         val player2 = PlayerAccount(id = 2L, email = "player2@example.com", password = "password", firstName = "Player", lastName = "Two")
         val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, playerName = "Player One", role = UserRole.PLAYER)
         val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, playerName = "Player Two", role = UserRole.PLAYER)
 
         whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
-        whenever(leagueSettingsRepository.findBySeasonId(seasonId)).thenReturn(leagueSettings)
+        whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(emptyList())
         whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1, membership2))
 
@@ -160,7 +160,7 @@ class StandingsServiceTest {
         val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
-        whenever(leagueSettingsRepository.findBySeasonId(seasonId)).thenReturn(null)
+        whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(null)
 
         val result = standingsService.getStandingsForSeason(seasonId)
 

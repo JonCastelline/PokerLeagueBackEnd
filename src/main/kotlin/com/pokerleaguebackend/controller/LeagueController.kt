@@ -22,8 +22,6 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import com.pokerleaguebackend.payload.LeagueSettingsResponse
-import com.pokerleaguebackend.payload.UpdateLeagueSettingsRequest
 import com.pokerleaguebackend.payload.UpdateLeagueMembershipStatusRequest
 import org.springframework.web.bind.annotation.RestController
 
@@ -159,30 +157,5 @@ class LeagueController(private val leagueService: LeagueService) {
         } catch (e: DuplicatePlayerException) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
-    }
-
-    @GetMapping("/{leagueId}/settings")
-    fun getLeagueSettings(
-        @PathVariable leagueId: Long,
-        @AuthenticationPrincipal userDetails: UserDetails
-    ): ResponseEntity<LeagueSettingsResponse> {
-        val playerAccount = (userDetails as UserPrincipal).playerAccount
-        val settings = leagueService.getLeagueSettings(leagueId, playerAccount.id)
-        return ResponseEntity.ok(settings)
-    }
-
-    @PutMapping("/{leagueId}/settings")
-    fun updateLeagueSettings(
-        @PathVariable leagueId: Long,
-        @RequestBody request: UpdateLeagueSettingsRequest,
-        @AuthenticationPrincipal userDetails: UserDetails
-    ): ResponseEntity<LeagueSettingsResponse> {
-        val playerAccount = (userDetails as UserPrincipal).playerAccount
-        val updatedSettings = leagueService.updateLeagueSettings(
-            leagueId,
-            request.nonOwnerAdminsCanManageRoles,
-            playerAccount.id
-        )
-        return ResponseEntity.ok(updatedSettings)
     }
 }

@@ -24,7 +24,6 @@ import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import com.pokerleaguebackend.service.LeagueService
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
@@ -44,7 +43,6 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     private val leagueService: LeagueService,
     private val objectMapper: ObjectMapper,
     private val seasonRepository: SeasonRepository,
-    private val leagueSettingsRepository: LeagueSettingsRepository
 ) {
 
     private var testPlayer: PlayerAccount? = null
@@ -54,7 +52,6 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     fun setup() {
         // Clear all previous data
         leagueMembershipRepository.deleteAll()
-        leagueSettingsRepository.deleteAll()
         seasonRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()
@@ -145,7 +142,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         // Create owner (Admin A)
         val ownerPlayer = PlayerAccount(firstName = "Owner", lastName = "A", email = "owner.a@example.com", password = "password")
         playerAccountRepository.save(ownerPlayer)
-        val ownerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(com.pokerleaguebackend.security.UserPrincipal(ownerPlayer, emptyList()), "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.name))))
+        val ownerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(UserPrincipal(ownerPlayer, emptyList()), "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.name))))
 
         // Create a league with Owner A
         val league = leagueService.createLeague("Test Promote League", ownerPlayer.id)
@@ -247,7 +244,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         leagueService.joinLeague(league.inviteCode, nonAdminPlayer.id)
 
         val nonAdminAuthorities = listOf(SimpleGrantedAuthority(SecurityRole.USER.name))
-        val nonAdminUserPrincipal = com.pokerleaguebackend.security.UserPrincipal(nonAdminPlayer, emptyList())
+        val nonAdminUserPrincipal = UserPrincipal(nonAdminPlayer, emptyList())
         val nonAdminAuthentication = UsernamePasswordAuthenticationToken(nonAdminUserPrincipal, "password", nonAdminAuthorities)
         val nonAdminToken = jwtTokenProvider.generateToken(nonAdminAuthentication)
 

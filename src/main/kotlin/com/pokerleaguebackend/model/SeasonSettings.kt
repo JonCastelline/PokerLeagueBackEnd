@@ -15,8 +15,8 @@ import jakarta.persistence.Table
 import java.math.BigDecimal
 
 @Entity
-@Table(name = "league_settings")
-data class LeagueSettings(
+@Table(name = "season_settings")
+data class SeasonSettings(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long = 0,
@@ -37,13 +37,12 @@ data class LeagueSettings(
     var enableAttendancePoints: Boolean = false,
     var attendancePoints: BigDecimal = BigDecimal.ZERO,
     var startingStack: Int = 1500,
-    var nonOwnerAdminsCanManageRoles: Boolean = false,
 
-    @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "seasonSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
     @JsonManagedReference
     var blindLevels: MutableList<BlindLevel> = mutableListOf(),
 
-    @OneToMany(mappedBy = "leagueSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToMany(mappedBy = "seasonSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
     @JsonManagedReference
     var placePoints: MutableList<PlacePoint> = mutableListOf()
 )

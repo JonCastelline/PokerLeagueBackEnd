@@ -9,7 +9,7 @@ import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
-import com.pokerleaguebackend.repository.LeagueSettingsRepository
+import com.pokerleaguebackend.repository.LeagueHomeContentRepository
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -40,10 +40,7 @@ class LeagueServiceTest {
     private lateinit var seasonRepository: SeasonRepository
 
     @Mock
-    private lateinit var leagueSettingsRepository: LeagueSettingsRepository
-
-    @Mock
-    private lateinit var leagueHomeContentRepository: com.pokerleaguebackend.repository.LeagueHomeContentRepository
+    private lateinit var leagueHomeContentRepository: LeagueHomeContentRepository
 
     @InjectMocks
     private lateinit var leagueService: LeagueService
@@ -96,4 +93,18 @@ class LeagueServiceTest {
         }
     }
 
+    @Test
+    fun `transferLeagueOwnership should throw IllegalArgumentException when new owner is the same as current owner`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
+    val ownerMembership = LeagueMembership(id = 1, playerAccount = playerAccount, league = league, role = UserRole.ADMIN, isOwner = true, playerName = "Owner", isActive = true)
+
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 1)).thenReturn(ownerMembership)
+        `when`(leagueMembershipRepository.findByLeagueIdAndIsOwner(1, true)).thenReturn(ownerMembership)
+        `when`(leagueMembershipRepository.findById(1)).thenReturn(Optional.of(ownerMembership))
+
+        assertThrows<IllegalArgumentException> {
+            leagueService.transferLeagueOwnership(1, 1, 1)
+        }
     }
+}
