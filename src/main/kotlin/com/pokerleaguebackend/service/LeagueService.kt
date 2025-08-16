@@ -23,6 +23,8 @@ import org.springframework.transaction.annotation.Transactional
 import java.util.Date
 import java.util.Calendar
 
+import com.pokerleaguebackend.payload.UpdateLeagueRequest
+
 @Service
 class LeagueService(
     private val leagueRepository: LeagueRepository,
@@ -32,6 +34,22 @@ class LeagueService(
     private val seasonRepository: SeasonRepository,
     private val leagueHomeContentRepository: LeagueHomeContentRepository
 ) {
+
+    @Transactional
+    fun updateLeague(leagueId: Long, request: UpdateLeagueRequest, requestingPlayerAccountId: Long): League {
+        val league = leagueRepository.findById(leagueId)
+            .orElseThrow { LeagueNotFoundException("League not found.") }
+
+        val requestingMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, requestingPlayerAccountId)
+            ?: throw AccessDeniedException("Player is not a member of this league.")
+
+        if (!requestingMembership.isOwner) {
+            throw AccessDeniedException("Only the league owner can update league settings.")
+        }
+
+        league.nonOwnerAdminsCanManageRoles = request.nonOwnerAdminsCanManageRoles
+        return leagueRepository.save(league)
+    }
 
     @Transactional
     fun createLeague(leagueName: String, creatorId: Long): League {
