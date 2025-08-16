@@ -25,9 +25,22 @@ import org.springframework.web.bind.annotation.RequestMapping
 import com.pokerleaguebackend.payload.UpdateLeagueMembershipStatusRequest
 import org.springframework.web.bind.annotation.RestController
 
+import com.pokerleaguebackend.payload.LeagueSettingsDto
+
 @RestController
 @RequestMapping("/api/leagues")
 class LeagueController(private val leagueService: LeagueService) {
+
+    @PutMapping("/{leagueId}")
+    fun updateLeague(
+        @PathVariable leagueId: Long,
+        @RequestBody request: LeagueSettingsDto,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<League> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val updatedLeague = leagueService.updateLeague(leagueId, request, playerAccount.id)
+        return ResponseEntity.ok(updatedLeague)
+    }
 
     @PostMapping
     fun createLeague(@RequestBody createLeagueRequest: CreateLeagueRequest, @AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<League> {

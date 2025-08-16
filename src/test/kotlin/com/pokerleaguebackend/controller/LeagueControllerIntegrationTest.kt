@@ -32,6 +32,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
+import com.pokerleaguebackend.payload.LeagueSettingsDto
+
 @SpringBootTest(classes = [com.pokerleaguebackend.PokerLeagueBackendApplication::class])
 @AutoConfigureMockMvc
 class LeagueControllerIntegrationTest @Autowired constructor(
@@ -70,6 +72,59 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         val userPrincipal = UserPrincipal(testPlayer!!, emptyList())
         val authentication = UsernamePasswordAuthenticationToken(userPrincipal, "password", authorities)
         token = jwtTokenProvider.generateToken(authentication)
+    }
+
+    @Test
+    fun `should update league settings for owner`() {
+        val league = leagueService.createLeague("Test League", testPlayer!!.id)
+        val updateLeagueRequest = LeagueSettingsDto(nonOwnerAdminsCanManageRoles = true)
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}", league.id)
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateLeagueRequest))
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.nonOwnerAdminsCanManageRoles").value(true))
+    }
+
+    @Test
+    fun `should not update league settings for non-owner`() {
+        val ownerPlayer = PlayerAccount(firstName = "Owner", lastName = "A", email = "owner.a@example.com", password = "password")
+        playerAccountRepository.save(ownerPlayer)
+
+        val league = leagueService.createLeague("Test League", ownerPlayer.id)
+        val updateLeagueRequest = LeagueSettingsDto(nonOwnerAdminsCanManageRoles = true)
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}", league.id)
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateLeagueRequest))
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `should not update league settings for non-member`() {
+        val ownerPlayer = PlayerAccount(firstName = "Owner", lastName = "A", email = "owner.a@example.com", password = "password")
+        playerAccountRepository.save(ownerPlayer)
+
+        val league = leagueService.createLeague("Test League", ownerPlayer.id)
+        val updateLeagueRequest = LeagueSettingsDto(nonOwnerAdminsCanManageRoles = true)
+
+        val nonMember = PlayerAccount(firstName = "Non", lastName = "Member", email = "non.member@example.com", password = "password")
+        playerAccountRepository.save(nonMember)
+        val nonMemberToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(UserPrincipal(nonMember, emptyList()), "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.name))))
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}", league.id)
+                .header("Authorization", "Bearer $nonMemberToken")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateLeagueRequest))
+        )
+            .andExpect(status().isForbidden)
     }
 
     @Test
