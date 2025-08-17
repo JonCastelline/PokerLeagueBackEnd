@@ -55,7 +55,7 @@ class LeagueServiceTest {
         val playerAccount = PlayerAccount(id = 1, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
         val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date())
-    val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, playerName = "Test User", isActive = true)
+    val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Test User", iconUrl = null, isActive = true)
 
         `when`(seasonRepository.findById(1)).thenReturn(Optional.of(season))
         `when`(playerAccountRepository.findByEmail("test@test.com")).thenReturn(playerAccount)
@@ -81,8 +81,8 @@ class LeagueServiceTest {
     fun `updateLeagueMembershipRole should throw IllegalStateException if setting a second owner`() {
         val playerAccount = PlayerAccount(id = 1, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
-    val ownerMembership = LeagueMembership(id = 1, playerAccount = playerAccount, league = league, role = UserRole.ADMIN, isOwner = true, playerName = "Owner", isActive = true)
-    val targetMembership = LeagueMembership(id = 2, playerAccount = PlayerAccount(id = 2, firstName = "Target", lastName = "User", email = "target@test.com", password = "password"), league = league, role = UserRole.PLAYER, playerName = "Target User", isActive = true)
+    val ownerMembership = LeagueMembership(id = 1, playerAccount = playerAccount, league = league, role = UserRole.ADMIN, isOwner = true, displayName = "Owner", iconUrl = null, isActive = true)
+    val targetMembership = LeagueMembership(id = 2, playerAccount = PlayerAccount(id = 2, firstName = "Target", lastName = "User", email = "target@test.com", password = "password"), league = league, role = UserRole.PLAYER, displayName = "Target User", iconUrl = null, isActive = true)
 
         `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 1)).thenReturn(ownerMembership)
         `when`(leagueMembershipRepository.findById(2)).thenReturn(Optional.of(targetMembership))
@@ -97,7 +97,7 @@ class LeagueServiceTest {
     fun `transferLeagueOwnership should throw IllegalArgumentException when new owner is the same as current owner`() {
         val playerAccount = PlayerAccount(id = 1, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
-    val ownerMembership = LeagueMembership(id = 1, playerAccount = playerAccount, league = league, role = UserRole.ADMIN, isOwner = true, playerName = "Owner", isActive = true)
+    val ownerMembership = LeagueMembership(id = 1, playerAccount = playerAccount, league = league, role = UserRole.ADMIN, isOwner = true, displayName = "Owner", iconUrl = null, isActive = true)
 
         `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 1)).thenReturn(ownerMembership)
         `when`(leagueMembershipRepository.findByLeagueIdAndIsOwner(1, true)).thenReturn(ownerMembership)

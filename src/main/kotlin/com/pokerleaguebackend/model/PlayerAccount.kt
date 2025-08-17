@@ -14,11 +14,11 @@ data class PlayerAccount(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    val firstName: String,
-    val lastName: String,
+    var firstName: String,
+    var lastName: String,
 
     @Column(unique = true)
-    val email: String,
+    var email: String,
 
     @Column(length = 100)
     var password: String? = null,

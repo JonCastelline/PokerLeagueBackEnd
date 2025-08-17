@@ -24,6 +24,7 @@ import java.util.Date
 import java.util.Calendar
 
 import com.pokerleaguebackend.payload.LeagueSettingsDto
+import com.pokerleaguebackend.payload.LeagueMembershipSettingsDto
 
 @Service
 class LeagueService(
@@ -68,7 +69,7 @@ class LeagueService(
         val membership = LeagueMembership(
             playerAccount = creator,
             league = savedLeague,
-            playerName = "${creator.firstName} ${creator.lastName}",
+            displayName = "${creator.firstName} ${creator.lastName}",
             role = UserRole.ADMIN,
             isOwner = true,
             isActive = true
@@ -109,7 +110,7 @@ class LeagueService(
         val membership = LeagueMembership(
             playerAccount = player,
             league = league,
-            playerName = "${player.firstName} ${player.lastName}",
+            displayName = "${player.firstName} ${player.lastName}",
             role = UserRole.PLAYER,
             isActive = true
         )
@@ -140,7 +141,8 @@ class LeagueService(
         return LeagueMembershipDto(
             id = membership.id,
             playerAccountId = membership.playerAccount?.id,
-            playerName = membership.playerName,
+            displayName = membership.displayName,
+            iconUrl = membership.iconUrl,
             role = membership.role,
             isOwner = membership.isOwner,
             email = membership.playerAccount?.email,
@@ -214,7 +216,8 @@ class LeagueService(
             LeagueMembershipDto(
                 id = it.id,
                 playerAccountId = it.playerAccount?.id,
-                playerName = it.playerName,
+                displayName = it.displayName,
+                iconUrl = it.iconUrl,
                 role = it.role,
                 isOwner = it.isOwner,
                 email = it.playerAccount?.email,
@@ -231,7 +234,8 @@ class LeagueService(
             LeagueMembershipDto(
                 id = it.id,
                 playerAccountId = it.playerAccount?.id,
-                playerName = it.playerName,
+                displayName = it.displayName,
+                iconUrl = it.iconUrl,
                 role = it.role,
                 isOwner = it.isOwner,
                 email = it.playerAccount?.email,
@@ -269,7 +273,8 @@ class LeagueService(
         return LeagueMembershipDto(
             id = updatedMembership.id,
             playerAccountId = updatedMembership.playerAccount?.id,
-            playerName = updatedMembership.playerName,
+            displayName = updatedMembership.displayName,
+            iconUrl = updatedMembership.iconUrl,
             role = updatedMembership.role,
             isOwner = updatedMembership.isOwner,
             email = updatedMembership.playerAccount?.email,
@@ -388,7 +393,8 @@ class LeagueService(
         return LeagueMembershipDto(
             id = updatedNewOwnerMembership.id,
             playerAccountId = updatedNewOwnerMembership.playerAccount?.id,
-            playerName = updatedNewOwnerMembership.playerName,
+            displayName = updatedNewOwnerMembership.displayName,
+            iconUrl = updatedNewOwnerMembership.iconUrl,
             role = updatedNewOwnerMembership.role,
             isOwner = updatedNewOwnerMembership.isOwner,
             email = updatedNewOwnerMembership.playerAccount?.email,
@@ -397,14 +403,14 @@ class LeagueService(
     }
 
     @Transactional
-    fun addUnregisteredPlayer(leagueId: Long, playerName: String, requestingPlayerAccountId: Long): LeagueMembershipDto {
+    fun addUnregisteredPlayer(leagueId: Long, displayName: String, requestingPlayerAccountId: Long): LeagueMembershipDto {
         val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
         if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
             throw AccessDeniedException("Only admins or owners can add unregistered players.")
         }
 
         // Check for existing unregistered player with the same name in this league
-        val existingUnregisteredPlayer = leagueMembershipRepository.findByLeagueIdAndPlayerNameAndPlayerAccountIsNull(leagueId, playerName)
+        val existingUnregisteredPlayer = leagueMembershipRepository.findByLeagueIdAndDisplayNameAndPlayerAccountIsNull(leagueId, displayName)
         if (existingUnregisteredPlayer != null) {
             throw DuplicatePlayerException("An unregistered player with this name already exists in this league.")
         }
@@ -415,7 +421,7 @@ class LeagueService(
         val newMembership = LeagueMembership(
             playerAccount = null, // This is the key for unregistered players
             league = league,
-            playerName = playerName,
+            displayName = displayName,
             role = UserRole.PLAYER,
             isOwner = false,
             isActive = true // Added
@@ -425,7 +431,8 @@ class LeagueService(
         return LeagueMembershipDto(
             id = savedMembership.id,
             playerAccountId = null, // No player account for unregistered players
-            playerName = savedMembership.playerName,
+            displayName = savedMembership.displayName,
+            iconUrl = savedMembership.iconUrl,
             role = savedMembership.role,
             isOwner = savedMembership.isOwner,
             email = null,
@@ -463,7 +470,30 @@ class LeagueService(
         return LeagueMembershipDto(
             id = updatedMembership.id,
             playerAccountId = updatedMembership.playerAccount?.id,
-            playerName = updatedMembership.playerName,
+            displayName = updatedMembership.displayName,
+            iconUrl = updatedMembership.iconUrl,
+            role = updatedMembership.role,
+            isOwner = updatedMembership.isOwner,
+            email = updatedMembership.playerAccount?.email,
+            isActive = updatedMembership.isActive
+        )
+    }
+
+    @Transactional
+    fun updateLeagueMembershipSettings(leagueId: Long, playerId: Long, settingsDto: LeagueMembershipSettingsDto): LeagueMembershipDto {
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerId)
+            ?: throw AccessDeniedException("Player is not a member of this league or league not found.")
+
+        membership.displayName = settingsDto.displayName
+        membership.iconUrl = settingsDto.iconUrl
+
+        val updatedMembership = leagueMembershipRepository.save(membership)
+
+        return LeagueMembershipDto(
+            id = updatedMembership.id,
+            playerAccountId = updatedMembership.playerAccount?.id,
+            displayName = updatedMembership.displayName,
+            iconUrl = updatedMembership.iconUrl,
             role = updatedMembership.role,
             isOwner = updatedMembership.isOwner,
             email = updatedMembership.playerAccount?.email,

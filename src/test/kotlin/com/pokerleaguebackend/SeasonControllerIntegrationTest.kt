@@ -90,7 +90,8 @@ class SeasonControllerIntegrationTest {
         val adminMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = adminUser,
             league = testLeague,
-            playerName = "Admin User",
+            displayName = "Admin User",
+            iconUrl = null,
             role = UserRole.ADMIN,
             isOwner = true,
             isActive = true

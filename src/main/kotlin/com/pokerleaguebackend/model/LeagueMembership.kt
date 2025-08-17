@@ -27,7 +27,8 @@ data class LeagueMembership(
     @JoinColumn(name = "league_id")
     val league: League,
 
-    val playerName: String,
+    var displayName: String,
+    var iconUrl: String? = null,
     @Enumerated(EnumType.STRING)
     var role: UserRole,
     var isOwner: Boolean = false,

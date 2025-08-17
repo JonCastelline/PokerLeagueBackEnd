@@ -71,7 +71,8 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
             LeagueMembership(
                 playerAccount = owner,
                 league = league,
-                playerName = "Owner User",
+                displayName = "New Owner",
+                iconUrl = null,
                 role = UserRole.ADMIN,
                 isOwner = true
             )
@@ -91,7 +92,8 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
             LeagueMembership(
                 playerAccount = player,
                 league = league,
-                playerName = "Player User",
+                displayName = "Player User",
+                iconUrl = null,
                 role = UserRole.PLAYER
             )
         )
@@ -110,7 +112,8 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
             LeagueMembership(
                 playerAccount = admin,
                 league = league,
-                playerName = "Admin User",
+                displayName = "Admin User",
+                iconUrl = null,
                 role = UserRole.ADMIN,
                 isOwner = false
             )
@@ -232,7 +235,8 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
             LeagueMembership(
                 playerAccount = newOwnerAccount,
                 league = league,
-                playerName = "New Owner",
+                displayName = "New Owner",
+                iconUrl = null,
                 role = UserRole.PLAYER
             )
         )
@@ -262,7 +266,8 @@ class LeagueMembershipManagementIntegrationTest @Autowired constructor(
             LeagueMembership(
                 playerAccount = newOwnerAccount,
                 league = league,
-                playerName = "New Owner 2",
+                displayName = "New Owner 2",
+                iconUrl = null,
                 role = UserRole.PLAYER
             )
         )

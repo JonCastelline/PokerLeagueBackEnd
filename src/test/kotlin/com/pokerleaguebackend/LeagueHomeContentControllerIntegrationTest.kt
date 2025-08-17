@@ -96,7 +96,8 @@ class LeagueHomeContentControllerIntegrationTest {
         leagueMembershipRepository.save(LeagueMembership(
             playerAccount = adminPlayer,
             league = testLeague,
-            playerName = "Admin Player",
+            displayName = "Admin Player",
+            iconUrl = null,
             role = UserRole.ADMIN,
             isOwner = true
         ))
@@ -104,7 +105,8 @@ class LeagueHomeContentControllerIntegrationTest {
         leagueMembershipRepository.save(LeagueMembership(
             playerAccount = nonAdminPlayer,
             league = testLeague,
-            playerName = "NonAdmin Player",
+            displayName = "NonAdmin Player",
+            iconUrl = null,
             role = UserRole.PLAYER,
             isOwner = false
         ))
