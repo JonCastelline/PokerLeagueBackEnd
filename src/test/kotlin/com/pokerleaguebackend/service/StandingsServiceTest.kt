@@ -98,8 +98,8 @@ class StandingsServiceTest {
 
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
         val player2 = PlayerAccount(id = 2L, email = "player2@example.com", password = "password", firstName = "Player", lastName = "Two")
-        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, playerName = "Player One", role = UserRole.PLAYER)
-        val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, playerName = "Player Two", role = UserRole.PLAYER)
+        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
+        val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, displayName = "Player Two", iconUrl = null, role = UserRole.PLAYER)
 
         val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
         val gameResults = listOf(
@@ -120,12 +120,12 @@ class StandingsServiceTest {
         assertEquals(2, result.size)
 
         // Player 1: 10 (place) + 2*1 (kills) + 1*5 (bounty) = 17
-        assertEquals("Player One", result[0].playerName)
+        assertEquals("Player One", result[0].displayName)
         assertEquals(BigDecimal("17.0"), result[0].totalPoints)
         assertEquals(1, result[0].rank)
 
         // Player 2: 7 (place) + 1*1 (kill) = 8
-        assertEquals("Player Two", result[1].playerName)
+        assertEquals("Player Two", result[1].displayName)
         assertEquals(BigDecimal("8.0"), result[1].totalPoints)
         assertEquals(2, result[1].rank)
     }
@@ -139,8 +139,8 @@ class StandingsServiceTest {
         val seasonSettings = SeasonSettings(id = 1L, season = season)
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
         val player2 = PlayerAccount(id = 2L, email = "player2@example.com", password = "password", firstName = "Player", lastName = "Two")
-        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, playerName = "Player One", role = UserRole.PLAYER)
-        val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, playerName = "Player Two", role = UserRole.PLAYER)
+        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
+        val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, displayName = "Player Two", iconUrl = null, role = UserRole.PLAYER)
 
         whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
         whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)

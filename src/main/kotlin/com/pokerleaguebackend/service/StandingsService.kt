@@ -49,7 +49,8 @@ class StandingsService(
         leagueMemberships.forEach { membership: LeagueMembership ->
             playerScores[membership.id] = PlayerStandingsDto(
                 playerId = membership.id,
-                playerName = membership.playerName,
+                displayName = membership.displayName,
+                iconUrl = membership.iconUrl,
                 totalPoints = BigDecimal.ZERO,
                 totalKills = 0,
                 totalBounties = 0,
@@ -61,7 +62,8 @@ class StandingsService(
             val standingsDto = playerScores.getOrPut(result.player.id) {
                 PlayerStandingsDto(
                     playerId = result.player.id,
-                    playerName = result.player.playerName,
+                    displayName = result.player.displayName,
+                    iconUrl = result.player.iconUrl,
                     totalPoints = BigDecimal.ZERO,
                     totalKills = 0,
                     totalBounties = 0,
@@ -96,7 +98,7 @@ class StandingsService(
 
         // Sort by total points (descending), then alphabetically by player name
         val sortedStandings = playerScores.values.sortedWith(compareByDescending<PlayerStandingsDto> { it.totalPoints }
-            .thenBy { it.playerName })
+            .thenBy { it.displayName })
 
         // Assign ranks, handling ties
         var rank = 1

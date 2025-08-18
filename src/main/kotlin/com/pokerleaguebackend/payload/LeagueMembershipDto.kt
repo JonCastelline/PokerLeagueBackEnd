@@ -5,7 +5,8 @@ import com.pokerleaguebackend.model.UserRole
 data class LeagueMembershipDto(
     val id: Long,
     val playerAccountId: Long?,
-    val playerName: String,
+    val displayName: String?,
+    val iconUrl: String?,
     val role: UserRole,
     val isOwner: Boolean,
     val email: String?,

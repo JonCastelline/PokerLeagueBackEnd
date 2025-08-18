@@ -83,7 +83,8 @@ class LeagueControllerIntegrationTest {
         val ownerMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = ownerUser,
             league = testLeague,
-            playerName = "Owner User",
+            displayName = "Owner User",
+            iconUrl = null,
             role = UserRole.ADMIN,
             isOwner = true
         ))
@@ -99,7 +100,8 @@ class LeagueControllerIntegrationTest {
         val adminMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = adminUser,
             league = testLeague,
-            playerName = "Admin User",
+            displayName = "Admin User",
+            iconUrl = null,
             role = UserRole.ADMIN,
             isOwner = false
         ))
@@ -115,7 +117,8 @@ class LeagueControllerIntegrationTest {
         val playerMembership = leagueMembershipRepository.save(LeagueMembership(
             playerAccount = playerUser,
             league = testLeague,
-            playerName = "Player User",
+            displayName = "Player User",
+            iconUrl = null,
             role = UserRole.PLAYER,
             isOwner = false
         ))

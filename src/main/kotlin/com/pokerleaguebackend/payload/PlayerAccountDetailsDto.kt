@@ -1,8 +1,6 @@
 package com.pokerleaguebackend.payload
 
-data class LoginResponse(
-    val accessToken: String,
-    val id: Long,
+data class PlayerAccountDetailsDto(
     val firstName: String,
     val lastName: String,
     val email: String

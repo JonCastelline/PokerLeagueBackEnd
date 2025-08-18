@@ -4,7 +4,8 @@ import java.math.BigDecimal
 
 data class PlayerStandingsDto(
     val playerId: Long,
-    val playerName: String,
+    val displayName: String?,
+    val iconUrl: String?,
     var totalPoints: BigDecimal,
     var totalKills: Int,
     var totalBounties: Int,

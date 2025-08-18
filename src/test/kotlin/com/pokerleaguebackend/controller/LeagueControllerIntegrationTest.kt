@@ -33,6 +33,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
 import com.pokerleaguebackend.payload.LeagueSettingsDto
+import com.pokerleaguebackend.payload.LeagueMembershipSettingsDto
 
 @SpringBootTest(classes = [com.pokerleaguebackend.PokerLeagueBackendApplication::class])
 @AutoConfigureMockMvc
@@ -186,7 +187,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.id").isNumber)
             .andExpect(jsonPath("$.playerAccountId").value(testPlayer!!.id))
-            .andExpect(jsonPath("$.playerName").value("${testPlayer!!.firstName} ${testPlayer!!.lastName}"))
+            .andExpect(jsonPath("$.displayName").value("${testPlayer!!.firstName} ${testPlayer!!.lastName}"))
             .andExpect(jsonPath("$.role").value(UserRole.ADMIN.name)) // testPlayer is admin by default when creating league
             .andExpect(jsonPath("$.isOwner").value(true))
             .andExpect(jsonPath("$.email").value(testPlayer!!.email))
@@ -271,7 +272,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     @Test
     fun `should allow admin to add an unregistered player`() {
         val league = leagueService.createLeague("Admin League", testPlayer!!.id)
-        val requestBody = mapOf("playerName" to "Unregistered Player 1")
+        val requestBody = mapOf("displayName" to "Unregistered Player 1")
 
         mockMvc.perform(
             post("/api/leagues/{leagueId}/members/unregistered", league.id)
@@ -280,7 +281,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
                 .content(objectMapper.writeValueAsString(requestBody))
         )
             .andExpect(status().isCreated)
-            .andExpect(jsonPath("$.playerName").value("Unregistered Player 1"))
+            .andExpect(jsonPath("$.displayName").value("Unregistered Player 1"))
             .andExpect(jsonPath("$.playerAccountId").doesNotExist())
     }
 
@@ -303,7 +304,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         val nonAdminAuthentication = UsernamePasswordAuthenticationToken(nonAdminUserPrincipal, "password", nonAdminAuthorities)
         val nonAdminToken = jwtTokenProvider.generateToken(nonAdminAuthentication)
 
-        val requestBody = mapOf("playerName" to "Unregistered Player 2")
+        val requestBody = mapOf("displayName" to "Unregistered Player 2")
 
         mockMvc.perform(
             post("/api/leagues/{leagueId}/members/unregistered", league.id)
@@ -317,7 +318,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     @Test
     fun `should prevent adding duplicate unregistered player name in the same league`() {
         val league = leagueService.createLeague("Admin League", testPlayer!!.id)
-        val requestBody = mapOf("playerName" to "Duplicate Player")
+        val requestBody = mapOf("displayName" to "Duplicate Player")
 
         // Add first unregistered player
         mockMvc.perform(
@@ -340,7 +341,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
 
     @Test
     fun `should return 404 when adding unregistered player to non-existent league`() {
-        val requestBody = mapOf("playerName" to "Non Existent Player")
+        val requestBody = mapOf("displayName" to "Non Existent Player")
         val nonExistentLeagueId = 9999L
 
         mockMvc.perform(
@@ -374,8 +375,8 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.size()").value(2)) // Owner and active player
-            .andExpect(jsonPath("$[0].playerName").value("Test Player"))
-            .andExpect(jsonPath("$[1].playerName").value("Active Player"))
+            .andExpect(jsonPath("$[0].displayName").value("Test Player"))
+            .andExpect(jsonPath("$[1].displayName").value("Active Player"))
     }
 
     @Test
@@ -421,5 +422,24 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.isActive").value(false))
+    }
+
+    @Test
+    fun `should update league membership settings`() {
+        val league = leagueService.createLeague("Settings League", testPlayer!!.id)
+        val settingsRequest = LeagueMembershipSettingsDto(
+            displayName = "NewDisplayName",
+            iconUrl = "http://example.com/icon.png"
+        )
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/me", league.id)
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(settingsRequest))
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.displayName").value("NewDisplayName"))
+            .andExpect(jsonPath("$.iconUrl").value("http://example.com/icon.png"))
     }
 }

@@ -26,6 +26,7 @@ import com.pokerleaguebackend.payload.UpdateLeagueMembershipStatusRequest
 import org.springframework.web.bind.annotation.RestController
 
 import com.pokerleaguebackend.payload.LeagueSettingsDto
+import com.pokerleaguebackend.payload.LeagueMembershipSettingsDto
 
 @RestController
 @RequestMapping("/api/leagues")
@@ -151,6 +152,17 @@ class LeagueController(private val leagueService: LeagueService) {
         return ResponseEntity.ok(updatedMembership)
     }
 
+    @PutMapping("/{leagueId}/members/me")
+    fun updateLeagueMembershipSettings(
+        @PathVariable leagueId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestBody settingsDto: LeagueMembershipSettingsDto
+    ): ResponseEntity<LeagueMembershipDto> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val updatedMembership = leagueService.updateLeagueMembershipSettings(leagueId, playerAccount.id, settingsDto)
+        return ResponseEntity.ok(updatedMembership)
+    }
+
     @PostMapping("/{leagueId}/members/unregistered")
     fun addUnregisteredPlayer(
         @PathVariable leagueId: Long,
@@ -161,7 +173,7 @@ class LeagueController(private val leagueService: LeagueService) {
         return try {
             val newMembership = leagueService.addUnregisteredPlayer(
                 leagueId,
-                request.playerName,
+                request.displayName,
                 playerAccount.id
             )
             ResponseEntity.status(HttpStatus.CREATED).body(newMembership)

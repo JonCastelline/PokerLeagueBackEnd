@@ -10,6 +10,6 @@ interface LeagueMembershipRepository : JpaRepository<LeagueMembership, Long> {
     fun findAllByPlayerAccountId(playerAccountId: Long): List<LeagueMembership>
     fun findAllByLeagueId(leagueId: Long): List<LeagueMembership>
     fun findByLeagueIdAndIsOwner(leagueId: Long, isOwner: Boolean): LeagueMembership?
-    fun findByLeagueIdAndPlayerNameAndPlayerAccountIsNull(leagueId: Long, playerName: String): LeagueMembership?
+    fun findByLeagueIdAndDisplayNameAndPlayerAccountIsNull(leagueId: Long, displayName: String): LeagueMembership?
     fun findAllByLeagueIdAndIsActive(leagueId: Long, isActive: Boolean): List<LeagueMembership>
 }
