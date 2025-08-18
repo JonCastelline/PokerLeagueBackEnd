@@ -10,5 +10,7 @@ data class LeagueMembershipDto(
     val role: UserRole,
     val isOwner: Boolean,
     val email: String?,
-    val isActive: Boolean
+    val isActive: Boolean,
+    val firstName: String?,
+    val lastName: String?
 )

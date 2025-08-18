@@ -191,6 +191,8 @@ class LeagueControllerIntegrationTest @Autowired constructor(
             .andExpect(jsonPath("$.role").value(UserRole.ADMIN.name)) // testPlayer is admin by default when creating league
             .andExpect(jsonPath("$.isOwner").value(true))
             .andExpect(jsonPath("$.email").value(testPlayer!!.email))
+            .andExpect(jsonPath("$.firstName").value(testPlayer!!.firstName))
+            .andExpect(jsonPath("$.lastName").value(testPlayer!!.lastName))
     }
 
     @Test
@@ -377,6 +379,10 @@ class LeagueControllerIntegrationTest @Autowired constructor(
             .andExpect(jsonPath("$.size()").value(2)) // Owner and active player
             .andExpect(jsonPath("$[0].displayName").value("Test Player"))
             .andExpect(jsonPath("$[1].displayName").value("Active Player"))
+            .andExpect(jsonPath("$[0].firstName").value("Test"))
+            .andExpect(jsonPath("$[0].lastName").value("Player"))
+            .andExpect(jsonPath("$[1].firstName").value("Active"))
+            .andExpect(jsonPath("$[1].lastName").value("Player"))
     }
 
     @Test
@@ -401,6 +407,12 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         )
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.size()").value(3)) // Owner, active player, and inactive player
+            .andExpect(jsonPath("$[0].firstName").value("Test"))
+            .andExpect(jsonPath("$[0].lastName").value("Player"))
+            .andExpect(jsonPath("$[1].firstName").value("Active"))
+            .andExpect(jsonPath("$[1].lastName").value("Player"))
+            .andExpect(jsonPath("$[2].firstName").value("Inactive"))
+            .andExpect(jsonPath("$[2].lastName").value("Player"))
     }
 
     @Test
@@ -441,5 +453,25 @@ class LeagueControllerIntegrationTest @Autowired constructor(
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.displayName").value("NewDisplayName"))
             .andExpect(jsonPath("$.iconUrl").value("http://example.com/icon.png"))
+    }
+
+    @Test
+    fun `should return firstName and lastName for registered members in get all league members`() {
+        val league = leagueService.createLeague("Test League for Names", testPlayer!!.id)
+
+        val playerWithNames = PlayerAccount(firstName = "John", lastName = "Doe", email = "john.doe@example.com", password = "password")
+        playerAccountRepository.save(playerWithNames)
+        leagueService.joinLeague(league.inviteCode, playerWithNames.id)
+
+        mockMvc.perform(
+            get("/api/leagues/{leagueId}/members", league.id)
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.size()").value(2)) // Owner and John Doe
+            .andExpect(jsonPath("$[0].firstName").value("Test"))
+            .andExpect(jsonPath("$[0].lastName").value("Player"))
+            .andExpect(jsonPath("$[1].firstName").value("John"))
+            .andExpect(jsonPath("$[1].lastName").value("Doe"))
     }
 }
