@@ -146,7 +146,9 @@ class LeagueService(
             role = membership.role,
             isOwner = membership.isOwner,
             email = membership.playerAccount?.email,
-            isActive = membership.isActive
+            isActive = membership.isActive,
+            firstName = membership.playerAccount?.firstName,
+            lastName = membership.playerAccount?.lastName
         )
     }
 
@@ -221,7 +223,9 @@ class LeagueService(
                 role = it.role,
                 isOwner = it.isOwner,
                 email = it.playerAccount?.email,
-                isActive = it.isActive
+                isActive = it.isActive,
+                firstName = it.playerAccount?.firstName,
+                lastName = it.playerAccount?.lastName
             )
         }
     }
@@ -239,7 +243,9 @@ class LeagueService(
                 role = it.role,
                 isOwner = it.isOwner,
                 email = it.playerAccount?.email,
-                isActive = it.isActive
+                isActive = it.isActive,
+                firstName = it.playerAccount?.firstName,
+                lastName = it.playerAccount?.lastName
             )
         }
     }
@@ -278,7 +284,9 @@ class LeagueService(
             role = updatedMembership.role,
             isOwner = updatedMembership.isOwner,
             email = updatedMembership.playerAccount?.email,
-            isActive = updatedMembership.isActive
+            isActive = updatedMembership.isActive,
+            firstName = updatedMembership.playerAccount?.firstName,
+            lastName = updatedMembership.playerAccount?.lastName
         )
     }
 
@@ -398,7 +406,9 @@ class LeagueService(
             role = updatedNewOwnerMembership.role,
             isOwner = updatedNewOwnerMembership.isOwner,
             email = updatedNewOwnerMembership.playerAccount?.email,
-            isActive = updatedNewOwnerMembership.isActive
+            isActive = updatedNewOwnerMembership.isActive,
+            firstName = updatedNewOwnerMembership.playerAccount?.firstName,
+            lastName = updatedNewOwnerMembership.playerAccount?.lastName
         )
     }
 
@@ -436,7 +446,9 @@ class LeagueService(
             role = savedMembership.role,
             isOwner = savedMembership.isOwner,
             email = null,
-            isActive = savedMembership.isActive
+            isActive = savedMembership.isActive,
+            firstName = null,
+            lastName = null
         )
     }
 
@@ -475,7 +487,9 @@ class LeagueService(
             role = updatedMembership.role,
             isOwner = updatedMembership.isOwner,
             email = updatedMembership.playerAccount?.email,
-            isActive = updatedMembership.isActive
+            isActive = updatedMembership.isActive,
+            firstName = updatedMembership.playerAccount?.firstName,
+            lastName = updatedMembership.playerAccount?.lastName
         )
     }
 
@@ -497,7 +511,9 @@ class LeagueService(
             role = updatedMembership.role,
             isOwner = updatedMembership.isOwner,
             email = updatedMembership.playerAccount?.email,
-            isActive = updatedMembership.isActive
+            isActive = updatedMembership.isActive,
+            firstName = updatedMembership.playerAccount?.firstName,
+            lastName = updatedMembership.playerAccount?.lastName
         )
     }
 }
