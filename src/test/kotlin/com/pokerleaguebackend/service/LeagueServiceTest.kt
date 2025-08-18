@@ -12,6 +12,7 @@ import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.repository.LeagueHomeContentRepository
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -19,6 +20,9 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
+import org.mockito.kotlin.verify
 import java.util.Date
 import java.util.Optional
 
@@ -106,5 +110,51 @@ class LeagueServiceTest {
         assertThrows<IllegalArgumentException> {
             leagueService.transferLeagueOwnership(1, 1, 1)
         }
+    }
+
+    @Test
+    fun `createLeague should default displayName to creator's full name`() {
+        val creatorId = 1L
+        val leagueName = "New League"
+        val creator = PlayerAccount(id = creatorId, firstName = "Creator", lastName = "User", email = "creator@example.com", password = "password")
+        val savedLeague = League(id = 1L, leagueName = leagueName, inviteCode = "some-code", expirationDate = null)
+
+        `when`(playerAccountRepository.findById(creatorId)).thenReturn(Optional.of(creator))
+        `when`(leagueRepository.save(any<League>())).thenReturn(savedLeague)
+        `when`(leagueMembershipRepository.save(any<LeagueMembership>())).thenAnswer { it.arguments[0] as LeagueMembership }
+
+        val createdLeague = leagueService.createLeague(leagueName, creatorId)
+
+        verify(leagueMembershipRepository).save(argThat { membership ->
+            membership.playerAccount == creator &&
+            membership.league == savedLeague &&
+            membership.displayName == "Creator User" &&
+            membership.role == UserRole.ADMIN &&
+            membership.isOwner == true
+        })
+        assertEquals(savedLeague, createdLeague)
+    }
+
+    @Test
+    fun `joinLeague should default displayName to player's full name`() {
+        val playerId = 1L
+        val inviteCode = "join-code"
+        val player = PlayerAccount(id = playerId, firstName = "Joining", lastName = "Player", email = "joining@example.com", password = "password")
+        val league = League(id = 1L, leagueName = "Joinable League", inviteCode = inviteCode, expirationDate = null)
+
+        `when`(leagueRepository.findByInviteCode(inviteCode)).thenReturn(league)
+        `when`(playerAccountRepository.findById(playerId)).thenReturn(Optional.of(player))
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerId)).thenReturn(null)
+        `when`(leagueMembershipRepository.save(any<LeagueMembership>())).thenAnswer { it.arguments[0] as LeagueMembership }
+
+        val joinedLeague = leagueService.joinLeague(inviteCode, playerId)
+
+        verify(leagueMembershipRepository).save(argThat { membership ->
+            membership.playerAccount == player &&
+            membership.league == league &&
+            membership.displayName == "Joining Player" &&
+            membership.role == UserRole.PLAYER
+        })
+        assertEquals(league, joinedLeague)
     }
 }

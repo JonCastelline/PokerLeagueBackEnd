@@ -141,7 +141,7 @@ class LeagueService(
         return LeagueMembershipDto(
             id = membership.id,
             playerAccountId = membership.playerAccount?.id,
-            displayName = membership.displayName,
+            displayName = membership.displayName ?: "${membership.playerAccount?.firstName} ${membership.playerAccount?.lastName}",
             iconUrl = membership.iconUrl,
             role = membership.role,
             isOwner = membership.isOwner,
