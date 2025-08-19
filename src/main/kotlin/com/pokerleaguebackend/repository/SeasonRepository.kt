@@ -10,4 +10,5 @@ interface SeasonRepository : JpaRepository<Season, Long> {
     fun findTopByLeagueIdOrderByStartDateDesc(leagueId: Long): Season?
     fun findAllByLeagueId(leagueId: Long): List<Season>
     fun findByLeagueIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(leagueId: Long, startDate: Date, endDate: Date): List<Season>
+    fun findTopByLeagueIdAndStartDateBeforeOrderByStartDateDesc(leagueId: Long, startDate: Date): Season?
 }

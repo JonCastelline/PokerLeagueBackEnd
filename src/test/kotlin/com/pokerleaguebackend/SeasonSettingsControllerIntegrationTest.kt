@@ -283,4 +283,62 @@ class SeasonSettingsControllerIntegrationTest {
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message").value("Player is not a member of this league"))
     }
+
+    @Test
+    fun `getSeasonSettings should copy settings from the immediate previous season`() {
+        // 1. Define custom settings for the first season
+        val customSettingsDto = SeasonSettingsDto(
+            trackKills = true,
+            trackBounties = true,
+            killPoints = BigDecimal("5.0"),
+            bountyPoints = BigDecimal("10.0"),
+            durationSeconds = 999, // Unique value to check for
+            bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NEXT_HIGHEST_PLAYER,
+            enableAttendancePoints = true,
+            attendancePoints = BigDecimal("1.0"),
+            startingStack = 5000,
+            blindLevels = listOf(BlindLevelDto(level = 1, smallBlind = 100, bigBlind = 200)),
+            placePoints = listOf(PlacePointDto(place = 1, points = "100.0".toBigDecimal()))
+        )
+
+        // 2. Update the first season's settings to be custom
+        mockMvc.perform(put("/api/seasons/${testSeason.id}/settings")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(customSettingsDto)))
+            .andExpect(status().isOk())
+
+        // 3. Create a new season (Season 2) with a later start date
+        val futureDate = Date(System.currentTimeMillis() + 86400000) // tomorrow
+        val newSeason = seasonRepository.save(Season(
+            seasonName = "New Season",
+            startDate = futureDate,
+            endDate = futureDate,
+            league = testLeague
+        ))
+
+        // 4. Get the settings for the new season, which should trigger the copy logic
+        mockMvc.perform(get("/api/seasons/${newSeason.id}/settings")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.durationSeconds").value(999)) // Check for the unique value
+            .andExpect(jsonPath("$.trackBounties").value(true))
+            .andExpect(jsonPath("$.killPoints").value(5.0))
+            .andExpect(jsonPath("$.bountyOnLeaderAbsenceRule").value("NEXT_HIGHEST_PLAYER"))
+            .andExpect(jsonPath("$.startingStack").value(5000))
+            .andExpect(jsonPath("$.blindLevels", hasSize<Any>(1)))
+            .andExpect(jsonPath("$.blindLevels[0].smallBlind").value(100))
+            .andExpect(jsonPath("$.placePoints", hasSize<Any>(1)))
+            .andExpect(jsonPath("$.placePoints[0].points").value(100.0))
+
+        // 5. Verify that the new season actually has its own settings in the database
+        val newSettings = seasonSettingsRepository.findBySeasonId(newSeason.id)
+        assertNotNull(newSettings)
+        assertEquals(999, newSettings?.durationSeconds)
+        assertEquals(newSeason.id, newSettings?.season?.id)
+        // Ensure the original settings were not modified
+        val originalSettings = seasonSettingsRepository.findBySeasonId(testSeason.id)
+        assertNotNull(originalSettings)
+        assertEquals(999, originalSettings?.durationSeconds)
+    }
 }
