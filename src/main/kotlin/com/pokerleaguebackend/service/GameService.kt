@@ -57,7 +57,7 @@ class GameService(
             gameName = gameNameToUse,
             gameDate = if (request.gameDate != null) Date.from(request.gameDate.atStartOfDay(ZoneId.systemDefault()).toInstant()) else Date(),
             gameTime = if (request.gameTime != null) Time.valueOf(request.gameTime) else Time(System.currentTimeMillis()),
-            gameLocation = request.gameLocation, // Persist gameLocation
+            gameLocation = request.gameLocation,
             season = season
         )
 
