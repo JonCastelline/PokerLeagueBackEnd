@@ -26,11 +26,13 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
 import java.util.Date
 import java.sql.Time
 
@@ -128,7 +130,7 @@ class GameControllerIntegrationTest {
         testSeason = seasonRepository.save(Season(
             seasonName = "Test Season",
             startDate = Date(),
-            endDate = Date(),
+            endDate = Date.from(LocalDate.now().plusDays(7).atStartOfDay(ZoneId.systemDefault()).toInstant()), // Set end date to 7 days in the future
             league = testLeague
         ))
     }
@@ -136,8 +138,10 @@ class GameControllerIntegrationTest {
     @Test
     fun `createGame should create a new game as admin`() {
         val createGameRequest = CreateGameRequest(
+            gameName = null,
             gameDate = LocalDate.now(),
-            gameTime = LocalTime.now()
+            gameTime = LocalTime.now(),
+            gameLocation = null
         )
 
         mockMvc.perform(post("/api/seasons/${testSeason.id}/games")
@@ -152,8 +156,10 @@ class GameControllerIntegrationTest {
     @Test
     fun `createGame should return forbidden for regular user`() {
         val createGameRequest = CreateGameRequest(
+            gameName = null,
             gameDate = LocalDate.now(),
-            gameTime = LocalTime.now()
+            gameTime = LocalTime.now(),
+            gameLocation = null
         )
 
         mockMvc.perform(post("/api/seasons/${testSeason.id}/games")
@@ -302,8 +308,10 @@ class GameControllerIntegrationTest {
     @Test
     fun `createGame should assign sequential game names`() {
         val createGameRequest = CreateGameRequest(
+            gameName = null,
             gameDate = LocalDate.now(),
-            gameTime = LocalTime.now()
+            gameTime = LocalTime.now(),
+            gameLocation = null
         )
 
         // Create first game
@@ -332,8 +340,10 @@ class GameControllerIntegrationTest {
 
         // Attempt to create a game in the finalized season
         val createGameRequest = CreateGameRequest(
+            gameName = null,
             gameDate = LocalDate.now(),
-            gameTime = LocalTime.now()
+            gameTime = LocalTime.now(),
+            gameLocation = null
         )
 
         mockMvc.perform(post("/api/seasons/${testSeason.id}/games")
@@ -341,5 +351,124 @@ class GameControllerIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(createGameRequest)))
             .andExpect(status().isConflict())
+    }
+
+    @Test
+    fun `updateGame should update an existing game as admin`() {
+        val game = gameRepository.save(Game(
+            gameName = "Original Game Name",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            gameLocation = "Original Location",
+            season = testSeason
+        ))
+
+        val updateGameRequest = CreateGameRequest(
+            gameName = "Updated Game Name",
+            gameDate = LocalDate.now().plusDays(1),
+            gameTime = LocalTime.now().plusHours(1),
+            gameLocation = "Updated Location"
+        )
+
+        mockMvc.perform(put("/api/seasons/${testSeason.id}/games/${game.id}")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(updateGameRequest)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.gameName").value("Updated Game Name"))
+            .andExpect(jsonPath("$.gameLocation").value("Updated Location"))
+    }
+
+    @Test
+    fun `updateGame should return bad request for gameDate outside season`() {
+        val game = gameRepository.save(Game(
+            gameName = "Game for Invalid Date",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+
+        val updateGameRequest = CreateGameRequest(
+            gameName = "Updated Game Name",
+            gameDate = LocalDate.now().plusYears(10), // Date far outside season
+            gameTime = LocalTime.now(),
+            gameLocation = "Some Location"
+        )
+
+        mockMvc.perform(put("/api/seasons/${testSeason.id}/games/${game.id}")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(updateGameRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Game date must be within the season's start and end dates."))
+    }
+
+    @Test
+    fun `updateGame should return forbidden for regular user`() {
+        val game = gameRepository.save(Game(
+            gameName = "Game for Forbidden Update",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+
+        val updateGameRequest = CreateGameRequest(
+            gameName = "Attempted Update",
+            gameDate = LocalDate.now(),
+            gameTime = LocalTime.now(),
+            gameLocation = "Forbidden Location"
+        )
+
+        mockMvc.perform(put("/api/seasons/${testSeason.id}/games/${game.id}")
+            .header("Authorization", "Bearer $regularUserToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(updateGameRequest)))
+            .andExpect(status().isForbidden())
+    }
+
+    @Test
+    fun `updateGame should return not found for non-existent game`() {
+        val nonExistentGameId = 9999L
+        val updateGameRequest = CreateGameRequest(
+            gameName = "Non Existent",
+            gameDate = LocalDate.now(),
+            gameTime = LocalTime.now(),
+            gameLocation = "Anywhere"
+        )
+
+        mockMvc.perform(put("/api/seasons/${testSeason.id}/games/${nonExistentGameId}")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(updateGameRequest)))
+            .andExpect(status().isBadRequest())
+    }
+
+    @Test
+    fun `updateGame in finalized season should return conflict`() {
+        val game = gameRepository.save(Game(
+            gameName = "Game in Finalized Season",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+
+        // Finalize the season first
+        mockMvc.perform(post("/api/leagues/${testLeague.id}/seasons/${testSeason.id}/finalize")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+
+        val updateGameRequest = CreateGameRequest(
+            gameName = "Attempted Update in Finalized Season",
+            gameDate = LocalDate.now(),
+            gameTime = LocalTime.now(),
+            gameLocation = "Finalized Location"
+        )
+
+        mockMvc.perform(put("/api/seasons/${testSeason.id}/games/${game.id}")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(updateGameRequest)))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value("Cannot update games in a finalized season."))
     }
 }

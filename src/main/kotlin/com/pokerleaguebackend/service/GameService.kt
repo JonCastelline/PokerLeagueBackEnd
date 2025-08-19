@@ -39,17 +39,71 @@ class GameService(
             throw IllegalStateException("Cannot add games to a finalized season.")
         }
 
-        val gameCount = gameRepository.countBySeasonId(seasonId)
-        val newGameName = "Game ${gameCount + 1}"
+        // Validate gameDate against season's start and end dates
+        request.gameDate?.let {
+            val gameLocalDate = it
+            val seasonStartDate = season.startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+            val seasonEndDate = season.endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+
+            if (gameLocalDate.isBefore(seasonStartDate) || gameLocalDate.isAfter(seasonEndDate)) {
+                throw IllegalArgumentException("Game date must be within the season's start and end dates.")
+            }
+        }
+
+        val defaultGameName = "Game ${gameRepository.countBySeasonId(seasonId) + 1}"
+        val gameNameToUse = request.gameName ?: defaultGameName // Use provided name or default
 
         val newGame = Game(
-            gameName = newGameName,
+            gameName = gameNameToUse,
             gameDate = if (request.gameDate != null) Date.from(request.gameDate.atStartOfDay(ZoneId.systemDefault()).toInstant()) else Date(),
             gameTime = if (request.gameTime != null) Time.valueOf(request.gameTime) else Time(System.currentTimeMillis()),
+            gameLocation = request.gameLocation, // Persist gameLocation
             season = season
         )
 
         return gameRepository.save(newGame)
+    }
+
+    @Transactional
+    fun updateGame(seasonId: Long, gameId: Long, request: CreateGameRequest, adminPlayerId: Long): Game {
+        val season = seasonRepository.findById(seasonId)
+            .orElseThrow { IllegalArgumentException("Season not found") }
+
+        val existingGame = gameRepository.findById(gameId)
+            .orElseThrow { IllegalArgumentException("Game not found") }
+
+        if (existingGame.season.id != seasonId) {
+            throw IllegalArgumentException("Game does not belong to the specified season.")
+        }
+
+        val adminMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, adminPlayerId)
+            ?: throw AccessDeniedException("Player is not an admin of this league")
+
+        if (adminMembership.role != UserRole.ADMIN && !adminMembership.isOwner) {
+            throw AccessDeniedException("Only an admin or owner can update games")
+        }
+
+        if (season.isFinalized) {
+            throw IllegalStateException("Cannot update games in a finalized season.")
+        }
+
+        // Validate gameDate against season's start and end dates
+        request.gameDate?.let {
+            val gameLocalDate = it
+            val seasonStartDate = season.startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+            val seasonEndDate = season.endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+
+            if (gameLocalDate.isBefore(seasonStartDate) || gameLocalDate.isAfter(seasonEndDate)) {
+                throw IllegalArgumentException("Game date must be within the season's start and end dates.")
+            }
+        }
+
+        existingGame.gameName = request.gameName ?: existingGame.gameName
+        existingGame.gameDate = if (request.gameDate != null) Date.from(request.gameDate.atStartOfDay(ZoneId.systemDefault()).toInstant()) else existingGame.gameDate
+        existingGame.gameTime = if (request.gameTime != null) Time.valueOf(request.gameTime) else existingGame.gameTime
+        existingGame.gameLocation = request.gameLocation
+
+        return gameRepository.save(existingGame)
     }
 
     @Transactional

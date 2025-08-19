@@ -17,9 +17,10 @@ data class Game(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    val gameName: String,
-    val gameDate: Date,
-    val gameTime: Time,
+    var gameName: String,
+    var gameDate: Date,
+    var gameTime: Time,
+    var gameLocation: String? = null,
     val scheduledDate: Date? = null,
 
     @ManyToOne
