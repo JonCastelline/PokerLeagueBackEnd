@@ -2,8 +2,10 @@ package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.model.Game
 import com.pokerleaguebackend.model.GameResult
+import com.pokerleaguebackend.payload.CreateGameRequest
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.service.GameService
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.access.prepost.PreAuthorize
@@ -23,11 +25,15 @@ class GameController(private val gameService: GameService, private val playerAcc
     @PreAuthorize("@leagueService.isLeagueAdmin(#seasonId, principal.username)")
     fun createGame(
         @PathVariable seasonId: Long,
-        @RequestBody game: Game,
+        @RequestBody request: CreateGameRequest,
         principal: Principal
-    ): ResponseEntity<Game> {
-        val newGame = gameService.createGame(seasonId, game, playerAccountRepository.findByEmail(principal.name)?.id ?: throw AccessDeniedException("Player not found"))
-        return ResponseEntity.ok(newGame)
+    ): ResponseEntity<*> {
+        return try {
+            val newGame = gameService.createGame(seasonId, request, playerAccountRepository.findByEmail(principal.name)?.id ?: throw AccessDeniedException("Player not found"))
+            ResponseEntity.ok(newGame)
+        } catch (e: IllegalStateException) {
+            ResponseEntity.status(HttpStatus.CONFLICT).body(mapOf("message" to e.message))
+        }
     }
 
     @PostMapping("/games/{gameId}/results")

@@ -8,6 +8,7 @@ import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.payload.CreateGameRequest
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
@@ -28,6 +29,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
+import java.time.LocalTime
 import java.util.Date
 import java.sql.Time
 
@@ -132,35 +135,31 @@ class GameControllerIntegrationTest {
 
     @Test
     fun `createGame should create a new game as admin`() {
-        val game = Game(
-            gameName = "Test Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
-            season = testSeason
+        val createGameRequest = CreateGameRequest(
+            gameDate = LocalDate.now(),
+            gameTime = LocalTime.now()
         )
 
         mockMvc.perform(post("/api/seasons/${testSeason.id}/games")
             .header("Authorization", "Bearer $adminToken")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(game)))
+            .content(objectMapper.writeValueAsString(createGameRequest)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.gameName").value("Test Game 1"))
+            .andExpect(jsonPath("$.gameName").value("Game 1"))
             .andExpect(jsonPath("$.season.id").value(testSeason.id))
     }
 
     @Test
     fun `createGame should return forbidden for regular user`() {
-        val game = Game(
-            gameName = "Test Game 2",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
-            season = testSeason
+        val createGameRequest = CreateGameRequest(
+            gameDate = LocalDate.now(),
+            gameTime = LocalTime.now()
         )
 
         mockMvc.perform(post("/api/seasons/${testSeason.id}/games")
             .header("Authorization", "Bearer $regularUserToken")
             .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(game)))
+            .content(objectMapper.writeValueAsString(createGameRequest)))
             .andExpect(status().isForbidden())
     }
 
@@ -298,5 +297,49 @@ class GameControllerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.length()").value(1))
             .andExpect(jsonPath("$[0].gameName").value("Scheduled Game 1"))
+    }
+
+    @Test
+    fun `createGame should assign sequential game names`() {
+        val createGameRequest = CreateGameRequest(
+            gameDate = LocalDate.now(),
+            gameTime = LocalTime.now()
+        )
+
+        // Create first game
+        mockMvc.perform(post("/api/seasons/${testSeason.id}/games")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(createGameRequest)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.gameName").value("Game 1"))
+
+        // Create second game
+        mockMvc.perform(post("/api/seasons/${testSeason.id}/games")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(createGameRequest)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.gameName").value("Game 2"))
+    }
+
+    @Test
+    fun `createGame in finalized season should return conflict`() {
+        // Finalize the season first
+        mockMvc.perform(post("/api/leagues/${testLeague.id}/seasons/${testSeason.id}/finalize")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+
+        // Attempt to create a game in the finalized season
+        val createGameRequest = CreateGameRequest(
+            gameDate = LocalDate.now(),
+            gameTime = LocalTime.now()
+        )
+
+        mockMvc.perform(post("/api/seasons/${testSeason.id}/games")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(createGameRequest)))
+            .andExpect(status().isConflict())
     }
 }

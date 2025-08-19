@@ -6,6 +6,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface GameRepository : JpaRepository<Game, Long> {
+    fun countBySeasonId(seasonId: Long): Int
     fun findAllBySeasonId(seasonId: Long): List<Game>
     fun findAllBySeasonIdAndScheduledDateIsNotNull(seasonId: Long): List<Game>
 }
