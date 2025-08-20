@@ -107,6 +107,38 @@ class GameService(
     }
 
     @Transactional
+    fun deleteGame(seasonId: Long, gameId: Long, adminPlayerId: Long) {
+        val season = seasonRepository.findById(seasonId)
+            .orElseThrow { IllegalArgumentException("Season not found") }
+
+        val gameToDelete = gameRepository.findById(gameId)
+            .orElseThrow { IllegalArgumentException("Game not found") }
+
+        if (gameToDelete.season.id != seasonId) {
+            throw IllegalArgumentException("Game does not belong to the specified season.")
+        }
+
+        val adminMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(season.league.id, adminPlayerId)
+            ?: throw AccessDeniedException("Player is not an admin of this league")
+
+        if (adminMembership.role != UserRole.ADMIN && !adminMembership.isOwner) {
+            throw AccessDeniedException("Only an admin or owner can delete games")
+        }
+
+        if (season.isFinalized) {
+            throw IllegalStateException("Cannot delete games from a finalized season.")
+        }
+
+        // Check for associated game results
+        val gameResults = gameResultRepository.findAllByGameId(gameId)
+        if (gameResults.isNotEmpty()) {
+            throw IllegalStateException("Cannot delete a game that has associated results.")
+        }
+
+        gameRepository.delete(gameToDelete)
+    }
+
+    @Transactional
     fun recordGameResults(gameId: Long, results: List<GameResult>, adminPlayerId: Long): List<GameResult> {
         val game = gameRepository.findById(gameId)
             .orElseThrow { IllegalArgumentException("Game not found") }

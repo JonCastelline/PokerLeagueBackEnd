@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -48,6 +49,23 @@ class GameController(private val gameService: GameService, private val playerAcc
         return try {
             val updatedGame = gameService.updateGame(seasonId, gameId, request, playerAccountRepository.findByEmail(principal.name)?.id ?: throw AccessDeniedException("Player not found"))
             ResponseEntity.ok(updatedGame)
+        } catch (e: IllegalStateException) {
+            ResponseEntity.status(HttpStatus.CONFLICT).body(mapOf("message" to e.message))
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(mapOf("message" to e.message))
+        }
+    }
+
+    @DeleteMapping("/seasons/{seasonId}/games/{gameId}")
+    @PreAuthorize("@leagueService.isLeagueAdmin(#seasonId, principal.username)")
+    fun deleteGame(
+        @PathVariable seasonId: Long,
+        @PathVariable gameId: Long,
+        principal: Principal
+    ): ResponseEntity<*> {
+        return try {
+            gameService.deleteGame(seasonId, gameId, playerAccountRepository.findByEmail(principal.name)?.id ?: throw AccessDeniedException("Player not found"))
+            ResponseEntity.ok().body(null)
         } catch (e: IllegalStateException) {
             ResponseEntity.status(HttpStatus.CONFLICT).body(mapOf("message" to e.message))
         } catch (e: IllegalArgumentException) {
