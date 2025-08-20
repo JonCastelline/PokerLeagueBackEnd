@@ -3,7 +3,10 @@ package com.pokerleaguebackend.controller
 import com.pokerleaguebackend.model.Game
 import com.pokerleaguebackend.model.GameResult
 import com.pokerleaguebackend.payload.CreateGameRequest
+import com.pokerleaguebackend.payload.StartGameRequest
+import com.pokerleaguebackend.payload.response.GameStateResponse
 import com.pokerleaguebackend.repository.PlayerAccountRepository
+import com.pokerleaguebackend.service.GameEngineService
 import com.pokerleaguebackend.service.GameService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -21,7 +24,11 @@ import java.security.Principal
 
 @RestController
 @RequestMapping("/api")
-class GameController(private val gameService: GameService, private val playerAccountRepository: PlayerAccountRepository) {
+class GameController(
+    private val gameService: GameService,
+    private val gameEngineService: GameEngineService,
+    private val playerAccountRepository: PlayerAccountRepository
+) {
 
     @PostMapping("/seasons/{seasonId}/games")
     @PreAuthorize("@leagueService.isLeagueAdmin(#seasonId, principal.username)")
@@ -103,5 +110,19 @@ class GameController(private val gameService: GameService, private val playerAcc
     fun getScheduledGames(@PathVariable seasonId: Long): ResponseEntity<List<Game>> {
         val games = gameService.getScheduledGames(seasonId)
         return ResponseEntity.ok(games)
+    }
+
+    @GetMapping("/games/{gameId}/live")
+    @PreAuthorize("@leagueService.isLeagueMemberByGame(#gameId, principal.username)")
+    fun getGameState(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.getGameState(gameId)
+        return ResponseEntity.ok(gameState)
+    }
+
+    @PostMapping("/games/{gameId}/live/start")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun startGame(@PathVariable gameId: Long, @RequestBody request: StartGameRequest): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.startGame(gameId, request)
+        return ResponseEntity.ok(gameState)
     }
 }

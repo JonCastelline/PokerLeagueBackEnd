@@ -1,14 +1,16 @@
 package com.pokerleaguebackend.model
 
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.GenerationType
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.Table
+import com.fasterxml.jackson.annotation.JsonManagedReference
+import jakarta.persistence.*
 import java.sql.Time
 import java.util.Date
+
+enum class GameStatus {
+    SCHEDULED,
+    IN_PROGRESS,
+    PAUSED,
+    COMPLETED
+}
 
 @Entity
 @Table(name = "game")
@@ -23,7 +25,18 @@ data class Game(
     var gameLocation: String? = null,
     val scheduledDate: Date? = null,
 
+    @Enumerated(EnumType.STRING)
+    var gameStatus: GameStatus = GameStatus.SCHEDULED,
+
+    var timerStartTime: Long? = null,
+    var timeRemainingInMillis: Long? = null,
+    var currentLevelIndex: Int? = 0,
+
     @ManyToOne
     @JoinColumn(name = "season_id")
-    var season: Season
+    var season: Season,
+
+    @OneToMany(mappedBy = "game", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JsonManagedReference
+    var liveGamePlayers: MutableList<LiveGamePlayer> = mutableListOf()
 )
