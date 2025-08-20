@@ -24,6 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
@@ -470,5 +471,83 @@ class GameControllerIntegrationTest {
             .content(objectMapper.writeValueAsString(updateGameRequest)))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.message").value("Cannot update games in a finalized season."))
+    }
+
+    @Test
+    fun `deleteGame should allow admin to delete a game with no results`() {
+        val game = gameRepository.save(Game(
+            gameName = "Deletable Game",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+
+        mockMvc.perform(delete("/api/seasons/${testSeason.id}/games/${game.id}")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+    }
+
+    @Test
+    fun `deleteGame should return conflict if game has results`() {
+        val game = gameRepository.save(Game(
+            gameName = "Game With Results",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+        gameResultRepository.save(GameResult(
+            game = game,
+            player = adminMembership,
+            place = 1,
+            kills = 0,
+            bounties = 0,
+            bountyPlacedOnPlayer = null
+        ))
+
+        mockMvc.perform(delete("/api/seasons/${testSeason.id}/games/${game.id}")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isConflict())
+    }
+
+    @Test
+    fun `deleteGame should return forbidden for regular user`() {
+        val game = gameRepository.save(Game(
+            gameName = "Game For Forbidden Delete",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+
+        mockMvc.perform(delete("/api/seasons/${testSeason.id}/games/${game.id}")
+            .header("Authorization", "Bearer $regularUserToken"))
+            .andExpect(status().isForbidden())
+    }
+
+    @Test
+    fun `deleteGame should return bad request for non-existent game`() {
+        val nonExistentGameId = 9999L
+
+        mockMvc.perform(delete("/api/seasons/${testSeason.id}/games/$nonExistentGameId")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isBadRequest())
+    }
+
+    @Test
+    fun `deleteGame should return conflict if season is finalized`() {
+        val game = gameRepository.save(Game(
+            gameName = "Game In Finalized Season",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+
+        // Finalize the season
+        mockMvc.perform(post("/api/leagues/${testLeague.id}/seasons/${testSeason.id}/finalize")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+
+        mockMvc.perform(delete("/api/seasons/${testSeason.id}/games/${game.id}")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isConflict())
     }
 }
