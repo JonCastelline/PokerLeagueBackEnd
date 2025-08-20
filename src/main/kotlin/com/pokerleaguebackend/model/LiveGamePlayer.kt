@@ -22,5 +22,9 @@ data class LiveGamePlayer(
     var isPlaying: Boolean = true,
     var isEliminated: Boolean = false,
     var place: Int? = null,
-    var kills: Int = 0
+    var kills: Int = 0,
+
+    @ManyToOne
+    @JoinColumn(name = "eliminated_by_player_id")
+    var eliminatedBy: LiveGamePlayer? = null
 )

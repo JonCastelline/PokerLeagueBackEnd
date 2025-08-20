@@ -3,6 +3,7 @@ package com.pokerleaguebackend.controller
 import com.pokerleaguebackend.model.Game
 import com.pokerleaguebackend.model.GameResult
 import com.pokerleaguebackend.payload.CreateGameRequest
+import com.pokerleaguebackend.payload.EliminatePlayerRequest
 import com.pokerleaguebackend.payload.StartGameRequest
 import com.pokerleaguebackend.payload.response.GameStateResponse
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -124,5 +125,40 @@ class GameController(
     fun startGame(@PathVariable gameId: Long, @RequestBody request: StartGameRequest): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.startGame(gameId, request)
         return ResponseEntity.ok(gameState)
+    }
+
+    @PostMapping("/games/{gameId}/live/pause")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun pauseGame(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.pauseGame(gameId)
+        return ResponseEntity.ok(gameState)
+    }
+
+    @PostMapping("/games/{gameId}/live/resume")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun resumeGame(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.resumeGame(gameId)
+        return ResponseEntity.ok(gameState)
+    }
+
+    @PostMapping("/games/{gameId}/live/eliminate")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun eliminatePlayer(@PathVariable gameId: Long, @RequestBody request: EliminatePlayerRequest): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.eliminatePlayer(gameId, request)
+        return ResponseEntity.ok(gameState)
+    }
+
+    @PostMapping("/games/{gameId}/live/undo")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun undoElimination(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.undoElimination(gameId)
+        return ResponseEntity.ok(gameState)
+    }
+
+    @PostMapping("/games/{gameId}/live/finalize")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun finalizeGame(@PathVariable gameId: Long): ResponseEntity<Void> {
+        gameEngineService.finalizeGame(gameId)
+        return ResponseEntity.ok().build()
     }
 }
