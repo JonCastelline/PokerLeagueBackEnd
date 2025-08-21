@@ -184,8 +184,6 @@ class GameEngineService(
 
         if (seasonSettings.trackBounties && eliminatedPlayer.hasBounty) {
             killerPlayer.bounties++
-            eliminatedPlayer.hasBounty = false // Remove bounty from eliminated player
-            killerPlayer.hasBounty = true // Transfer bounty to killer
         }
 
         val updatedGame = gameRepository.save(game)
@@ -209,11 +207,7 @@ class GameEngineService(
             killer.kills--
             val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
                 ?: throw EntityNotFoundException("SeasonSettings not found for season id: ${game.season.id}")
-            if (seasonSettings.trackBounties) {
-                // If the killer had a bounty, it means they received it from the undone eliminated player
-                // So, remove bounty from killer and give it back to the undone eliminated player
-                killer.hasBounty = false
-                lastEliminated.hasBounty = true
+            if (seasonSettings.trackBounties && lastEliminated.hasBounty) {
                 killer.bounties--
             }
         }

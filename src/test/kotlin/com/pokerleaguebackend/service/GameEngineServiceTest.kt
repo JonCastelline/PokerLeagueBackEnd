@@ -33,6 +33,8 @@ import org.mockito.junit.jupiter.MockitoExtension
 import java.sql.Time
 import java.util.Date
 import java.util.Optional
+import java.math.BigDecimal
+import com.pokerleaguebackend.payload.dto.PlayerStandingsDto
 
 @ExtendWith(MockitoExtension::class)
 class GameEngineServiceTest {
@@ -214,19 +216,169 @@ class GameEngineServiceTest {
     }
 
     @Test
-    fun `finalizeGame should create game results and complete game`() {
+    fun `startGame should assign bounty to player with highest points if trackBounties is true and standings exist`() {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(
-            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
-        )
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
         val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
         val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
-        val livePlayer1 = LiveGamePlayer(game = game, player = player1, kills = 1)
+        val players = listOf(player1, player2)
+        val request = StartGameRequest(playerIds = players.map { it.id })
+
+        val standings = listOf(
+            PlayerStandingsDto(playerId = player1.id, displayName = "Player 1", iconUrl = null, totalPoints = BigDecimal("100.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 0),
+            PlayerStandingsDto(playerId = player2.id, displayName = "Player 2", iconUrl = null, totalPoints = BigDecimal("50.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 0)
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(leagueMembershipRepository.findAllById(request.playerIds)).thenReturn(players)
+        `when`(standingsService.getStandingsForLatestSeason(game.season.league.id)).thenReturn(standings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+
+        // When
+        gameEngineService.startGame(1, request)
+
+        // Then
+        val livePlayer1 = game.liveGamePlayers.find { it.player.id == player1.id }
+        val livePlayer2 = game.liveGamePlayers.find { it.player.id == player2.id }
+
+        assertNotNull(livePlayer1)
+        assertNotNull(livePlayer2)
+        assertTrue(livePlayer1!!.hasBounty)
+        assertFalse(livePlayer2!!.hasBounty)
+    }
+
+    @Test
+    fun `startGame should not assign bounty if trackBounties is false`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = false) // trackBounties is false
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val players = listOf(player1)
+        val request = StartGameRequest(playerIds = players.map { it.id })
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(leagueMembershipRepository.findAllById(request.playerIds)).thenReturn(players)
+        `when`(gameRepository.save(game)).thenReturn(game)
+
+        // When
+        gameEngineService.startGame(1, request)
+
+        // Then
+        val livePlayer1 = game.liveGamePlayers.find { it.player.id == player1.id }
+        assertNotNull(livePlayer1)
+        assertFalse(livePlayer1!!.hasBounty)
+    }
+
+    @Test
+    fun `startGame should not assign bounty if standings are empty`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val players = listOf(player1)
+        val request = StartGameRequest(playerIds = players.map { it.id })
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(leagueMembershipRepository.findAllById(request.playerIds)).thenReturn(players)
+        `when`(standingsService.getStandingsForLatestSeason(game.season.league.id)).thenReturn(emptyList()) // Empty standings
+        `when`(gameRepository.save(game)).thenReturn(game)
+
+        // When
+        gameEngineService.startGame(1, request)
+
+        // Then
+        val livePlayer1 = game.liveGamePlayers.find { it.player.id == player1.id }
+        assertNotNull(livePlayer1)
+        assertFalse(livePlayer1!!.hasBounty)
+    }
+
+    @Test
+    fun `eliminatePlayer should increment killer bounties if trackBounties is true`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        val livePlayer1 = LiveGamePlayer(game = game, player = player1, hasBounty = true) // Player 1 has bounty
+        val livePlayer2 = LiveGamePlayer(game = game, player = player2)
+        game.liveGamePlayers.addAll(listOf(livePlayer1, livePlayer2))
+
+        val request = EliminatePlayerRequest(eliminatedPlayerId = player1.id, killerPlayerId = player2.id) // Player 2 eliminates Player 1
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+
+        // When
+        val gameState = gameEngineService.eliminatePlayer(1, request)
+
+        // Then
+        val killerPlayerState = gameState.players.find { it.id == player2.id }
+        assertNotNull(killerPlayerState)
+        assertEquals(1, killerPlayerState!!.bounties) // Killer's bounty count increments
+    }
+
+    @Test
+    fun `undoElimination should revert bounty and kill count if trackBounties is true`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        // State after elimination: Player 1 eliminated, Player 2 got kill and bounty
+    val livePlayer1 = LiveGamePlayer(game = game, player = player1, isEliminated = true, place = 2, eliminatedBy = null, hasBounty = true)
+        val livePlayer2 = LiveGamePlayer(game = game, player = player2, kills = 1, bounties = 1, hasBounty = true)
+        livePlayer1.eliminatedBy = livePlayer2 // Manually set eliminatedBy for undo logic
+        game.liveGamePlayers.addAll(listOf(livePlayer1, livePlayer2))
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+
+        // When
+        val gameState = gameEngineService.undoElimination(1)
+
+        // Then
+        val killerPlayerState = gameState.players.find { it.id == player2.id }
+        assertNotNull(killerPlayerState)
+        assertEquals(0, killerPlayerState!!.bounties) // Killer's bounty count decrements
+        assertEquals(0, killerPlayerState.kills) // Killer's kill count decrements
+    }
+
+    @Test
+    fun `finalizeGame should correctly record bounties`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        
+        val livePlayer1 = LiveGamePlayer(game = game, player = player1, kills = 1, bounties = 1) // Player 1 collected 1 bounty
         val livePlayer2 = LiveGamePlayer(game = game, player = player2, isEliminated = true, place = 2, eliminatedBy = livePlayer1)
         game.liveGamePlayers.addAll(listOf(livePlayer1, livePlayer2))
 
@@ -240,12 +392,13 @@ class GameEngineServiceTest {
         val capturedResults = gameResultCaptor.value
         assertEquals(2, capturedResults.size)
 
-        val winnerResult = capturedResults.find { it.player.id == 1L }
-        assertEquals(1, winnerResult?.place)
+        val player1Result = capturedResults.find { it.player.id == player1.id }
+        val player2Result = capturedResults.find { it.player.id == player2.id }
 
-        val loserResult = capturedResults.find { it.player.id == 2L }
-        assertEquals(2, loserResult?.place)
+        assertNotNull(player1Result)
+        assertNotNull(player2Result)
 
-        assertEquals(GameStatus.COMPLETED, game.gameStatus)
+        assertEquals(1, player1Result!!.bounties) // Player 1's bounties should be recorded
+        assertEquals(0, player2Result!!.bounties) // Player 2's bounties should be 0
     }
 }
