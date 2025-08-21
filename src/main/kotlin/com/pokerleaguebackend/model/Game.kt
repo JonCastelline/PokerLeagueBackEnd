@@ -33,7 +33,6 @@ data class Game(
     var gameDate: Date,
     var gameTime: Time,
     var gameLocation: String? = null,
-    val scheduledDate: Date? = null,
 
     @Enumerated(EnumType.STRING)
     var gameStatus: GameStatus = GameStatus.SCHEDULED,

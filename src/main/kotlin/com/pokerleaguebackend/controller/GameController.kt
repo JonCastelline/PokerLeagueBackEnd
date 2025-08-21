@@ -37,7 +37,7 @@ class GameController(
         @PathVariable seasonId: Long,
         @RequestBody request: CreateGameRequest,
         principal: Principal
-    ): ResponseEntity<*> {
+    ): ResponseEntity<Any> {
         return try {
             val newGame = gameService.createGame(seasonId, request, playerAccountRepository.findByEmail(principal.name)?.id ?: throw AccessDeniedException("Player not found"))
             ResponseEntity.ok(newGame)
@@ -53,7 +53,7 @@ class GameController(
         @PathVariable gameId: Long,
         @RequestBody request: CreateGameRequest,
         principal: Principal
-    ): ResponseEntity<*> {
+    ): ResponseEntity<Any> {
         return try {
             val updatedGame = gameService.updateGame(seasonId, gameId, request, playerAccountRepository.findByEmail(principal.name)?.id ?: throw AccessDeniedException("Player not found"))
             ResponseEntity.ok(updatedGame)
@@ -106,12 +106,7 @@ class GameController(
         return ResponseEntity.ok(games)
     }
 
-    @GetMapping("/seasons/{seasonId}/scheduled-games")
-    @PreAuthorize("@leagueService.isLeagueMember(#seasonId, principal.username)")
-    fun getScheduledGames(@PathVariable seasonId: Long): ResponseEntity<List<Game>> {
-        val games = gameService.getScheduledGames(seasonId)
-        return ResponseEntity.ok(games)
-    }
+    
 
     @GetMapping("/games/{gameId}/live")
     @PreAuthorize("@leagueService.isLeagueMemberByGame(#gameId, principal.username)")

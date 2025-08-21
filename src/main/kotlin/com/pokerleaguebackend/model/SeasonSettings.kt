@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.model
 
 import com.fasterxml.jackson.annotation.JsonManagedReference
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -23,6 +24,7 @@ data class SeasonSettings(
 
     @OneToOne
     @JoinColumn(name = "season_id", referencedColumnName = "id")
+    @JsonIgnore // Added to break circular reference during JSON serialization
     var season: Season,
 
     var trackKills: Boolean = false,

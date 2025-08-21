@@ -165,7 +165,5 @@ class GameService(
         return gameRepository.findAllBySeasonId(seasonId)
     }
 
-    fun getScheduledGames(seasonId: Long): List<Game> {
-        return gameRepository.findAllBySeasonIdAndScheduledDateIsNotNull(seasonId)
-    }
+    
 }
