@@ -49,6 +49,9 @@ class GameEngineServiceTest {
     @Mock
     private lateinit var gameResultRepository: GameResultRepository
 
+    @Mock
+    private lateinit var standingsService: StandingsService
+
     @InjectMocks
     private lateinit var gameEngineService: GameEngineService
 

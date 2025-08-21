@@ -24,7 +24,9 @@ data class PlayerStateDto(
     val isPlaying: Boolean,
     val isEliminated: Boolean,
     val place: Int?,
-    val kills: Int
+    val kills: Int,
+    val bounties: Int, // Number of bounties collected by this player
+    val hasBounty: Boolean // True if this player has a bounty on their head
 )
 
 data class GameSettingsDto(

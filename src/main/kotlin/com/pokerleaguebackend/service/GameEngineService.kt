@@ -22,7 +22,8 @@ class GameEngineService(
     private val gameRepository: GameRepository,
     private val seasonSettingsRepository: SeasonSettingsRepository,
     private val leagueMembershipRepository: LeagueMembershipRepository,
-    private val gameResultRepository: GameResultRepository
+    private val gameResultRepository: GameResultRepository,
+    private val standingsService: StandingsService
 ) {
 
     fun getGameState(gameId: Long): GameStateResponse {
@@ -52,7 +53,9 @@ class GameEngineService(
                 isPlaying = livePlayer.isPlaying,
                 isEliminated = livePlayer.isEliminated,
                 place = livePlayer.place,
-                kills = livePlayer.kills
+                kills = livePlayer.kills,
+                bounties = livePlayer.bounties,
+                hasBounty = livePlayer.hasBounty
             )
         }
 
@@ -84,12 +87,27 @@ class GameEngineService(
 
         val players = leagueMembershipRepository.findAllById(request.playerIds)
 
+        // Determine initial bounty holder(s)
+        val initialBountyHolders = if (seasonSettings.trackBounties) {
+            val standings = standingsService.getStandingsForLatestSeason(game.season.league.id)
+            if (standings.isNotEmpty()) {
+                val maxPoints = standings.maxOf { it.totalPoints }
+                standings.filter { it.totalPoints == maxPoints }.map { it.playerId }
+            } else {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+
         game.liveGamePlayers.clear()
         players.forEach { player ->
+            val hasBounty = initialBountyHolders.contains(player.id)
             game.liveGamePlayers.add(
                 LiveGamePlayer(
                     game = game,
-                    player = player
+                    player = player,
+                    hasBounty = hasBounty // Set hasBounty based on initial calculation
                 )
             )
         }
@@ -161,6 +179,15 @@ class GameEngineService(
 
         killerPlayer.kills++
 
+        val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
+            ?: throw EntityNotFoundException("SeasonSettings not found for season id: ${game.season.id}")
+
+        if (seasonSettings.trackBounties && eliminatedPlayer.hasBounty) {
+            killerPlayer.bounties++
+            eliminatedPlayer.hasBounty = false // Remove bounty from eliminated player
+            killerPlayer.hasBounty = true // Transfer bounty to killer
+        }
+
         val updatedGame = gameRepository.save(game)
         return getGameState(updatedGame.id)
     }
@@ -178,7 +205,18 @@ class GameEngineService(
             .maxByOrNull { it.place ?: 0 }
             ?: throw IllegalStateException("No players have been eliminated yet.")
 
-        lastEliminated.eliminatedBy?.let { it.kills-- }
+        lastEliminated.eliminatedBy?.let { killer ->
+            killer.kills--
+            val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
+                ?: throw EntityNotFoundException("SeasonSettings not found for season id: ${game.season.id}")
+            if (seasonSettings.trackBounties) {
+                // If the killer had a bounty, it means they received it from the undone eliminated player
+                // So, remove bounty from killer and give it back to the undone eliminated player
+                killer.hasBounty = false
+                lastEliminated.hasBounty = true
+                killer.bounties--
+            }
+        }
 
         lastEliminated.isEliminated = false
         lastEliminated.place = null
@@ -209,7 +247,7 @@ class GameEngineService(
                 player = livePlayer.player,
                 place = livePlayer.place ?: 0, // Handle case where a player might not have a place
                 kills = livePlayer.kills,
-                bounties = 0, // Bounties not tracked in this epic
+                bounties = livePlayer.bounties, // Populate bounties from LiveGamePlayer
                 bountyPlacedOnPlayer = livePlayer.eliminatedBy?.player
             )
         }

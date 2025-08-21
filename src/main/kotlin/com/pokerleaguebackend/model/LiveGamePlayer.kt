@@ -30,6 +30,8 @@ data class LiveGamePlayer(
     var isEliminated: Boolean = false,
     var place: Int? = null,
     var kills: Int = 0,
+    var bounties: Int = 0, // Tracks bounties collected by this player
+    var hasBounty: Boolean = false, // Indicates if this player has a bounty on their head
 
     @ManyToOne
     @JoinColumn(name = "eliminated_by_player_id")
