@@ -6,7 +6,7 @@ import com.pokerleaguebackend.model.LeagueHomeContent
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.model.LeagueMembership
-import com.pokerleaguebackend.payload.LeagueHomeContentDto
+import com.pokerleaguebackend.payload.dto.LeagueHomeContentDto
 import com.pokerleaguebackend.repository.LeagueHomeContentRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository

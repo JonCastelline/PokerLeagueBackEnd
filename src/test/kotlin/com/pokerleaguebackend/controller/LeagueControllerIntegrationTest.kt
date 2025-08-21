@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
-import com.pokerleaguebackend.payload.CreateLeagueRequest
-import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
-import com.pokerleaguebackend.payload.UpdateLeagueMembershipStatusRequest
+import com.pokerleaguebackend.payload.request.CreateLeagueRequest
+import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipRoleRequest
+import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipStatusRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -32,8 +32,8 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 
-import com.pokerleaguebackend.payload.LeagueSettingsDto
-import com.pokerleaguebackend.payload.LeagueMembershipSettingsDto
+import com.pokerleaguebackend.payload.dto.LeagueSettingsDto
+import com.pokerleaguebackend.payload.dto.LeagueMembershipSettingsDto
 
 @SpringBootTest(classes = [com.pokerleaguebackend.PokerLeagueBackendApplication::class])
 @AutoConfigureMockMvc

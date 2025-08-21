@@ -1,6 +1,6 @@
 package com.pokerleaguebackend.controller
 
-import com.pokerleaguebackend.payload.PlayerStandingsDto
+import com.pokerleaguebackend.payload.dto.PlayerStandingsDto
 import com.pokerleaguebackend.service.LeagueService
 import com.pokerleaguebackend.service.StandingsService
 import org.springframework.http.ResponseEntity

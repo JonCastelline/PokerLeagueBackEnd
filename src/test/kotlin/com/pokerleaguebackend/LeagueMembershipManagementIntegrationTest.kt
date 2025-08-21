@@ -7,8 +7,8 @@ import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.model.Season
-import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
-import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
+import com.pokerleaguebackend.payload.request.TransferLeagueOwnershipRequest
+import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository

@@ -1,11 +1,11 @@
 package com.pokerleaguebackend.controller
 
-import com.pokerleaguebackend.payload.ApiResponse
+import com.pokerleaguebackend.payload.response.ApiResponse
 import com.pokerleaguebackend.model.PlayerAccount
-import com.pokerleaguebackend.payload.JwtAuthenticationResponse
-import com.pokerleaguebackend.payload.LoginRequest
-import com.pokerleaguebackend.payload.LoginResponse
-import com.pokerleaguebackend.payload.SignUpRequest
+import com.pokerleaguebackend.payload.response.JwtAuthenticationResponse
+import com.pokerleaguebackend.payload.request.LoginRequest
+import com.pokerleaguebackend.payload.response.LoginResponse
+import com.pokerleaguebackend.payload.request.SignUpRequest
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
 import org.springframework.http.HttpStatus

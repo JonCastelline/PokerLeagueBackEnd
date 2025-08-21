@@ -9,7 +9,7 @@ import com.pokerleaguebackend.model.PlacePoint
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.UserRole
-import com.pokerleaguebackend.payload.PlayerStandingsDto
+import com.pokerleaguebackend.payload.dto.PlayerStandingsDto
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository

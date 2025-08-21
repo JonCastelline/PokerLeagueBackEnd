@@ -2,8 +2,8 @@
 package com.pokerleaguebackend
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.pokerleaguebackend.payload.LoginRequest
-import com.pokerleaguebackend.payload.SignUpRequest
+import com.pokerleaguebackend.payload.request.LoginRequest
+import com.pokerleaguebackend.payload.request.SignUpRequest
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc

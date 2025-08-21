@@ -1,7 +1,7 @@
 package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.model.LeagueHomeContent
-import com.pokerleaguebackend.payload.LeagueHomeContentDto
+import com.pokerleaguebackend.payload.dto.LeagueHomeContentDto
 import com.pokerleaguebackend.service.LeagueHomeContentService
 import com.pokerleaguebackend.service.LeagueService
 import com.pokerleaguebackend.security.UserPrincipal

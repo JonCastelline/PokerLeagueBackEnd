@@ -1,13 +1,13 @@
 package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.model.League
-import com.pokerleaguebackend.payload.CreateLeagueRequest
-import com.pokerleaguebackend.payload.JoinLeagueRequest
-import com.pokerleaguebackend.payload.LeagueMembershipDto
-import com.pokerleaguebackend.payload.LeagueDto
-import com.pokerleaguebackend.payload.AddUnregisteredPlayerRequest
-import com.pokerleaguebackend.payload.TransferLeagueOwnershipRequest
-import com.pokerleaguebackend.payload.UpdateLeagueMembershipRoleRequest
+import com.pokerleaguebackend.payload.request.CreateLeagueRequest
+import com.pokerleaguebackend.payload.request.JoinLeagueRequest
+import com.pokerleaguebackend.payload.dto.LeagueMembershipDto
+import com.pokerleaguebackend.payload.dto.LeagueDto
+import com.pokerleaguebackend.payload.request.AddUnregisteredPlayerRequest
+import com.pokerleaguebackend.payload.request.TransferLeagueOwnershipRequest
+import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.LeagueService
 import com.pokerleaguebackend.exception.DuplicatePlayerException
@@ -22,11 +22,11 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import com.pokerleaguebackend.payload.UpdateLeagueMembershipStatusRequest
+import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipStatusRequest
 import org.springframework.web.bind.annotation.RestController
 
-import com.pokerleaguebackend.payload.LeagueSettingsDto
-import com.pokerleaguebackend.payload.LeagueMembershipSettingsDto
+import com.pokerleaguebackend.payload.dto.LeagueSettingsDto
+import com.pokerleaguebackend.payload.dto.LeagueMembershipSettingsDto
 
 @RestController
 @RequestMapping("/api/leagues")

@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.payload.response
 
 import com.pokerleaguebackend.model.GameStatus
+import com.pokerleaguebackend.payload.dto.BlindLevelDto
 
 data class GameStateResponse(
     val gameId: Long,
@@ -30,10 +31,4 @@ data class GameSettingsDto(
     val timerDurationMinutes: Int,
     val trackKills: Boolean,
     val trackBounties: Boolean
-)
-
-data class BlindLevelDto(
-    val level: Int,
-    val smallBlind: Int,
-    val bigBlind: Int
 )

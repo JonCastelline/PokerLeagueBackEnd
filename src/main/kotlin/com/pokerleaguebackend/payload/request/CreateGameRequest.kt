@@ -1,4 +1,4 @@
-package com.pokerleaguebackend.payload
+package com.pokerleaguebackend.payload.request
 
 import java.time.LocalDate
 import java.time.LocalTime

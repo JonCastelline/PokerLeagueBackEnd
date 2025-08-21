@@ -9,7 +9,7 @@ import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.SeasonSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository
-import com.pokerleaguebackend.payload.PlayerStandingsDto
+import com.pokerleaguebackend.payload.dto.PlayerStandingsDto
 import org.springframework.stereotype.Service
 import java.math.BigDecimal
 

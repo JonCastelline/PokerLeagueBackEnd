@@ -1,4 +1,4 @@
-package com.pokerleaguebackend.payload
+package com.pokerleaguebackend.payload.dto
 
 import java.math.BigDecimal
 

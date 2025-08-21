@@ -1,4 +1,4 @@
-package com.pokerleaguebackend.payload
+package com.pokerleaguebackend.payload.request
 
 data class LoginRequest(
     val email: String,

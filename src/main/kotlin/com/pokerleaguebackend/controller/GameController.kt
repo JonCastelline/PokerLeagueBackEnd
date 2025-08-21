@@ -2,9 +2,9 @@ package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.model.Game
 import com.pokerleaguebackend.model.GameResult
-import com.pokerleaguebackend.payload.CreateGameRequest
-import com.pokerleaguebackend.payload.EliminatePlayerRequest
-import com.pokerleaguebackend.payload.StartGameRequest
+import com.pokerleaguebackend.payload.request.CreateGameRequest
+import com.pokerleaguebackend.payload.request.EliminatePlayerRequest
+import com.pokerleaguebackend.payload.request.StartGameRequest
 import com.pokerleaguebackend.payload.response.GameStateResponse
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.service.GameEngineService

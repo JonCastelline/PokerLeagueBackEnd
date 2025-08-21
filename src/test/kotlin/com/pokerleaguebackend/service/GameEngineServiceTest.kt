@@ -10,8 +10,8 @@ import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.UserRole
-import com.pokerleaguebackend.payload.EliminatePlayerRequest
-import com.pokerleaguebackend.payload.StartGameRequest
+import com.pokerleaguebackend.payload.request.EliminatePlayerRequest
+import com.pokerleaguebackend.payload.request.StartGameRequest
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository

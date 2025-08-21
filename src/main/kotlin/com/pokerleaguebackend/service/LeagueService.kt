@@ -4,8 +4,8 @@ import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
-import com.pokerleaguebackend.payload.LeagueMembershipDto
-import com.pokerleaguebackend.payload.LeagueDto
+import com.pokerleaguebackend.payload.dto.LeagueMembershipDto
+import com.pokerleaguebackend.payload.dto.LeagueDto
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -23,8 +23,8 @@ import org.springframework.transaction.annotation.Transactional
 import java.util.Date
 import java.util.Calendar
 
-import com.pokerleaguebackend.payload.LeagueSettingsDto
-import com.pokerleaguebackend.payload.LeagueMembershipSettingsDto
+import com.pokerleaguebackend.payload.dto.LeagueSettingsDto
+import com.pokerleaguebackend.payload.dto.LeagueMembershipSettingsDto
 
 @Service
 class LeagueService(

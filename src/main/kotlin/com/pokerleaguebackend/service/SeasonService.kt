@@ -1,7 +1,7 @@
 package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.Season
-import com.pokerleaguebackend.payload.CreateSeasonRequest
+import com.pokerleaguebackend.payload.request.CreateSeasonRequest
 import com.pokerleaguebackend.model.UserRole
 import java.math.BigDecimal
 import java.util.Date
