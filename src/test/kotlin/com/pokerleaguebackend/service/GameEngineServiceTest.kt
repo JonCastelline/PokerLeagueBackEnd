@@ -475,4 +475,126 @@ class GameEngineServiceTest {
         assertFalse(livePlayer1!!.hasBounty)
         assertFalse(livePlayer2!!.hasBounty)
     }
+
+    @Test
+    fun `nextLevel should increment level index and reset timer`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val blindLevels = listOf(
+            com.pokerleaguebackend.model.BlindLevel(level = 1, smallBlind = 10, bigBlind = 20),
+            com.pokerleaguebackend.model.BlindLevel(level = 2, smallBlind = 20, bigBlind = 40)
+        )
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            currentLevelIndex = 0, timeRemainingInMillis = 5000L, timerStartTime = System.currentTimeMillis()
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+        `when`(standingsService.getStandingsForSeason(1)).thenReturn(emptyList())
+
+
+        // When
+        val gameState = gameEngineService.nextLevel(1)
+
+        // Then
+        assertEquals(1, gameState.timer.currentLevelIndex)
+        assertEquals(1200 * 1000L, gameState.timer.timeRemainingInMillis)
+        assertNotNull(gameState.timer.timerStartTime)
+    }
+
+    @Test
+    fun `previousLevel should decrement level index and reset timer`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val blindLevels = listOf(
+            com.pokerleaguebackend.model.BlindLevel(level = 1, smallBlind = 10, bigBlind = 20),
+            com.pokerleaguebackend.model.BlindLevel(level = 2, smallBlind = 20, bigBlind = 40)
+        )
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.PAUSED,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            currentLevelIndex = 1, timeRemainingInMillis = 5000L, timerStartTime = null
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+        `when`(standingsService.getStandingsForSeason(1)).thenReturn(emptyList())
+
+        // When
+        val gameState = gameEngineService.previousLevel(1)
+
+        // Then
+        assertEquals(0, gameState.timer.currentLevelIndex)
+        assertEquals(1200 * 1000L, gameState.timer.timeRemainingInMillis)
+        assertNull(gameState.timer.timerStartTime) // Should remain null as game was paused
+    }
+
+    @Test
+    fun `nextLevel_shouldDoNothingWhenAtMaxLevel`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val blindLevels = listOf(
+            com.pokerleaguebackend.model.BlindLevel(level = 1, smallBlind = 10, bigBlind = 20),
+            com.pokerleaguebackend.model.BlindLevel(level = 2, smallBlind = 20, bigBlind = 40)
+        )
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            currentLevelIndex = 1, // Already at max level (index 1)
+            timeRemainingInMillis = 5000L, 
+            timerStartTime = System.currentTimeMillis()
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+        `when`(standingsService.getStandingsForSeason(1)).thenReturn(emptyList())
+
+        // When
+        val gameState = gameEngineService.nextLevel(1)
+
+        // Then
+        assertEquals(1, gameState.timer.currentLevelIndex) // Should not change
+        assertEquals(5000L, gameState.timer.timeRemainingInMillis) // Should not change
+    }
+
+    @Test
+    fun `previousLevel_shouldDoNothingWhenAtFirstLevel`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val blindLevels = listOf(
+            com.pokerleaguebackend.model.BlindLevel(level = 1, smallBlind = 10, bigBlind = 20)
+        )
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            currentLevelIndex = 0, // Already at first level
+            timeRemainingInMillis = 3000L, 
+            timerStartTime = System.currentTimeMillis()
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+        `when`(standingsService.getStandingsForSeason(1)).thenReturn(emptyList())
+
+        // When
+        val gameState = gameEngineService.previousLevel(1)
+
+        // Then
+        assertEquals(0, gameState.timer.currentLevelIndex) // Should not change
+        assertEquals(3000L, gameState.timer.timeRemainingInMillis) // Should not change
+    }
 }
