@@ -401,4 +401,78 @@ class GameEngineServiceTest {
         assertEquals(1, player1Result!!.bounties) // Player 1's bounties should be recorded
         assertEquals(0, player2Result!!.bounties) // Player 2's bounties should be 0
     }
+
+    @Test
+    fun `getGameState_shouldIncludePlayerRanks`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
+
+        val standings = listOf(
+            PlayerStandingsDto(playerId = 1, displayName = "Player 1", iconUrl = null, totalPoints = BigDecimal.TEN, totalKills = 0, totalBounties = 0, gamesPlayed = 1, rank = 1),
+            PlayerStandingsDto(playerId = 2, displayName = "Player 2", iconUrl = null, totalPoints = BigDecimal.ONE, totalKills = 0, totalBounties = 0, gamesPlayed = 1, rank = 2)
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(standingsService.getStandingsForSeason(1)).thenReturn(standings)
+
+        // When
+        val gameState = gameEngineService.getGameState(1)
+
+        // Then
+        val player1State = gameState.players.find { it.id == 1L }
+        val player2State = gameState.players.find { it.id == 2L }
+
+        assertNotNull(player1State)
+        assertEquals(1, player1State!!.rank)
+        assertNotNull(player2State)
+        assertEquals(2, player2State!!.rank)
+    }
+
+    @Test
+    fun `startGame_shouldNotAssignBountyIfAllPlayersHaveZeroPoints`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        val players = listOf(player1, player2)
+        val request = StartGameRequest(playerIds = players.map { it.id })
+
+        val standings = listOf(
+            PlayerStandingsDto(playerId = player1.id, displayName = "Player 1", iconUrl = null, totalPoints = BigDecimal.ZERO, totalKills = 0, totalBounties = 0, gamesPlayed = 0),
+            PlayerStandingsDto(playerId = player2.id, displayName = "Player 2", iconUrl = null, totalPoints = BigDecimal.ZERO, totalKills = 0, totalBounties = 0, gamesPlayed = 0)
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(leagueMembershipRepository.findAllById(request.playerIds)).thenReturn(players)
+        `when`(standingsService.getStandingsForLatestSeason(game.season.league.id)).thenReturn(standings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+
+        // When
+        gameEngineService.startGame(1, request)
+
+        // Then
+        val livePlayer1 = game.liveGamePlayers.find { it.player.id == player1.id }
+        val livePlayer2 = game.liveGamePlayers.find { it.player.id == player2.id }
+
+        assertNotNull(livePlayer1)
+        assertNotNull(livePlayer2)
+        assertFalse(livePlayer1!!.hasBounty)
+        assertFalse(livePlayer2!!.hasBounty)
+    }
 }

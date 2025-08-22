@@ -33,6 +33,10 @@ class GameEngineService(
         val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
             ?: throw EntityNotFoundException("SeasonSettings not found for season id: ${game.season.id}")
 
+        // Get standings to map player ranks
+        val standings = standingsService.getStandingsForSeason(game.season.id)
+        val playerRanks = standings.associate { it.playerId to it.rank }
+
         val timerState = TimerStateDto(
             timerStartTime = game.timerStartTime,
             timeRemainingInMillis = game.timeRemainingInMillis,
@@ -50,6 +54,7 @@ class GameEngineService(
             PlayerStateDto(
                 id = livePlayer.player.id,
                 displayName = livePlayer.player.displayName ?: "Unnamed Player",
+                rank = playerRanks[livePlayer.player.id],
                 isPlaying = livePlayer.isPlaying,
                 isEliminated = livePlayer.isEliminated,
                 place = livePlayer.place,
@@ -92,7 +97,11 @@ class GameEngineService(
             val standings = standingsService.getStandingsForLatestSeason(game.season.league.id)
             if (standings.isNotEmpty()) {
                 val maxPoints = standings.maxOf { it.totalPoints }
-                standings.filter { it.totalPoints == maxPoints }.map { it.playerId }
+                if (maxPoints > java.math.BigDecimal.ZERO) {
+                    standings.filter { it.totalPoints == maxPoints }.map { it.playerId }
+                } else {
+                    emptyList()
+                }
             } else {
                 emptyList()
             }

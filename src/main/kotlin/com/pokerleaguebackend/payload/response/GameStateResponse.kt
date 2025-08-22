@@ -21,6 +21,7 @@ data class TimerStateDto(
 data class PlayerStateDto(
     val id: Long, // This is the LeagueMembershipId
     val displayName: String,
+    val rank: Int?,
     val isPlaying: Boolean,
     val isEliminated: Boolean,
     val place: Int?,
