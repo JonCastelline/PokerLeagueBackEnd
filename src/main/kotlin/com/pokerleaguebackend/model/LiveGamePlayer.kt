@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.model
 
 import com.fasterxml.jackson.annotation.JsonBackReference
+import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
 import jakarta.persistence.Id
@@ -35,5 +36,6 @@ data class LiveGamePlayer(
 
     @ManyToOne
     @JoinColumn(name = "eliminated_by_player_id")
+    @JsonIgnore
     var eliminatedBy: LiveGamePlayer? = null
 )

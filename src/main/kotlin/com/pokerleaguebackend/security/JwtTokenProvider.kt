@@ -57,13 +57,12 @@ class JwtTokenProvider {
         return claims.subject
     }
 
-    fun validateToken(authToken: String): Boolean {
+    fun validateToken(authToken: String) {
         try {
             Jwts.parserBuilder().setSigningKey(getSecretKey()).build().parseClaimsJws(authToken)
-            return true
         } catch (ex: Exception) {
             logger.error("Invalid JWT token", ex)
+            throw ex // Re-throw the exception to be handled by the filter
         }
-        return false
     }
 }
