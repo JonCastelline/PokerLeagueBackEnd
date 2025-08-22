@@ -150,6 +150,20 @@ class GameController(
         return ResponseEntity.ok(gameState)
     }
 
+    @PostMapping("/games/{gameId}/live/next-level")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun nextLevel(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.nextLevel(gameId)
+        return ResponseEntity.ok(gameState)
+    }
+
+    @PostMapping("/games/{gameId}/live/previous-level")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun previousLevel(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.previousLevel(gameId)
+        return ResponseEntity.ok(gameState)
+    }
+
     @PostMapping("/games/{gameId}/live/finalize")
     @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
     fun finalizeGame(@PathVariable gameId: Long): ResponseEntity<Void> {

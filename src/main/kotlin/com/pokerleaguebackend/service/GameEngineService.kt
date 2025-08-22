@@ -229,6 +229,53 @@ class GameEngineService(
         return getGameState(updatedGame.id)
     }
 
+    fun nextLevel(gameId: Long): GameStateResponse {
+        val game = gameRepository.findById(gameId)
+            .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
+
+        if (game.gameStatus != GameStatus.IN_PROGRESS && game.gameStatus != GameStatus.PAUSED) {
+            throw IllegalStateException("Game is not active.")
+        }
+
+        val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
+            ?: throw EntityNotFoundException("SeasonSettings not found for season id: ${game.season.id}")
+
+        val maxLevel = seasonSettings.blindLevels.size - 1
+        if ((game.currentLevelIndex ?: 0) < maxLevel) {
+            game.currentLevelIndex = (game.currentLevelIndex ?: 0) + 1
+            game.timeRemainingInMillis = seasonSettings.durationSeconds * 1000L
+            if (game.gameStatus == GameStatus.IN_PROGRESS) {
+                game.timerStartTime = System.currentTimeMillis()
+            }
+        }
+
+        val updatedGame = gameRepository.save(game)
+        return getGameState(updatedGame.id)
+    }
+
+    fun previousLevel(gameId: Long): GameStateResponse {
+        val game = gameRepository.findById(gameId)
+            .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
+
+        if (game.gameStatus != GameStatus.IN_PROGRESS && game.gameStatus != GameStatus.PAUSED) {
+            throw IllegalStateException("Game is not active.")
+        }
+
+        val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
+            ?: throw EntityNotFoundException("SeasonSettings not found for season id: ${game.season.id}")
+
+        if ((game.currentLevelIndex ?: 0) > 0) {
+            game.currentLevelIndex = (game.currentLevelIndex ?: 0) - 1
+            game.timeRemainingInMillis = seasonSettings.durationSeconds * 1000L
+            if (game.gameStatus == GameStatus.IN_PROGRESS) {
+                game.timerStartTime = System.currentTimeMillis()
+            }
+        }
+
+        val updatedGame = gameRepository.save(game)
+        return getGameState(updatedGame.id)
+    }
+
     fun finalizeGame(gameId: Long) {
         val game = gameRepository.findById(gameId)
             .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
