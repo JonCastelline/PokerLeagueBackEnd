@@ -1,3 +1,3 @@
-package com.pokerleaguebackend.payload
+package com.pokerleaguebackend.payload.request
 
 data class JoinLeagueRequest(val inviteCode: String)

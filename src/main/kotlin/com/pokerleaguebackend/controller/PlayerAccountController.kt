@@ -1,7 +1,7 @@
 package com.pokerleaguebackend.controller
 
-import com.pokerleaguebackend.payload.PasswordChangeDto
-import com.pokerleaguebackend.payload.PlayerAccountDetailsDto
+import com.pokerleaguebackend.payload.dto.PasswordChangeDto
+import com.pokerleaguebackend.payload.dto.PlayerAccountDetailsDto
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.PlayerAccountService
 import org.springframework.http.ResponseEntity

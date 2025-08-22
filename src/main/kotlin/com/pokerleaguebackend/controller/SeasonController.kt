@@ -1,7 +1,7 @@
 package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.model.Season
-import com.pokerleaguebackend.payload.CreateSeasonRequest
+import com.pokerleaguebackend.payload.request.CreateSeasonRequest
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.SeasonService
 import org.springframework.beans.factory.annotation.Autowired

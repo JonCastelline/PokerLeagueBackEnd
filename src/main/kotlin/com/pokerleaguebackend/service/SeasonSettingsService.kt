@@ -5,7 +5,7 @@ import com.pokerleaguebackend.model.BountyOnLeaderAbsenceRule
 import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.PlacePoint
 import com.pokerleaguebackend.model.Season
-import com.pokerleaguebackend.payload.SeasonSettingsDto
+import com.pokerleaguebackend.payload.dto.SeasonSettingsDto
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.SeasonSettingsRepository
 import com.pokerleaguebackend.repository.SeasonRepository

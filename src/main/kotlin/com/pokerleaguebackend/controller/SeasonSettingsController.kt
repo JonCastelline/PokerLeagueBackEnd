@@ -1,7 +1,7 @@
 package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.model.SeasonSettings
-import com.pokerleaguebackend.payload.SeasonSettingsDto
+import com.pokerleaguebackend.payload.dto.SeasonSettingsDto
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.SeasonSettingsService
 import org.springframework.http.HttpStatus

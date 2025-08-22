@@ -8,7 +8,7 @@ import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.UserRole
-import com.pokerleaguebackend.payload.CreateGameRequest
+import com.pokerleaguebackend.payload.request.CreateGameRequest
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
@@ -281,29 +281,6 @@ class GameControllerIntegrationTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$[0].gameName").value("History Game 1"))
             .andExpect(jsonPath("$[1].gameName").value("History Game 2"))
-    }
-
-    @Test
-    fun `getScheduledGames should return scheduled games for season member`() {
-        gameRepository.save(Game(
-            gameName = "Scheduled Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
-            scheduledDate = Date(),
-            season = testSeason
-        ))
-        gameRepository.save(Game(
-            gameName = "Unscheduled Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
-            season = testSeason
-        ))
-
-        mockMvc.perform(get("/api/seasons/${testSeason.id}/scheduled-games")
-            .header("Authorization", "Bearer $regularUserToken"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.length()").value(1))
-            .andExpect(jsonPath("$[0].gameName").value("Scheduled Game 1"))
     }
 
     @Test

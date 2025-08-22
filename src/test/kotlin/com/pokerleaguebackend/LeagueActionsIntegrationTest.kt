@@ -2,8 +2,8 @@
 package com.pokerleaguebackend
 
 import com.pokerleaguebackend.model.PlayerAccount
-import com.pokerleaguebackend.payload.CreateLeagueRequest
-import com.pokerleaguebackend.payload.JoinLeagueRequest
+import com.pokerleaguebackend.payload.request.CreateLeagueRequest
+import com.pokerleaguebackend.payload.request.JoinLeagueRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository

@@ -1,4 +1,4 @@
-package com.pokerleaguebackend.payload
+package com.pokerleaguebackend.payload.response
 
 data class LoginResponse(
     val accessToken: String,

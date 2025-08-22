@@ -2,7 +2,7 @@ package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.Game
 import com.pokerleaguebackend.model.GameResult
-import com.pokerleaguebackend.payload.CreateGameRequest
+import com.pokerleaguebackend.payload.request.CreateGameRequest
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
@@ -165,7 +165,5 @@ class GameService(
         return gameRepository.findAllBySeasonId(seasonId)
     }
 
-    fun getScheduledGames(seasonId: Long): List<Game> {
-        return gameRepository.findAllBySeasonIdAndScheduledDateIsNotNull(seasonId)
-    }
+    
 }

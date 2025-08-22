@@ -1,8 +1,8 @@
 package com.pokerleaguebackend.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.pokerleaguebackend.payload.PasswordChangeDto
-import com.pokerleaguebackend.payload.PlayerAccountDetailsDto
+import com.pokerleaguebackend.payload.dto.PasswordChangeDto
+import com.pokerleaguebackend.payload.dto.PlayerAccountDetailsDto
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.security.JwtTokenProvider

@@ -1,4 +1,4 @@
-package com.pokerleaguebackend.payload
+package com.pokerleaguebackend.payload.request
 
 import com.pokerleaguebackend.model.UserRole
 

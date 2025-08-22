@@ -5,7 +5,7 @@ import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.LeagueMembership
-import com.pokerleaguebackend.payload.CreateSeasonRequest
+import com.pokerleaguebackend.payload.request.CreateSeasonRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository

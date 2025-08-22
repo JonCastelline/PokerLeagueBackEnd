@@ -1,7 +1,7 @@
 package com.pokerleaguebackend.service
 
-import com.pokerleaguebackend.payload.PasswordChangeDto
-import com.pokerleaguebackend.payload.PlayerAccountDetailsDto
+import com.pokerleaguebackend.payload.dto.PasswordChangeDto
+import com.pokerleaguebackend.payload.dto.PlayerAccountDetailsDto
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import org.springframework.security.crypto.password.PasswordEncoder

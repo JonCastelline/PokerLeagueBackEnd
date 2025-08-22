@@ -1,4 +1,4 @@
-package com.pokerleaguebackend.payload
+package com.pokerleaguebackend.payload.request
 
 data class SignUpRequest(
     val firstName: String,

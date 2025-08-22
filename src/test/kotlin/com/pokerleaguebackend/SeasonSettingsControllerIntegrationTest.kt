@@ -7,9 +7,9 @@ import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.LeagueMembership
-import com.pokerleaguebackend.payload.BlindLevelDto
-import com.pokerleaguebackend.payload.SeasonSettingsDto
-import com.pokerleaguebackend.payload.PlacePointDto
+import com.pokerleaguebackend.payload.dto.BlindLevelDto
+import com.pokerleaguebackend.payload.dto.SeasonSettingsDto
+import com.pokerleaguebackend.payload.dto.PlacePointDto
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.SeasonSettingsRepository

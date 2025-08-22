@@ -1,5 +1,5 @@
 
-package com.pokerleaguebackend.payload
+package com.pokerleaguebackend.payload.request
 
 import java.util.Date
 
