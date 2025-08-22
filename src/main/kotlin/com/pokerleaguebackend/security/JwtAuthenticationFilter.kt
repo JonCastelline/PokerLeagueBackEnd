@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.security
 
 import com.pokerleaguebackend.service.CustomUserDetailsService
+import io.jsonwebtoken.ExpiredJwtException
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -27,7 +28,8 @@ class JwtAuthenticationFilter(
     ) {
         try {
             getJwtFromRequest(request)?.let { jwt ->
-                if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+                if (StringUtils.hasText(jwt)) {
+                    tokenProvider.validateToken(jwt)
                     val userEmail = tokenProvider.getEmailFromJWT(jwt)
                     val userDetails = customUserDetailsService.loadUserByUsername(userEmail)
                     val authentication = UsernamePasswordAuthenticationToken(userDetails, null, userDetails.authorities)
@@ -36,11 +38,18 @@ class JwtAuthenticationFilter(
                     SecurityContextHolder.getContext().authentication = authentication
                 }
             }
+            filterChain.doFilter(request, response)
+        } catch (ex: ExpiredJwtException) {
+            jwtLogger.error("Expired JWT token: {}", ex.message)
+            response.status = HttpServletResponse.SC_UNAUTHORIZED
+            response.writer.write("{\"error\": \"Expired JWT token\"}")
+            return
         } catch (ex: Exception) {
-            jwtLogger.error("Could not set user authentication in security context", ex)
+            jwtLogger.error("Authentication error: {}", ex.message)
+            response.status = HttpServletResponse.SC_UNAUTHORIZED
+            response.writer.write("{\"error\": \"Invalid Token\"}")
+            return
         }
-
-        filterChain.doFilter(request, response)
     }
 
     private fun getJwtFromRequest(request: HttpServletRequest): String? {
