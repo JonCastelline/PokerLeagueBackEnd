@@ -46,8 +46,6 @@ class JwtAuthenticationFilter(
             return
         } catch (ex: Exception) {
             jwtLogger.error("Authentication error: {}", ex.message)
-            // For other exceptions, you might want a more generic message
-            // or specific handling for different exception types.
             response.status = HttpServletResponse.SC_UNAUTHORIZED
             response.writer.write("{\"error\": \"Invalid Token\"}")
             return
