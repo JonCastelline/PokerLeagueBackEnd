@@ -55,6 +55,7 @@ class GameEngineService(
             PlayerStateDto(
                 id = livePlayer.player.id,
                 displayName = livePlayer.player.displayName ?: "Unnamed Player",
+                iconUrl = livePlayer.player.iconUrl,
                 rank = playerRanks[livePlayer.player.id],
                 isPlaying = livePlayer.isPlaying,
                 isEliminated = livePlayer.isEliminated,
