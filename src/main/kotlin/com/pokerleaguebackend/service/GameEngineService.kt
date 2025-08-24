@@ -5,6 +5,7 @@ import com.pokerleaguebackend.model.GameStatus
 import com.pokerleaguebackend.model.LiveGamePlayer
 import com.pokerleaguebackend.payload.request.EliminatePlayerRequest
 import com.pokerleaguebackend.payload.request.StartGameRequest
+import com.pokerleaguebackend.payload.request.UpdateGameResultsRequest
 import com.pokerleaguebackend.payload.response.GameStateResponse
 import com.pokerleaguebackend.payload.response.TimerStateDto
 import com.pokerleaguebackend.payload.response.PlayerStateDto
@@ -269,6 +270,30 @@ class GameEngineService(
             game.timeRemainingInMillis = seasonSettings.durationSeconds * 1000L
             if (game.gameStatus == GameStatus.IN_PROGRESS) {
                 game.timerStartTime = System.currentTimeMillis()
+            }
+        }
+
+        val updatedGame = gameRepository.save(game)
+        return getGameState(updatedGame.id)
+    }
+
+    fun updateGameResults(gameId: Long, request: UpdateGameResultsRequest): GameStateResponse {
+        val game = gameRepository.findById(gameId)
+            .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
+
+        if (game.gameStatus == GameStatus.COMPLETED) {
+            throw IllegalStateException("Cannot update results for a completed game.")
+        }
+
+        val resultsMap = request.results.associateBy { it.playerId }
+
+        game.liveGamePlayers.forEach { livePlayer ->
+            resultsMap[livePlayer.player.id]?.let { result ->
+                livePlayer.place = result.place
+                livePlayer.kills = result.kills
+                livePlayer.bounties = result.bounties
+                // If a player is assigned a place, they are considered eliminated for sorting purposes
+                livePlayer.isEliminated = result.place > 0
             }
         }
 
