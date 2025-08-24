@@ -39,7 +39,7 @@ data class SeasonSettings(
     var enableAttendancePoints: Boolean = false,
     var attendancePoints: BigDecimal = BigDecimal.ZERO,
     var startingStack: Int = 1500,
-    var warningSoundEnabled: Boolean = true,
+    var warningSoundEnabled: Boolean = false,
     var warningSoundTimeSeconds: Int = 60,
 
     @OneToMany(mappedBy = "seasonSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
