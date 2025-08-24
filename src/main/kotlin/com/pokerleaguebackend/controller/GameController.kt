@@ -5,6 +5,7 @@ import com.pokerleaguebackend.model.GameResult
 import com.pokerleaguebackend.payload.request.CreateGameRequest
 import com.pokerleaguebackend.payload.request.EliminatePlayerRequest
 import com.pokerleaguebackend.payload.request.StartGameRequest
+import com.pokerleaguebackend.payload.request.UpdateGameResultsRequest
 import com.pokerleaguebackend.payload.response.GameStateResponse
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.service.GameEngineService
@@ -161,6 +162,16 @@ class GameController(
     @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
     fun previousLevel(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.previousLevel(gameId)
+        return ResponseEntity.ok(gameState)
+    }
+
+    @PutMapping("/games/{gameId}/live/results")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun updateGameResults(
+        @PathVariable gameId: Long,
+        @RequestBody request: UpdateGameResultsRequest
+    ): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.updateGameResults(gameId, request)
         return ResponseEntity.ok(gameState)
     }
 

@@ -597,4 +597,50 @@ class GameEngineServiceTest {
         assertEquals(0, gameState.timer.currentLevelIndex) // Should not change
         assertEquals(3000L, gameState.timer.timeRemainingInMillis) // Should not change
     }
+
+    @Test
+    fun `updateGameResults should update player stats`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+        )
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1, place = 1, kills = 1, bounties = 1))
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2, place = 2, kills = 0, bounties = 0))
+
+        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+            results = listOf(
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 2, kills = 0, bounties = 0),
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 1, kills = 1, bounties = 1)
+            )
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(gameRepository.save(game)).thenReturn(game)
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season))
+        `when`(standingsService.getStandingsForSeason(1)).thenReturn(emptyList())
+
+        // When
+        val gameState = gameEngineService.updateGameResults(1, request)
+
+        // Then
+        val player1State = gameState.players.find { it.id == 1L }
+        val player2State = gameState.players.find { it.id == 2L }
+
+        assertNotNull(player1State)
+        assertEquals(2, player1State!!.place)
+        assertEquals(0, player1State.kills)
+        assertEquals(0, player1State.bounties)
+
+        assertNotNull(player2State)
+        assertEquals(1, player2State!!.place)
+        assertEquals(1, player2State.kills)
+        assertEquals(1, player2State.bounties)
+    }
 }
