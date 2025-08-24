@@ -34,5 +34,7 @@ data class PlayerStateDto(
 data class GameSettingsDto(
     val timerDurationMinutes: Int,
     val trackKills: Boolean,
-    val trackBounties: Boolean
+    val trackBounties: Boolean,
+    val warningSoundEnabled: Boolean,
+    val warningSoundTimeSeconds: Int
 )

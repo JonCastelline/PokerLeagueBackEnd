@@ -69,7 +69,9 @@ class GameEngineService(
         val gameSettings = GameSettingsDto(
             timerDurationMinutes = seasonSettings.durationSeconds / 60,
             trackKills = seasonSettings.trackKills,
-            trackBounties = seasonSettings.trackBounties
+            trackBounties = seasonSettings.trackBounties,
+            warningSoundEnabled = seasonSettings.warningSoundEnabled,
+            warningSoundTimeSeconds = seasonSettings.warningSoundTimeSeconds
         )
 
         return GameStateResponse(
