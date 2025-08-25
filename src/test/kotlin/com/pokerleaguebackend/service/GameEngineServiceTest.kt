@@ -230,8 +230,8 @@ class GameEngineServiceTest {
         val request = StartGameRequest(playerIds = players.map { it.id })
 
         val standings = listOf(
-            PlayerStandingsDto(playerId = player1.id, displayName = "Player 1", iconUrl = null, totalPoints = BigDecimal("100.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 0),
-            PlayerStandingsDto(playerId = player2.id, displayName = "Player 2", iconUrl = null, totalPoints = BigDecimal("50.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 0)
+            PlayerStandingsDto(seasonId = season.id, playerId = player1.id, displayName = "Player 1", iconUrl = null, totalPoints = BigDecimal("100.0"), placePointsEarned = BigDecimal("0.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 0),
+            PlayerStandingsDto(seasonId = season.id, playerId = player2.id, displayName = "Player 2", iconUrl = null, totalPoints = BigDecimal("50.0"), placePointsEarned = BigDecimal("0.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 0)
         )
 
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
@@ -417,8 +417,8 @@ class GameEngineServiceTest {
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
 
         val standings = listOf(
-            PlayerStandingsDto(playerId = 1, displayName = "Player 1", iconUrl = null, totalPoints = BigDecimal.TEN, totalKills = 0, totalBounties = 0, gamesPlayed = 1, rank = 1),
-            PlayerStandingsDto(playerId = 2, displayName = "Player 2", iconUrl = null, totalPoints = BigDecimal.ONE, totalKills = 0, totalBounties = 0, gamesPlayed = 1, rank = 2)
+            PlayerStandingsDto(seasonId = season.id, playerId = 1, displayName = "Player 1", iconUrl = null, totalPoints = BigDecimal.TEN, placePointsEarned = BigDecimal("0.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 1, rank = 1),
+            PlayerStandingsDto(seasonId = season.id, playerId = 2, displayName = "Player 2", iconUrl = null, totalPoints = BigDecimal.ONE, placePointsEarned = BigDecimal("0.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 1, rank = 2)
         )
 
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
@@ -453,8 +453,8 @@ class GameEngineServiceTest {
         val request = StartGameRequest(playerIds = players.map { it.id })
 
         val standings = listOf(
-            PlayerStandingsDto(playerId = player1.id, displayName = "Player 1", iconUrl = null, totalPoints = BigDecimal.ZERO, totalKills = 0, totalBounties = 0, gamesPlayed = 0),
-            PlayerStandingsDto(playerId = player2.id, displayName = "Player 2", iconUrl = null, totalPoints = BigDecimal.ZERO, totalKills = 0, totalBounties = 0, gamesPlayed = 0)
+            PlayerStandingsDto(seasonId = season.id, playerId = player1.id, displayName = "Player 1", iconUrl = null, totalPoints = BigDecimal.ZERO, placePointsEarned = BigDecimal("0.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 0),
+            PlayerStandingsDto(seasonId = season.id, playerId = player2.id, displayName = "Player 2", iconUrl = null, totalPoints = BigDecimal.ZERO, placePointsEarned = BigDecimal("0.0"), totalKills = 0, totalBounties = 0, gamesPlayed = 0)
         )
 
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))

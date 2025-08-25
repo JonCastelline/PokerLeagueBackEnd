@@ -86,6 +86,8 @@ class StandingsServiceTest {
         val seasonSettings = SeasonSettings(
             id = 1L,
             season = season,
+            trackKills = true, // Explicitly enable kill tracking
+            trackBounties = true, // Explicitly enable bounty tracking
             killPoints = BigDecimal("1.0"),
             bountyPoints = BigDecimal("5.0"),
             enableAttendancePoints = true,
@@ -138,7 +140,7 @@ class StandingsServiceTest {
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val seasonSettings = SeasonSettings(id = 1L, season = season)
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
-        val player2 = PlayerAccount(id = 2L, email = "player2@example.com", password = "password", firstName = "Player", lastName = "Two")
+        val player2 = PlayerAccount(id = 2L, email = "player2@example.com", password = "password", firstName = "Test", lastName = "Two")
         val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
         val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, displayName = "Player Two", iconUrl = null, role = UserRole.PLAYER)
 
@@ -175,5 +177,226 @@ class StandingsServiceTest {
         val result = standingsService.getStandingsForSeason(seasonId)
 
         assertEquals(emptyList<Any>(), result)
+    }
+
+    @Test
+    fun `getStandingsForSeason does not add kill points if trackKills is false`() {
+        // Given
+        val seasonId = 1L
+        val leagueId = 1L
+        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val seasonSettings = SeasonSettings(
+            id = 1L,
+            season = season,
+            trackKills = false, // Kills tracking is OFF
+            killPoints = BigDecimal("1.0"),
+            bountyPoints = BigDecimal("5.0"),
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal("2.0")
+        )
+        seasonSettings.placePoints.addAll(listOf(
+            PlacePoint(place = 1, points = BigDecimal("10.0"), seasonSettings = seasonSettings)
+        ))
+
+        val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
+        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
+
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val gameResults = listOf(
+            GameResult(game = game1, player = membership1, place = 1, kills = 5, bounties = 0, bountyPlacedOnPlayer = null) // Player has kills
+        )
+
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
+        whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
+        whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
+        whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
+        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
+
+        // When
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        // Then
+        assertEquals(1, result.size)
+        // Player 1: 10 (place) + 0 (kills, because trackKills is false) = 10
+        assertEquals(BigDecimal("10.0"), result[0].totalPoints)
+        assertEquals(1, result[0].rank)
+    }
+
+    @Test
+    fun `getStandingsForSeason does not add bounty points if trackBounties is false`() {
+        // Given
+        val seasonId = 1L
+        val leagueId = 1L
+        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val seasonSettings = SeasonSettings(
+            id = 1L,
+            season = season,
+            trackKills = true,
+            killPoints = BigDecimal("1.0"),
+            trackBounties = false, // Bounties tracking is OFF
+            bountyPoints = BigDecimal("5.0"),
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal("2.0")
+        )
+        seasonSettings.placePoints.addAll(listOf(
+            PlacePoint(place = 1, points = BigDecimal("10.0"), seasonSettings = seasonSettings)
+        ))
+
+        val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
+        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
+
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val gameResults = listOf(
+            GameResult(game = game1, player = membership1, place = 1, kills = 0, bounties = 3, bountyPlacedOnPlayer = null) // Player has bounties
+        )
+
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
+        whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
+        whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
+        whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
+        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
+
+        // When
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        // Then
+        assertEquals(1, result.size)
+        // Player 1: 10 (place) + 0 (bounties, because trackBounties is false) = 10
+        assertEquals(BigDecimal("10.0"), result[0].totalPoints)
+        assertEquals(1, result[0].rank)
+    }
+
+    @Test
+    fun `getStandingsForSeason calculates kill points correctly when killPoints is 0_33 and kills is multiple of 3`() {
+        // Given
+        val seasonId = 1L
+        val leagueId = 1L
+        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val seasonSettings = SeasonSettings(
+            id = 1L,
+            season = season,
+            trackKills = true,
+            killPoints = BigDecimal("0.33"), // Specific kill point value
+            bountyPoints = BigDecimal.ZERO,
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal.ZERO
+        )
+        seasonSettings.placePoints.addAll(listOf(
+            PlacePoint(place = 1, points = BigDecimal("10.0"), seasonSettings = seasonSettings)
+        ))
+
+        val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
+        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
+
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val gameResults = listOf(
+            GameResult(game = game1, player = membership1, place = 1, kills = 3, bounties = 0, bountyPlacedOnPlayer = null) // 3 kills
+        )
+
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
+        whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
+        whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
+        whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
+        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
+
+        // When
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        // Then
+        assertEquals(1, result.size)
+        // Player 1: 10 (place) + 1 (from 3 kills at 0.33) = 11
+        assertEquals(0, BigDecimal("11.0").compareTo(result[0].totalPoints))
+        assertEquals(1, result[0].rank)
+    }
+
+    @Test
+    fun `getStandingsForSeason calculates kill points correctly when killPoints is 0_33 and kills is not multiple of 3`() {
+        // Given
+        val seasonId = 1L
+        val leagueId = 1L
+        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val seasonSettings = SeasonSettings(
+            id = 1L,
+            season = season,
+            trackKills = true,
+            killPoints = BigDecimal("0.33"), // Specific kill point value
+            bountyPoints = BigDecimal.ZERO,
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal.ZERO
+        )
+        seasonSettings.placePoints.addAll(listOf(
+            PlacePoint(place = 1, points = BigDecimal("10.0"), seasonSettings = seasonSettings)
+        ))
+
+        val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
+        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
+
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val gameResults = listOf(
+            GameResult(game = game1, player = membership1, place = 1, kills = 4, bounties = 0, bountyPlacedOnPlayer = null) // 4 kills
+        )
+
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
+        whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
+        whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
+        whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
+        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
+
+        // When
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        // Then
+        assertEquals(1, result.size)
+        // Player 1: 10 (place) + 1.33 (from 4 kills at 0.33) = 11.33
+        assertEquals(BigDecimal("11.33"), result[0].totalPoints)
+        assertEquals(1, result[0].rank)
+    }
+
+    @Test
+    fun `getStandingsForSeason calculates kill points with standard multiplication when killPoints is not 0_33`() {
+        // Given
+        val seasonId = 1L
+        val leagueId = 1L
+        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val seasonSettings = SeasonSettings(
+            id = 1L,
+            season = season,
+            trackKills = true,
+            killPoints = BigDecimal("0.5"), // Different kill point value
+            bountyPoints = BigDecimal.ZERO,
+            enableAttendancePoints = false,
+            attendancePoints = BigDecimal.ZERO
+        )
+        seasonSettings.placePoints.addAll(listOf(
+            PlacePoint(place = 1, points = BigDecimal("10.0"), seasonSettings = seasonSettings)
+        ))
+
+        val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
+        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
+
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val gameResults = listOf(
+            GameResult(game = game1, player = membership1, place = 1, kills = 3, bounties = 0, bountyPlacedOnPlayer = null) // 3 kills
+        )
+
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
+        whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
+        whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
+        whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
+        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
+
+        // When
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        // Then
+        assertEquals(1, result.size)
+        // Player 1: 10 (place) + 3*0.5 (kills) = 11.5
+        assertEquals(BigDecimal("11.5"), result[0].totalPoints)
+        assertEquals(1, result[0].rank)
     }
 }

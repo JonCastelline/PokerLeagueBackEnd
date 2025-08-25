@@ -48,10 +48,12 @@ class StandingsService(
         val leagueMemberships = leagueMembershipRepository.findAllByLeagueId(season.league.id)
         leagueMemberships.forEach { membership: LeagueMembership ->
             playerScores[membership.id] = PlayerStandingsDto(
+                seasonId = season.id, // Add seasonId
                 playerId = membership.id,
                 displayName = membership.displayName,
                 iconUrl = membership.iconUrl,
                 totalPoints = BigDecimal.ZERO,
+                placePointsEarned = BigDecimal.ZERO,
                 totalKills = 0,
                 totalBounties = 0,
                 gamesPlayed = 0
@@ -61,10 +63,12 @@ class StandingsService(
         allGameResults.forEach { result ->
             val standingsDto = playerScores.getOrPut(result.player.id) {
                 PlayerStandingsDto(
+                    seasonId = season.id, // Add seasonId
                     playerId = result.player.id,
                     displayName = result.player.displayName,
                     iconUrl = result.player.iconUrl,
                     totalPoints = BigDecimal.ZERO,
+                    placePointsEarned = BigDecimal.ZERO,
                     totalKills = 0,
                     totalBounties = 0,
                     gamesPlayed = 0
@@ -76,6 +80,7 @@ class StandingsService(
 
             // Update standings
             standingsDto.totalPoints = standingsDto.totalPoints.add(placePoints)
+            standingsDto.placePointsEarned = standingsDto.placePointsEarned.add(placePoints)
             standingsDto.totalKills += result.kills
             standingsDto.totalBounties += result.bounties
             standingsDto.gamesPlayed += 1
@@ -86,10 +91,22 @@ class StandingsService(
 
         // Apply kill and bounty points from season settings
         playerScores.values.forEach { standings ->
-            standings.totalPoints = standings.totalPoints
-                .add(seasonSettings.killPoints.multiply(BigDecimal(standings.totalKills)))
-                .add(seasonSettings.bountyPoints.multiply(BigDecimal(standings.totalBounties)))
-
+            if (seasonSettings.trackKills) {
+	            val killsContribution = if (seasonSettings.killPoints == BigDecimal("0.33")) {
+		            // For every 3 kills, add 1.0 point
+                    val fullPointsFromKills = BigDecimal(standings.totalKills / 3) //Integer division to get full sets of 3 kills
+                    val remainderKills = standings.totalKills % 3
+                    val remainderKillContribution = seasonSettings.killPoints.multiply(BigDecimal(remainderKills))
+                    fullPointsFromKills.add(remainderKillContribution)
+	            } else {
+		            seasonSettings.killPoints.multiply(BigDecimal(standings.totalKills))
+	            }
+	            standings.totalPoints = standings.totalPoints.add(killsContribution)
+            }
+            if (seasonSettings.trackBounties) {
+                standings.totalPoints = standings.totalPoints
+                    .add(seasonSettings.bountyPoints.multiply(BigDecimal(standings.totalBounties)))
+            }
             // Apply attendance points if enabled
             if (seasonSettings.enableAttendancePoints) {
                 standings.totalPoints = standings.totalPoints.add(seasonSettings.attendancePoints.multiply(BigDecimal(standings.gamesWithoutPlacePoints)))
