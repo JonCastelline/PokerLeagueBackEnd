@@ -58,6 +58,8 @@ class SeasonSettingsService(
         existingSettings.enableAttendancePoints = settingsDto.enableAttendancePoints
         existingSettings.attendancePoints = settingsDto.attendancePoints
         existingSettings.startingStack = settingsDto.startingStack
+        existingSettings.warningSoundEnabled = settingsDto.warningSoundEnabled
+        existingSettings.warningSoundTimeSeconds = settingsDto.warningSoundTimeSeconds
 
         // Update blind levels
         existingSettings.blindLevels.clear()

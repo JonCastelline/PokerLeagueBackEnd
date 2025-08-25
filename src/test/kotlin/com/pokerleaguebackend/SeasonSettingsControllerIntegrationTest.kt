@@ -142,7 +142,9 @@ class SeasonSettingsControllerIntegrationTest {
             bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NO_BOUNTY,
             enableAttendancePoints = false,
             attendancePoints = BigDecimal("0.0"),
-            startingStack = 1500
+            startingStack = 1500,
+            warningSoundEnabled = true,
+            warningSoundTimeSeconds = 60
         ))
     }
 
@@ -191,7 +193,9 @@ class SeasonSettingsControllerIntegrationTest {
             placePoints = listOf(
                 PlacePointDto(place = 1, points = "10.0".toBigDecimal()),
                 PlacePointDto(place = 2, points = "7.0".toBigDecimal())
-            )
+            ),
+            warningSoundEnabled = true,
+            warningSoundTimeSeconds = 60
         )
 
         mockMvc.perform(put("/api/seasons/${testSeason.id}/settings")
@@ -241,7 +245,9 @@ class SeasonSettingsControllerIntegrationTest {
             attendancePoints = BigDecimal("0.0"),
             startingStack = 2000,
             blindLevels = emptyList(),
-            placePoints = emptyList()
+            placePoints = emptyList(),
+            warningSoundEnabled = true,
+            warningSoundTimeSeconds = 60
         )
 
         mockMvc.perform(put("/api/seasons/${testSeason.id}/settings")
@@ -273,7 +279,9 @@ class SeasonSettingsControllerIntegrationTest {
             attendancePoints = BigDecimal("0.0"),
             startingStack = 2000,
             blindLevels = emptyList(),
-            placePoints = emptyList()
+            placePoints = emptyList(),
+            warningSoundEnabled = true,
+            warningSoundTimeSeconds = 60
         )
 
         mockMvc.perform(put("/api/seasons/${testSeason.id}/settings")
@@ -298,7 +306,9 @@ class SeasonSettingsControllerIntegrationTest {
             attendancePoints = BigDecimal("1.0"),
             startingStack = 5000,
             blindLevels = listOf(BlindLevelDto(level = 1, smallBlind = 100, bigBlind = 200)),
-            placePoints = listOf(PlacePointDto(place = 1, points = "100.0".toBigDecimal()))
+            placePoints = listOf(PlacePointDto(place = 1, points = "100.0".toBigDecimal())),
+            warningSoundEnabled = true,
+            warningSoundTimeSeconds = 60
         )
 
         // 2. Update the first season's settings to be custom

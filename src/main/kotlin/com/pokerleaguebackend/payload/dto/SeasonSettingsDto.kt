@@ -13,6 +13,8 @@ data class SeasonSettingsDto(
     val enableAttendancePoints: Boolean,
     val attendancePoints: BigDecimal,
     val startingStack: Int,
+    val warningSoundEnabled: Boolean,
+    val warningSoundTimeSeconds: Int,
     val blindLevels: List<BlindLevelDto>,
     val placePoints: List<PlacePointDto>
 )

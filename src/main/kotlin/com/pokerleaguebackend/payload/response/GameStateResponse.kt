@@ -21,6 +21,7 @@ data class TimerStateDto(
 data class PlayerStateDto(
     val id: Long, // This is the LeagueMembershipId
     val displayName: String,
+    val iconUrl: String?,
     val rank: Int?,
     val isPlaying: Boolean,
     val isEliminated: Boolean,
@@ -33,5 +34,7 @@ data class PlayerStateDto(
 data class GameSettingsDto(
     val timerDurationMinutes: Int,
     val trackKills: Boolean,
-    val trackBounties: Boolean
+    val trackBounties: Boolean,
+    val warningSoundEnabled: Boolean,
+    val warningSoundTimeSeconds: Int
 )

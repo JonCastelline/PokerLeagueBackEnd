@@ -55,6 +55,7 @@ class GameEngineService(
             PlayerStateDto(
                 id = livePlayer.player.id,
                 displayName = livePlayer.player.displayName ?: "Unnamed Player",
+                iconUrl = livePlayer.player.iconUrl,
                 rank = playerRanks[livePlayer.player.id],
                 isPlaying = livePlayer.isPlaying,
                 isEliminated = livePlayer.isEliminated,
@@ -68,7 +69,9 @@ class GameEngineService(
         val gameSettings = GameSettingsDto(
             timerDurationMinutes = seasonSettings.durationSeconds / 60,
             trackKills = seasonSettings.trackKills,
-            trackBounties = seasonSettings.trackBounties
+            trackBounties = seasonSettings.trackBounties,
+            warningSoundEnabled = seasonSettings.warningSoundEnabled,
+            warningSoundTimeSeconds = seasonSettings.warningSoundTimeSeconds
         )
 
         return GameStateResponse(
