@@ -181,4 +181,11 @@ class GameController(
         gameEngineService.finalizeGame(gameId)
         return ResponseEntity.ok().build()
     }
+
+    @PutMapping("/games/{gameId}/live/timer")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun updateTimer(@PathVariable gameId: Long, @RequestBody request: com.pokerleaguebackend.payload.request.UpdateTimerRequest): ResponseEntity<Unit> {
+        gameEngineService.updateTimer(gameId, request)
+        return ResponseEntity.ok().build()
+    }
 }
