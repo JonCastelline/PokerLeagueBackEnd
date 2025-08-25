@@ -7,14 +7,19 @@ import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.model.SeasonSettings
+import com.pokerleaguebackend.model.BlindLevel
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.payload.request.CreateGameRequest
+import com.pokerleaguebackend.payload.request.StartGameRequest
+import com.pokerleaguebackend.payload.request.UpdateTimerRequest
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.SeasonRepository
+import com.pokerleaguebackend.repository.SeasonSettingsRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -31,6 +36,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
@@ -56,6 +62,9 @@ class GameControllerIntegrationTest {
 
     @Autowired
     private lateinit var seasonRepository: SeasonRepository
+
+    @Autowired
+    private lateinit var seasonSettingsRepository: SeasonSettingsRepository
 
     @Autowired
     private lateinit var leagueMembershipRepository: LeagueMembershipRepository
@@ -133,6 +142,27 @@ class GameControllerIntegrationTest {
             startDate = Date(),
             endDate = Date.from(LocalDate.now().plusDays(7).atStartOfDay(ZoneId.systemDefault()).toInstant()), // Set end date to 7 days in the future
             league = testLeague
+        ))
+
+        val blindLevel1 = BlindLevel(
+            smallBlind = 10,
+            bigBlind = 20,
+            level = 1
+        )
+        val blindLevel2 = BlindLevel(
+            smallBlind = 20,
+            bigBlind = 40,
+            level = 2
+        )
+
+        seasonSettingsRepository.save(SeasonSettings(
+            season = testSeason,
+            durationSeconds = 600,
+            trackKills = true,
+            trackBounties = true,
+            warningSoundEnabled = true,
+            warningSoundTimeSeconds = 30,
+            blindLevels = mutableListOf(blindLevel1, blindLevel2)
         ))
     }
 
@@ -526,5 +556,45 @@ class GameControllerIntegrationTest {
         mockMvc.perform(delete("/api/seasons/${testSeason.id}/games/${game.id}")
             .header("Authorization", "Bearer $adminToken"))
             .andExpect(status().isConflict())
+    }
+
+    @Test
+    fun `updateTimer should update the game timer`() {
+        // Arrange: Create and start a game
+        val game = gameRepository.save(Game(
+            gameName = "Live Game",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+
+        val startGameRequest = StartGameRequest(
+            playerIds = listOf(adminMembership.id, regularMembership.id)
+        )
+
+        mockMvc.perform(post("/api/games/${game.id}/live/start")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(startGameRequest)))
+            .andDo(MockMvcResultHandlers.print())
+            .andExpect(status().isOk())
+
+        val newTimeRemaining = 500L
+        val updateTimerRequest = UpdateTimerRequest(
+            timeRemainingInMillis = newTimeRemaining
+        )
+
+        // Act: Update the timer
+        mockMvc.perform(put("/api/games/${game.id}/live/timer")
+            .header("Authorization", "Bearer $adminToken")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(updateTimerRequest)))
+            .andExpect(status().isOk())
+
+        // Assert: Verify the timer was updated
+        mockMvc.perform(get("/api/games/${game.id}/live")
+            .header("Authorization", "Bearer $adminToken"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.timer.timeRemainingInMillis").value(newTimeRemaining))
     }
 }

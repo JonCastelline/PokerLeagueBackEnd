@@ -143,8 +143,6 @@ class GameEngineService(
             throw IllegalStateException("Game is not in progress.")
         }
 
-        val elapsed = System.currentTimeMillis() - (game.timerStartTime ?: 0)
-        game.timeRemainingInMillis = (game.timeRemainingInMillis ?: 0) - elapsed
         game.gameStatus = GameStatus.PAUSED
         game.timerStartTime = null
 
@@ -335,6 +333,18 @@ class GameEngineService(
         game.gameStatus = GameStatus.COMPLETED
         game.timerStartTime = null
         game.timeRemainingInMillis = null
+        gameRepository.save(game)
+    }
+
+    fun updateTimer(gameId: Long, request: com.pokerleaguebackend.payload.request.UpdateTimerRequest) {
+        val game = gameRepository.findById(gameId)
+            .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
+
+        if (game.gameStatus != GameStatus.IN_PROGRESS && game.gameStatus != GameStatus.PAUSED) {
+            throw IllegalStateException("Game is not active.")
+        }
+
+        game.timeRemainingInMillis = request.timeRemainingInMillis
         gameRepository.save(game)
     }
 }
