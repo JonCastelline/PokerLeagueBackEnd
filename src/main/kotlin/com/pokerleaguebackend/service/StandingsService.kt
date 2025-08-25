@@ -48,7 +48,7 @@ class StandingsService(
         val leagueMemberships = leagueMembershipRepository.findAllByLeagueId(season.league.id)
         leagueMemberships.forEach { membership: LeagueMembership ->
             playerScores[membership.id] = PlayerStandingsDto(
-                seasonId = season.id, // Add seasonId
+                seasonId = season.id,
                 playerId = membership.id,
                 displayName = membership.displayName,
                 iconUrl = membership.iconUrl,
@@ -63,7 +63,7 @@ class StandingsService(
         allGameResults.forEach { result ->
             val standingsDto = playerScores.getOrPut(result.player.id) {
                 PlayerStandingsDto(
-                    seasonId = season.id, // Add seasonId
+                    seasonId = season.id,
                     playerId = result.player.id,
                     displayName = result.player.displayName,
                     iconUrl = result.player.iconUrl,
