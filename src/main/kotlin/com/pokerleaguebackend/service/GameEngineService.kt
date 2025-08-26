@@ -170,7 +170,7 @@ class GameEngineService(
             .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
 
         if (!(game.gameStatus == GameStatus.IN_PROGRESS || game.gameStatus == GameStatus.PAUSED)) {
-            throw IllegalStateException("Game is not in progress. Temporary delete me")
+            throw IllegalStateException("Game is not in progress.")
         }
 
         val eliminatedPlayer = game.liveGamePlayers.find { it.player.id == request.eliminatedPlayerId }
