@@ -169,7 +169,7 @@ class GameEngineService(
         val game = gameRepository.findById(gameId)
             .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
 
-        if (game.gameStatus != GameStatus.IN_PROGRESS) {
+        if (!(game.gameStatus == GameStatus.IN_PROGRESS || game.gameStatus == GameStatus.PAUSED)) {
             throw IllegalStateException("Game is not in progress.")
         }
 
@@ -205,7 +205,7 @@ class GameEngineService(
         val game = gameRepository.findById(gameId)
             .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
 
-        if (game.gameStatus != GameStatus.IN_PROGRESS) {
+        if (!(game.gameStatus == GameStatus.IN_PROGRESS || game.gameStatus == GameStatus.PAUSED)) {
             throw IllegalStateException("Game is not in progress.")
         }
 
