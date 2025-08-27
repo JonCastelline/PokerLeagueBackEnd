@@ -608,8 +608,7 @@ class GameControllerIntegrationTest {
             season = testSeason
         ))
 
-        mockMvc.perform(get("/api/games/${game.id}/calendar.ics")
-            .header("Authorization", "Bearer $regularUserToken"))
+        mockMvc.perform(get("/api/games/${game.id}/calendar.ics"))
             .andExpect(status().isOk)
             .andExpect(header().string("Content-Type", "text/calendar"))
     }

@@ -36,14 +36,14 @@ class WebSecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFi
 
     @Bean
     fun jwtAuthenticationEntryPoint(): AuthenticationEntryPoint {
-        return AuthenticationEntryPoint { request, response, authException ->
+        return AuthenticationEntryPoint { _, response, _ ->
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
         }
     }
 
     @Bean
     fun jwtAccessDeniedHandler(): AccessDeniedHandler {
-        return AccessDeniedHandler { request, response, accessDeniedException ->
+        return AccessDeniedHandler { _, response, _ ->
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden")
         }
     }
@@ -60,7 +60,7 @@ class WebSecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFi
         return source
     }
 
-    @Bean
+        @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf { it.disable() }
@@ -72,6 +72,7 @@ class WebSecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFi
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers(AntPathRequestMatcher("/api/auth/**")).permitAll()
+                auth.requestMatchers(AntPathRequestMatcher("/api/games/*/calendar.ics")).permitAll() // New line
                 auth.anyRequest().authenticated()
             }
 

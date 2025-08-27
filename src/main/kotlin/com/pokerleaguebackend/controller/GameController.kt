@@ -191,7 +191,6 @@ class GameController(
     }
 
     @GetMapping("/games/{gameId}/calendar.ics")
-    @PreAuthorize("@leagueService.isLeagueMemberByGame(#gameId, principal.username)")
     fun getGameCalendar(@PathVariable gameId: Long, response: HttpServletResponse) {
         gameService.getGameCalendar(gameId, response)
     }
