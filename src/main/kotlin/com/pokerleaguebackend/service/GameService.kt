@@ -11,6 +11,10 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import com.pokerleaguebackend.model.UserRole
+import biweekly.Biweekly
+import biweekly.ICalendar
+import biweekly.component.VEvent
+import jakarta.servlet.http.HttpServletResponse
 import java.sql.Time
 import java.time.ZoneId
 import java.util.Date
@@ -165,5 +169,35 @@ class GameService(
         return gameRepository.findAllBySeasonId(seasonId)
     }
 
-    
+    fun getGameCalendar(gameId: Long, response: HttpServletResponse) {
+        val game = gameRepository.findById(gameId)
+            .orElseThrow { IllegalArgumentException("Game not found") }
+
+        val ical = ICalendar()
+        val event = VEvent()
+
+        event.setSummary(game.gameName)
+
+        // Combine date and time
+        val gameDateTime = java.util.Calendar.getInstance()
+        gameDateTime.time = game.gameDate
+        val timeCal = java.util.Calendar.getInstance()
+        timeCal.time = game.gameTime
+        gameDateTime.set(java.util.Calendar.HOUR_OF_DAY, timeCal.get(java.util.Calendar.HOUR_OF_DAY))
+        gameDateTime.set(java.util.Calendar.MINUTE, timeCal.get(java.util.Calendar.MINUTE))
+        gameDateTime.set(java.util.Calendar.SECOND, timeCal.get(java.util.Calendar.SECOND))
+
+        event.setDateStart(gameDateTime.time)
+
+        game.gameLocation?.let {
+            event.setLocation(it)
+        }
+
+        ical.addEvent(event)
+
+        response.contentType = "text/calendar"
+        response.setHeader("Content-Disposition", "attachment; filename=\"game-${game.id}.ics\"")
+
+        Biweekly.write(ical).go(response.writer)
+    }
 }

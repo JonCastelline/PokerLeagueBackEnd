@@ -10,6 +10,7 @@ import com.pokerleaguebackend.payload.response.GameStateResponse
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.service.GameEngineService
 import com.pokerleaguebackend.service.GameService
+import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
@@ -187,5 +188,11 @@ class GameController(
     fun updateTimer(@PathVariable gameId: Long, @RequestBody request: com.pokerleaguebackend.payload.request.UpdateTimerRequest): ResponseEntity<Unit> {
         gameEngineService.updateTimer(gameId, request)
         return ResponseEntity.ok().build()
+    }
+
+    @GetMapping("/games/{gameId}/calendar.ics")
+    @PreAuthorize("@leagueService.isLeagueMemberByGame(#gameId, principal.username)")
+    fun getGameCalendar(@PathVariable gameId: Long, response: HttpServletResponse) {
+        gameService.getGameCalendar(gameId, response)
     }
 }

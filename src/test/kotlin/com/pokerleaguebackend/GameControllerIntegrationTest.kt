@@ -34,6 +34,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers
@@ -596,5 +597,20 @@ class GameControllerIntegrationTest {
             .header("Authorization", "Bearer $adminToken"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.timer.timeRemainingInMillis").value(newTimeRemaining))
+    }
+
+    @Test
+    fun `getGameCalendar should return ics file for league member`() {
+        val game = gameRepository.save(Game(
+            gameName = "Calendar Test Game",
+            gameDate = Date(),
+            gameTime = Time(System.currentTimeMillis()),
+            season = testSeason
+        ))
+
+        mockMvc.perform(get("/api/games/${game.id}/calendar.ics")
+            .header("Authorization", "Bearer $regularUserToken"))
+            .andExpect(status().isOk)
+            .andExpect(header().string("Content-Type", "text/calendar"))
     }
 }
