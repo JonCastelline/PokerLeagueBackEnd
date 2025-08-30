@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.RestController
 
 import com.pokerleaguebackend.payload.dto.LeagueSettingsDto
 import com.pokerleaguebackend.payload.dto.LeagueMembershipSettingsDto
+import com.pokerleaguebackend.payload.request.InvitePlayerRequest
 
 @RestController
 @RequestMapping("/api/leagues")
@@ -182,5 +183,17 @@ class LeagueController(private val leagueService: LeagueService) {
         } catch (e: DuplicatePlayerException) {
             ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
+    }
+
+    @PostMapping("/{leagueId}/members/{membershipId}/invite")
+    fun invitePlayer(
+        @PathVariable leagueId: Long,
+        @PathVariable membershipId: Long,
+        @RequestBody request: InvitePlayerRequest,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<Map<String, String>> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val deepLink = leagueService.invitePlayer(leagueId, membershipId, request.email, playerAccount.id)
+        return ResponseEntity.ok(mapOf("deepLink" to deepLink))
     }
 }

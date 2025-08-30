@@ -4,6 +4,11 @@ import com.pokerleaguebackend.payload.dto.PasswordChangeDto
 import com.pokerleaguebackend.payload.dto.PlayerAccountDetailsDto
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.PlayerAccountService
+import com.pokerleaguebackend.service.LeagueService
+import com.pokerleaguebackend.payload.dto.PlayerInviteDto
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
@@ -15,7 +20,8 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api/player-accounts")
 class PlayerAccountController(
-    private val playerAccountService: PlayerAccountService
+    private val playerAccountService: PlayerAccountService,
+    private val leagueService: LeagueService
 ) {
 
     @PutMapping("/me")
@@ -39,6 +45,23 @@ class PlayerAccountController(
     ): ResponseEntity<Void> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
         playerAccountService.changePassword(playerAccount.id, passwordChangeDto)
+        return ResponseEntity.noContent().build()
+    }
+
+    @GetMapping("/me/invites")
+    fun getPendingInvites(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<List<PlayerInviteDto>> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val invites = leagueService.getPendingInvites(playerAccount.email)
+        return ResponseEntity.ok(invites)
+    }
+
+    @PostMapping("/me/invites/{inviteId}/accept")
+    fun acceptInvite(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @PathVariable inviteId: Long
+    ): ResponseEntity<Void> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        leagueService.acceptInvite(inviteId, playerAccount.id)
         return ResponseEntity.noContent().build()
     }
 }

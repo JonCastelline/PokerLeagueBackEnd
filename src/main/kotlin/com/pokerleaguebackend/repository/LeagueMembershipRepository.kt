@@ -2,7 +2,9 @@ package com.pokerleaguebackend.repository
 
 import com.pokerleaguebackend.model.LeagueMembership
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.util.Optional
 
 @Repository
 interface LeagueMembershipRepository : JpaRepository<LeagueMembership, Long> {
@@ -12,4 +14,7 @@ interface LeagueMembershipRepository : JpaRepository<LeagueMembership, Long> {
     fun findByLeagueIdAndIsOwner(leagueId: Long, isOwner: Boolean): LeagueMembership?
     fun findByLeagueIdAndDisplayNameAndPlayerAccountIsNull(leagueId: Long, displayName: String): LeagueMembership?
     fun findAllByLeagueIdAndIsActive(leagueId: Long, isActive: Boolean): List<LeagueMembership>
+
+    @Query("SELECT lm FROM LeagueMembership lm JOIN FETCH lm.playerAccount WHERE lm.id = :id")
+    fun findByIdWithPlayerAccount(id: Long): Optional<LeagueMembership>
 }
