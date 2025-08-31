@@ -39,7 +39,6 @@ class GameEngineService(
         val playerRanks = standings.associate { it.playerId to it.rank }
 
         val timerState = TimerStateDto(
-            timerStartTime = game.timerStartTime,
             timeRemainingInMillis = game.timeRemainingInMillis,
             currentLevelIndex = game.currentLevelIndex,
             blindLevels = seasonSettings.blindLevels.map { blindLevel ->
@@ -126,7 +125,6 @@ class GameEngineService(
         }
 
         game.gameStatus = GameStatus.IN_PROGRESS
-        game.timerStartTime = System.currentTimeMillis()
         game.timeRemainingInMillis = seasonSettings.durationSeconds * 1000L
         game.currentLevelIndex = 0
 
@@ -144,7 +142,6 @@ class GameEngineService(
         }
 
         game.gameStatus = GameStatus.PAUSED
-        game.timerStartTime = null
 
         val updatedGame = gameRepository.save(game)
         return getGameState(updatedGame.id)
@@ -159,7 +156,6 @@ class GameEngineService(
         }
 
         game.gameStatus = GameStatus.IN_PROGRESS
-        game.timerStartTime = System.currentTimeMillis()
 
         val updatedGame = gameRepository.save(game)
         return getGameState(updatedGame.id)
@@ -246,9 +242,6 @@ class GameEngineService(
         if ((game.currentLevelIndex ?: 0) < maxLevel) {
             game.currentLevelIndex = (game.currentLevelIndex ?: 0) + 1
             game.timeRemainingInMillis = seasonSettings.durationSeconds * 1000L
-            if (game.gameStatus == GameStatus.IN_PROGRESS) {
-                game.timerStartTime = System.currentTimeMillis()
-            }
         }
 
         val updatedGame = gameRepository.save(game)
@@ -269,9 +262,6 @@ class GameEngineService(
         if ((game.currentLevelIndex ?: 0) > 0) {
             game.currentLevelIndex = (game.currentLevelIndex ?: 0) - 1
             game.timeRemainingInMillis = seasonSettings.durationSeconds * 1000L
-            if (game.gameStatus == GameStatus.IN_PROGRESS) {
-                game.timerStartTime = System.currentTimeMillis()
-            }
         }
 
         val updatedGame = gameRepository.save(game)
@@ -331,7 +321,6 @@ class GameEngineService(
         gameResultRepository.saveAll(results)
 
         game.gameStatus = GameStatus.COMPLETED
-        game.timerStartTime = null
         game.timeRemainingInMillis = null
         gameRepository.save(game)
     }
