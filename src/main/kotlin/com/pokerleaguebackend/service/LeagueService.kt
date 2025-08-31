@@ -4,22 +4,28 @@ import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.PlayerInvite
+import com.pokerleaguebackend.model.InviteStatus
 import com.pokerleaguebackend.payload.dto.LeagueMembershipDto
 import com.pokerleaguebackend.payload.dto.LeagueDto
+import com.pokerleaguebackend.payload.dto.PlayerInviteDto
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.repository.LeagueHomeContentRepository
+import com.pokerleaguebackend.repository.PlayerInviteRepository
 import com.pokerleaguebackend.exception.DuplicatePlayerException
 import com.pokerleaguebackend.exception.LeagueNotFoundException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
+import org.springframework.beans.factory.annotation.Value
+import jakarta.persistence.EntityManager
+import org.slf4j.LoggerFactory
 import java.util.UUID
 
 import org.springframework.transaction.annotation.Transactional
-
 import java.util.Date
 import java.util.Calendar
 
@@ -33,8 +39,15 @@ class LeagueService(
     private val playerAccountRepository: PlayerAccountRepository,
     private val gameRepository: GameRepository,
     private val seasonRepository: SeasonRepository,
-    private val leagueHomeContentRepository: LeagueHomeContentRepository
+    private val leagueHomeContentRepository: LeagueHomeContentRepository,
+    private val playerInviteRepository: PlayerInviteRepository,
+    private val entityManager: EntityManager
 ) {
+
+    @Value("\${pokerleague.frontend.base-url}")
+    private lateinit var frontendBaseUrl: String
+
+    private val logger = LoggerFactory.getLogger(LeagueService::class.java)
 
     @Transactional
     fun updateLeague(leagueId: Long, request: LeagueSettingsDto, requestingPlayerAccountId: Long): League {
@@ -136,7 +149,10 @@ class LeagueService(
 
     fun getLeagueMembershipForPlayer(leagueId: Long, playerAccountId: Long): LeagueMembershipDto {
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerAccountId)
-            ?: throw AccessDeniedException("Player is not a member of this league or league not found.")
+        if (membership == null) {
+            logger.warn("Player with ID {} attempted to access league {} but is not a member.", playerAccountId, leagueId)
+            throw AccessDeniedException("Player is not a member of this league or league not found.")
+        }
 
         return LeagueMembershipDto(
             id = membership.id,
@@ -161,6 +177,7 @@ class LeagueService(
             ?: throw IllegalStateException("Player is not a member of this league")
 
         if (membership.role != UserRole.ADMIN) {
+            logger.warn("Player with ID {} attempted to refresh invite code without ADMIN role in league {}", playerId, leagueId)
             throw AccessDeniedException("Only admins can refresh the invite code")
         }
 
@@ -323,6 +340,7 @@ class LeagueService(
     private fun authorizeRoleManagement(requestingMembership: LeagueMembership, leagueId: Long) {
         requestingMembership.let {
             if (!it.isOwner && it.role != UserRole.ADMIN) {
+                logger.warn("Player with ID {} attempted to manage roles without ADMIN or OWNER role in league {}", it.playerAccount?.id, leagueId)
                 throw AccessDeniedException("Only admins or owners can manage roles.")
             }
 
@@ -339,6 +357,7 @@ class LeagueService(
 
     private fun validateOwnerStatusChange(requestingMembership: LeagueMembership, newIsOwner: Boolean) {
         if (newIsOwner && !requestingMembership.isOwner) {
+            logger.warn("Player with ID {} attempted to set owner status without OWNER role.", requestingMembership.playerAccount?.id)
             throw AccessDeniedException("Only the owner can set a member as owner.")
         }
     }
@@ -363,9 +382,13 @@ class LeagueService(
         requestingPlayerAccountId: Long
     ): LeagueMembershipDto {
         val requestingMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, requestingPlayerAccountId)
-            ?: throw AccessDeniedException("Player is not a member of this league.")
+            ?: run {
+                logger.warn("Player with ID {} attempted to transfer ownership in league {} but is not a member.", requestingPlayerAccountId, leagueId)
+                throw AccessDeniedException("Player is not a member of this league.")
+            }
 
         if (!requestingMembership.isOwner) {
+            logger.warn("Player with ID {} attempted to transfer ownership without OWNER role in league {}", requestingPlayerAccountId, leagueId)
             throw AccessDeniedException("Only the current owner can transfer league ownership.")
         }
 
@@ -437,6 +460,9 @@ class LeagueService(
             isActive = true // Added
         )
         val savedMembership = leagueMembershipRepository.save(newMembership)
+        logger.info("Saved new unregistered membership with ID: {}", savedMembership.id)
+        leagueMembershipRepository.flush()
+        entityManager.detach(savedMembership)
 
         return LeagueMembershipDto(
             id = savedMembership.id,
@@ -461,6 +487,7 @@ class LeagueService(
     ): LeagueMembershipDto {
         val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
         if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
+            logger.warn("Player with ID {} attempted to update membership status without ADMIN or OWNER role in league {}", requestingPlayerAccountId, leagueId)
             throw AccessDeniedException("Only admins or owners can update player status.")
         }
 
@@ -514,6 +541,129 @@ class LeagueService(
             isActive = updatedMembership.isActive,
             firstName = updatedMembership.playerAccount?.firstName,
             lastName = updatedMembership.playerAccount?.lastName
+        )
+    }
+
+    @Transactional
+    fun invitePlayer(leagueId: Long, membershipId: Long, email: String, requestingPlayerAccountId: Long): String {
+        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
+        if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
+            logger.warn("Player with ID {} attempted to invite player without ADMIN or OWNER role in league {}", requestingPlayerAccountId, leagueId)
+            throw AccessDeniedException("Only admins or owners can invite players.")
+        }
+
+        val targetMembership = leagueMembershipRepository.findById(membershipId)
+            .orElseThrow { LeagueNotFoundException("League membership not found.") }
+
+        if (targetMembership.league.id != leagueId) {
+            throw LeagueNotFoundException("League membership does not belong to the specified league.")
+        }
+
+        if (targetMembership.playerAccount != null) {
+            throw IllegalStateException("This player is already registered.")
+        }
+
+        val token = UUID.randomUUID().toString()
+        val calendar = Calendar.getInstance()
+        calendar.time = Date()
+        calendar.add(Calendar.HOUR_OF_DAY, 72)
+        val expirationDate = calendar.time
+
+        val invite = PlayerInvite(
+            leagueMembership = targetMembership,
+            email = email,
+            token = token,
+            expirationDate = expirationDate
+        )
+        playerInviteRepository.save(invite)
+
+        return "$frontendBaseUrl/signup?token=$token"
+    }
+
+    fun getPendingInvites(email: String): List<PlayerInviteDto> {
+        val invites = playerInviteRepository.findByEmailAndStatusAndExpirationDateAfter(email, InviteStatus.PENDING, Date())
+        return invites.map {
+            PlayerInviteDto(
+                inviteId = it.id,
+                leagueId = it.leagueMembership.league.id,
+                leagueName = it.leagueMembership.league.leagueName!!,
+                displayNameToClaim = it.leagueMembership.displayName ?: "Unknown Player"
+            )
+        }
+    }
+
+    @Transactional
+    fun acceptInvite(inviteId: Long, requestingPlayerAccountId: Long) {
+        val invite = playerInviteRepository.findById(inviteId)
+            .orElseThrow { LeagueNotFoundException("Invite not found.") }
+        entityManager.refresh(invite) // Explicitly refresh the invite
+
+        val playerAccount = playerAccountRepository.findById(requestingPlayerAccountId)
+            .orElseThrow { LeagueNotFoundException("Player account not found.") }
+
+        if (invite.email != playerAccount.email) {
+            throw AccessDeniedException("This invite is not for you.")
+        }
+
+        if (invite.status != InviteStatus.PENDING) {
+            throw IllegalStateException("This invite has already been accepted.")
+        }
+
+        if (invite.expirationDate.before(Date())) {
+            throw IllegalStateException("This invite has expired.")
+        }
+
+        val membership = leagueMembershipRepository.findById(invite.leagueMembership.id)
+            .orElseThrow { LeagueNotFoundException("League membership not found for invite.") }
+        logger.info("Attempting to set playerAccount {} to membership {}", playerAccount.id, membership.id)
+        membership.playerAccount = playerAccount
+        leagueMembershipRepository.save(membership)
+        leagueMembershipRepository.flush()
+        logger.info("Successfully set playerAccount {} to membership {}", membership.playerAccount?.id, membership.id)
+
+        invite.status = InviteStatus.ACCEPTED
+        playerInviteRepository.save(invite)
+        playerInviteRepository.flush()
+    }
+
+    fun validateAndGetInvite(token: String): PlayerInvite {
+        val invite = playerInviteRepository.findByToken(token)
+            ?: throw LeagueNotFoundException("Invite not found.")
+
+        if (invite.status != InviteStatus.PENDING) {
+            throw IllegalStateException("This invite has already been used.")
+        }
+
+        if (invite.expirationDate.before(Date())) {
+            throw IllegalStateException("This invite has expired.")
+        }
+
+        return invite
+    }
+
+    @Transactional
+    fun claimInvite(invite: PlayerInvite, playerAccount: PlayerAccount) {
+        val membership = leagueMembershipRepository.findById(invite.leagueMembership.id)
+            .orElseThrow { LeagueNotFoundException("League membership not found during claim.") }
+
+        membership.playerAccount = playerAccount
+        leagueMembershipRepository.save(membership)
+        leagueMembershipRepository.flush()
+
+        val managedInvite = playerInviteRepository.findById(invite.id)
+            .orElseThrow { LeagueNotFoundException("Invite not found during claim.") }
+
+        managedInvite.status = InviteStatus.ACCEPTED
+        playerInviteRepository.save(managedInvite)
+        playerInviteRepository.flush()
+    }
+
+    fun getInviteDetailsByToken(token: String): com.pokerleaguebackend.payload.dto.PublicPlayerInviteDto {
+        val invite = validateAndGetInvite(token)
+        return com.pokerleaguebackend.payload.dto.PublicPlayerInviteDto(
+            leagueName = invite.leagueMembership.league.leagueName ?: "Unknown League",
+            displayNameToClaim = invite.leagueMembership.displayName ?: "Unknown Player",
+            email = invite.email
         )
     }
 }

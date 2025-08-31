@@ -21,7 +21,7 @@ data class LeagueMembership(
 
     @ManyToOne
     @JoinColumn(name = "player_account_id", nullable = true)
-    val playerAccount: PlayerAccount?,
+    var playerAccount: PlayerAccount?,
 
     @ManyToOne
     @JoinColumn(name = "league_id")

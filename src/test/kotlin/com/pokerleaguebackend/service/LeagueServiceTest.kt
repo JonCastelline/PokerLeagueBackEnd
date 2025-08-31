@@ -10,6 +10,8 @@ import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.repository.LeagueHomeContentRepository
+import com.pokerleaguebackend.repository.PlayerInviteRepository
+import org.springframework.core.env.Environment
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -45,6 +47,15 @@ class LeagueServiceTest {
 
     @Mock
     private lateinit var leagueHomeContentRepository: LeagueHomeContentRepository
+
+    @Mock
+    private lateinit var playerInviteRepository: PlayerInviteRepository
+
+    @Mock
+    private lateinit var env: Environment
+
+    @Mock
+    private lateinit var entityManager: jakarta.persistence.EntityManager
 
     @InjectMocks
     private lateinit var leagueService: LeagueService
