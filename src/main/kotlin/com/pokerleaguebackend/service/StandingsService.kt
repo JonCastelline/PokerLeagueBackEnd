@@ -56,7 +56,8 @@ class StandingsService(
                 placePointsEarned = BigDecimal.ZERO,
                 totalKills = 0,
                 totalBounties = 0,
-                gamesPlayed = 0
+                gamesPlayed = 0,
+                isActive = membership.isActive
             )
         }
 
@@ -71,7 +72,8 @@ class StandingsService(
                     placePointsEarned = BigDecimal.ZERO,
                     totalKills = 0,
                     totalBounties = 0,
-                    gamesPlayed = 0
+                    gamesPlayed = 0,
+                    isActive = result.player.isActive
                 )
             }
 
@@ -114,7 +116,11 @@ class StandingsService(
         }
 
         // Sort by total points (descending), then alphabetically by player name
-        val sortedStandings = playerScores.values.sortedWith(compareByDescending<PlayerStandingsDto> { it.totalPoints }
+        val filteredStandings = playerScores.values.filter { standingsDto ->
+            standingsDto.isActive || standingsDto.gamesPlayed > 0
+        }
+
+        val sortedStandings = filteredStandings.sortedWith(compareByDescending<PlayerStandingsDto> { it.totalPoints }
             .thenBy { it.displayName })
 
         // Assign ranks, handling ties

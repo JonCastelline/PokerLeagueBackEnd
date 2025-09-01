@@ -157,6 +157,36 @@ class StandingsServiceTest {
     }
 
     @Test
+    fun `getStandingsForSeason should not include inactive players with no games played`() {
+        // Given
+        val seasonId = 1L
+        val leagueId = 1L
+        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val seasonSettings = SeasonSettings(id = 1L, season = season)
+
+        val activePlayer = PlayerAccount(id = 1L, email = "active@example.com", password = "password", firstName = "Active", lastName = "Player")
+        val inactivePlayer = PlayerAccount(id = 2L, email = "inactive@example.com", password = "password", firstName = "Inactive", lastName = "Player")
+
+        val activeMembership = LeagueMembership(id = 1L, playerAccount = activePlayer, league = season.league, displayName = "Active Player", iconUrl = null, role = UserRole.PLAYER, isActive = true)
+        val inactiveMembership = LeagueMembership(id = 2L, playerAccount = inactivePlayer, league = season.league, displayName = "Inactive Player", iconUrl = null, role = UserRole.PLAYER, isActive = false) // Inactive
+
+        whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
+        whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
+        whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(emptyList()) // No games played by anyone
+        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(activeMembership, inactiveMembership))
+
+        // When
+        val result = standingsService.getStandingsForSeason(seasonId)
+
+        // Then
+        assertEquals(1, result.size) // Only active player should be present
+        assertEquals("Active Player", result[0].displayName)
+        assertEquals(BigDecimal.ZERO, result[0].totalPoints)
+        assertEquals(0, result[0].gamesPlayed)
+    }
+
+    @Test
     fun `getStandingsForSeason when league settings not found returns empty list`() {
         val seasonId = 1L
         val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")

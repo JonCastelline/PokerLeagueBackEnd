@@ -13,5 +13,6 @@ data class PlayerStandingsDto(
     var totalBounties: Int,
     var gamesPlayed: Int,
     var rank: Int = 0,
-    var gamesWithoutPlacePoints: Int = 0
+    var gamesWithoutPlacePoints: Int = 0,
+    val isActive: Boolean
 )
