@@ -78,7 +78,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     @Test
     fun `should update league settings for owner`() {
         val league = leagueService.createLeague("Test League", testPlayer!!.id)
-        val updateLeagueRequest = LeagueSettingsDto(nonOwnerAdminsCanManageRoles = true)
+        val updateLeagueRequest = LeagueSettingsDto(leagueName = "New League Name", nonOwnerAdminsCanManageRoles = true)
 
         mockMvc.perform(
             put("/api/leagues/{leagueId}", league.id)
@@ -87,6 +87,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
                 .content(objectMapper.writeValueAsString(updateLeagueRequest))
         )
             .andExpect(status().isOk)
+            .andExpect(jsonPath("$.leagueName").value("New League Name"))
             .andExpect(jsonPath("$.nonOwnerAdminsCanManageRoles").value(true))
     }
 
@@ -96,7 +97,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         playerAccountRepository.save(ownerPlayer)
 
         val league = leagueService.createLeague("Test League", ownerPlayer.id)
-        val updateLeagueRequest = LeagueSettingsDto(nonOwnerAdminsCanManageRoles = true)
+        val updateLeagueRequest = LeagueSettingsDto(leagueName = "New League Name", nonOwnerAdminsCanManageRoles = true)
 
         mockMvc.perform(
             put("/api/leagues/{leagueId}", league.id)
@@ -113,7 +114,7 @@ class LeagueControllerIntegrationTest @Autowired constructor(
         playerAccountRepository.save(ownerPlayer)
 
         val league = leagueService.createLeague("Test League", ownerPlayer.id)
-        val updateLeagueRequest = LeagueSettingsDto(nonOwnerAdminsCanManageRoles = true)
+        val updateLeagueRequest = LeagueSettingsDto(leagueName = "New League Name", nonOwnerAdminsCanManageRoles = true)
 
         val nonMember = PlayerAccount(firstName = "Non", lastName = "Member", email = "non.member@example.com", password = "password")
         playerAccountRepository.save(nonMember)
