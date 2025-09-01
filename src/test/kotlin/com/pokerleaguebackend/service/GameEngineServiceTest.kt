@@ -87,7 +87,6 @@ class GameEngineServiceTest {
         assertEquals(2, gameState.players.size)
         assertEquals("Player 1", gameState.players[0].displayName)
         assertEquals("Player 2", gameState.players[1].displayName)
-        assertNotNull(gameState.timer.timerStartTime)
         assertEquals(1200 * 1000L, gameState.timer.timeRemainingInMillis)
         assertEquals(0, gameState.timer.currentLevelIndex)
     }
@@ -100,7 +99,7 @@ class GameEngineServiceTest {
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
             gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
-            timerStartTime = System.currentTimeMillis(), timeRemainingInMillis = 1200 * 1000L
+            timeRemainingInMillis = 1200 * 1000L
         )
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
 
@@ -113,7 +112,6 @@ class GameEngineServiceTest {
 
         // Then
         assertEquals(GameStatus.PAUSED, gameState.gameStatus)
-        assertNull(gameState.timer.timerStartTime)
     }
 
     @Test
@@ -137,7 +135,6 @@ class GameEngineServiceTest {
 
         // Then
         assertEquals(GameStatus.IN_PROGRESS, gameState.gameStatus)
-        assertNotNull(gameState.timer.timerStartTime)
     }
 
     @Test
@@ -489,7 +486,7 @@ class GameEngineServiceTest {
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
             gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
-            currentLevelIndex = 0, timeRemainingInMillis = 5000L, timerStartTime = System.currentTimeMillis()
+            currentLevelIndex = 0, timeRemainingInMillis = 5000L
         )
 
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
@@ -504,7 +501,6 @@ class GameEngineServiceTest {
         // Then
         assertEquals(1, gameState.timer.currentLevelIndex)
         assertEquals(1200 * 1000L, gameState.timer.timeRemainingInMillis)
-        assertNotNull(gameState.timer.timerStartTime)
     }
 
     @Test
@@ -520,7 +516,7 @@ class GameEngineServiceTest {
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.PAUSED,
             gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
-            currentLevelIndex = 1, timeRemainingInMillis = 5000L, timerStartTime = null
+            currentLevelIndex = 1, timeRemainingInMillis = 5000L
         )
 
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
@@ -534,7 +530,6 @@ class GameEngineServiceTest {
         // Then
         assertEquals(0, gameState.timer.currentLevelIndex)
         assertEquals(1200 * 1000L, gameState.timer.timeRemainingInMillis)
-        assertNull(gameState.timer.timerStartTime) // Should remain null as game was paused
     }
 
     @Test
@@ -551,8 +546,7 @@ class GameEngineServiceTest {
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
             gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
             currentLevelIndex = 1, // Already at max level (index 1)
-            timeRemainingInMillis = 5000L, 
-            timerStartTime = System.currentTimeMillis()
+            timeRemainingInMillis = 5000L
         )
 
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
@@ -581,8 +575,7 @@ class GameEngineServiceTest {
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
             gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
             currentLevelIndex = 0, // Already at first level
-            timeRemainingInMillis = 3000L, 
-            timerStartTime = System.currentTimeMillis()
+            timeRemainingInMillis = 3000L
         )
 
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))

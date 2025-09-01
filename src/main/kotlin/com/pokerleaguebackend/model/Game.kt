@@ -37,7 +37,7 @@ data class Game(
     @Enumerated(EnumType.STRING)
     var gameStatus: GameStatus = GameStatus.SCHEDULED,
 
-    var timerStartTime: Long? = null,
+    
     var timeRemainingInMillis: Long? = null,
     var currentLevelIndex: Int? = 0,
 

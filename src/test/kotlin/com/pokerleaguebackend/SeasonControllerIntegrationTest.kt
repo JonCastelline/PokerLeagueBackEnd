@@ -24,11 +24,14 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.security.UserPrincipal
+import com.pokerleaguebackend.payload.request.UpdateSeasonRequest
 import java.util.Date
 import org.springframework.test.annotation.DirtiesContext
 
@@ -147,5 +150,47 @@ class SeasonControllerIntegrationTest {
             .header("Authorization", "Bearer $adminToken"))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("No active season found for this league"))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `updateSeason should update season details`() {
+        val season = seasonRepository.save(Season(
+            seasonName = "Old Season Name",
+            startDate = Date(),
+            endDate = Date(),
+            league = testLeague
+        ))
+        val updateSeasonRequest = UpdateSeasonRequest(
+            seasonName = "New Season Name",
+            startDate = season.startDate,
+            endDate = season.endDate
+        )
+
+        mockMvc.perform(put("/api/leagues/{leagueId}/seasons/{seasonId}", testLeague.id, season.id)
+            .with(user(adminPrincipal))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(updateSeasonRequest)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.seasonName").value("New Season Name"))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `deleteSeason should delete a season`() {
+        val season = seasonRepository.save(Season(
+            seasonName = "Season to Delete",
+            startDate = Date(),
+            endDate = Date(),
+            league = testLeague
+        ))
+
+        mockMvc.perform(delete("/api/leagues/{leagueId}/seasons/{seasonId}", testLeague.id, season.id)
+            .with(user(adminPrincipal)))
+            .andExpect(status().isNoContent())
+
+        // Verify the season is deleted
+        val deletedSeason = seasonRepository.findById(season.id)
+        assert(deletedSeason.isEmpty)
     }
 }

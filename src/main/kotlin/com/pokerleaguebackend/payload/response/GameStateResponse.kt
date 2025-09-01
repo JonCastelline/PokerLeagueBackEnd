@@ -12,7 +12,7 @@ data class GameStateResponse(
 )
 
 data class TimerStateDto(
-    val timerStartTime: Long?,
+    
     val timeRemainingInMillis: Long?,
     val currentLevelIndex: Int?,
     val blindLevels: List<BlindLevelDto>
