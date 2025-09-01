@@ -16,9 +16,9 @@ data class Season(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    val seasonName: String,
-    val startDate: Date,
-    val endDate: Date,
+    var seasonName: String,
+    var startDate: Date,
+    var endDate: Date,
     var isFinalized: Boolean = false,
 
     @ManyToOne
