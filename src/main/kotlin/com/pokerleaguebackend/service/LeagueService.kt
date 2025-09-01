@@ -61,7 +61,9 @@ class LeagueService(
             throw AccessDeniedException("Only the league owner can update league settings.")
         }
 
+        league.leagueName = request.leagueName
         league.nonOwnerAdminsCanManageRoles = request.nonOwnerAdminsCanManageRoles
+
         return leagueRepository.save(league)
     }
 
@@ -142,7 +144,8 @@ class LeagueService(
                 inviteCode = membership.league.inviteCode,
                 isOwner = membership.isOwner,
                 role = membership.role,
-                logoImageUrl = leagueHomeContent?.logoImageUrl
+                logoImageUrl = leagueHomeContent?.logoImageUrl,
+                nonOwnerAdminsCanManageRoles = membership.league.nonOwnerAdminsCanManageRoles
             )
         }
     }

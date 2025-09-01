@@ -8,5 +8,6 @@ data class LeagueDto(
     val inviteCode: String?,
     val isOwner: Boolean,
     val role: UserRole,
-    val logoImageUrl: String?
+    val logoImageUrl: String?,
+    val nonOwnerAdminsCanManageRoles: Boolean
 )
