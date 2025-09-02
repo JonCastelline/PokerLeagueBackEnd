@@ -190,6 +190,20 @@ class GameController(
         return ResponseEntity.ok().build()
     }
 
+    @PostMapping("/games/{gameId}/live/reset-level")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun resetLevel(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.resetLevel(gameId)
+        return ResponseEntity.ok(gameState)
+    }
+
+    @PostMapping("/games/{gameId}/live/set-time")
+    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    fun setTime(@PathVariable gameId: Long, @RequestBody request: com.pokerleaguebackend.payload.request.SetTimeRequest): ResponseEntity<GameStateResponse> {
+        val gameState = gameEngineService.setTime(gameId, request)
+        return ResponseEntity.ok(gameState)
+    }
+
     @GetMapping("/games/{gameId}/calendar.ics")
     fun getGameCalendar(@PathVariable gameId: Long, response: HttpServletResponse) {
         gameService.getGameCalendar(gameId, response)

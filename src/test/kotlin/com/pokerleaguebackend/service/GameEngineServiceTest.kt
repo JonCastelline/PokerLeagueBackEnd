@@ -636,4 +636,54 @@ class GameEngineServiceTest {
         assertEquals(1, player2State.kills)
         assertEquals(1, player2State.bounties)
     }
+
+    @Test
+    fun `resetLevel should reset the timer to the level's duration`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            currentLevelIndex = 0, timeRemainingInMillis = 5000L // 5 seconds left
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+        `when`(standingsService.getStandingsForSeason(1)).thenReturn(emptyList())
+
+        // When
+        val gameState = gameEngineService.resetLevel(1)
+
+        // Then
+        assertEquals(1200 * 1000L, gameState.timer.timeRemainingInMillis)
+        assertEquals(0, gameState.timer.currentLevelIndex) // Level index should not change
+    }
+
+    @Test
+    fun `setTime should update the timer to the specified value`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.PAUSED,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            currentLevelIndex = 1, timeRemainingInMillis = 5000L
+        )
+        val request = com.pokerleaguebackend.payload.request.SetTimeRequest(timeRemainingInMillis = 600000L) // 10 minutes
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(gameRepository.save(game)).thenReturn(game)
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(standingsService.getStandingsForSeason(1)).thenReturn(emptyList())
+
+        // When
+        val gameState = gameEngineService.setTime(1, request)
+
+        // Then
+        assertEquals(600000L, gameState.timer.timeRemainingInMillis)
+    }
 }
