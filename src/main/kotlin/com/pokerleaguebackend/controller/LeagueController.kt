@@ -169,6 +169,22 @@ class LeagueController(private val leagueService: LeagueService) {
         return ResponseEntity.ok(updatedMembership)
     }
 
+    @PostMapping("/{leagueId}/leave")
+    fun leaveLeague(
+        @PathVariable leagueId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<Void> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        return try {
+            leagueService.leaveLeague(leagueId, playerAccount.id)
+            ResponseEntity.ok().build()
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity.badRequest().build()
+        } catch (e: AccessDeniedException) {
+            ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+        }
+    }
+
     @PutMapping("/{leagueId}/members/me")
     fun updateLeagueMembershipSettings(
         @PathVariable leagueId: Long,

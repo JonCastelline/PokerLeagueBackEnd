@@ -1,4 +1,3 @@
-
 package com.pokerleaguebackend
 
 import com.pokerleaguebackend.model.PlayerAccount
@@ -181,7 +180,7 @@ class LeagueActionsIntegrationTest {
         assertThat(response.body).hasSize(2)
     }
 
-        @Test
+    @Test
     fun `removePlayerFromLeague should remove player for admin`() {
         // Given
         val adminUser = PlayerAccount(
@@ -237,6 +236,55 @@ class LeagueActionsIntegrationTest {
         assertThat(updatedMembership).isNotNull
         assertThat(updatedMembership!!.playerAccount).isNull()
         assertThat(updatedMembership.isActive).isFalse()
+    }
+
+    @Test
+    fun `player can leave a league`() {
+        // Given
+        val leavingPlayer = PlayerAccount(
+            firstName = "Leaving",
+            lastName = "Player",
+            email = "leaving.player@example.com",
+            password = passwordEncoder.encode("password")
+        )
+        playerAccountRepository.save(leavingPlayer)
+
+        val leavingPlayerLoginRequest = mapOf("email" to "leaving.player@example.com", "password" to "password")
+        val leavingPlayerLoginResponse = testRestTemplate.postForEntity("/api/auth/signin", leavingPlayerLoginRequest, Map::class.java)
+        val leavingPlayerToken = leavingPlayerLoginResponse.body?.get("accessToken") as String
+        val leavingPlayerHeaders = HttpHeaders()
+        leavingPlayerHeaders.setBearerAuth(leavingPlayerToken)
+
+        val joinRequest = JoinLeagueRequest(inviteCode = leagueRepository.findById(leagueId).get().inviteCode)
+        testRestTemplate.exchange("/api/leagues/join", HttpMethod.POST, HttpEntity(joinRequest, leavingPlayerHeaders), Map::class.java)
+
+        val leavingPlayerMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, leavingPlayer.id)
+        assertThat(leavingPlayerMembership).isNotNull
+
+        // When
+        val response = testRestTemplate.exchange("/api/leagues/$leagueId/leave", HttpMethod.POST, HttpEntity<Void>(leavingPlayerHeaders), Void::class.java)
+
+        // Then
+        assertThat(response.statusCode).isEqualTo(HttpStatus.OK)
+
+        val updatedMembership = leagueMembershipRepository.findById(leavingPlayerMembership!!.id).orElse(null)
+        assertThat(updatedMembership).isNotNull
+        assertThat(updatedMembership!!.playerAccount).isNull()
+        assertThat(updatedMembership.isActive).isFalse()
+    }
+
+    @Test
+    fun `owner cannot leave a league`() {
+        // Given
+        val ownerMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, testUser!!.id)
+        assertThat(ownerMembership).isNotNull
+        assertThat(ownerMembership!!.isOwner).isTrue()
+
+        // When
+        val response = testRestTemplate.exchange("/api/leagues/$leagueId/leave", HttpMethod.POST, HttpEntity<Void>(getAuthHeaders()), Void::class.java)
+
+        // Then
+        assertThat(response.statusCode).isEqualTo(HttpStatus.BAD_REQUEST)
     }
 
     @Test
