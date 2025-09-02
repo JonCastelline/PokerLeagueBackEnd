@@ -577,6 +577,21 @@ class LeagueService(
     }
 
     @Transactional
+    fun leaveLeague(leagueId: Long, playerAccountId: Long) {
+        val requestingMembership = getLeagueMembership(leagueId, playerAccountId)
+
+        // Validation: Prevent owner from leaving
+        if (requestingMembership.isOwner) {
+            throw IllegalArgumentException("League owner cannot leave the league. Please transfer ownership first.")
+        }
+
+        // Logic: Set playerAccount = null and isActive = false
+        requestingMembership.playerAccount = null
+        requestingMembership.isActive = false
+        leagueMembershipRepository.save(requestingMembership)
+    }
+
+    @Transactional
     fun updateLeagueMembershipSettings(leagueId: Long, playerId: Long, settingsDto: LeagueMembershipSettingsDto): LeagueMembershipDto {
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerId)
             ?: throw AccessDeniedException("Player is not a member of this league or league not found.")
