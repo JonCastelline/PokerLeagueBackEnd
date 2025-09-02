@@ -276,6 +276,65 @@ class GameEngineService(
             throw IllegalStateException("Cannot update results for a completed game.")
         }
 
+        val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
+            ?: throw EntityNotFoundException("SeasonSettings not found for season id: ${game.season.id}")
+
+        val numPlayers = game.liveGamePlayers.size
+        val availableBounties = game.liveGamePlayers.count { it.hasBounty }
+
+        // Map incoming results to a more accessible structure and validate numeric inputs
+        val incomingResults = request.results.map {
+            val place = it.place
+            val kills = it.kills
+            val bounties = it.bounties
+
+            // Basic numeric validation
+            if (place < 0 || kills < 0 || bounties < 0) {
+                throw IllegalArgumentException("Place, kills, and bounties must be non-negative.")
+            }
+            it // Return the original object if valid
+        }
+
+        // Validation 1: Total Kills
+        val totalKills = incomingResults.sumOf { it.kills }
+        if (seasonSettings.trackKills && totalKills > numPlayers - 1) {
+            throw IllegalArgumentException("Total kills ($totalKills) cannot exceed the number of players minus one (${numPlayers - 1}).")
+        }
+
+        // Validation 2: Total Bounties
+        val totalBounties = incomingResults.sumOf { it.bounties }
+        if (seasonSettings.trackBounties && totalBounties > availableBounties) {
+            throw IllegalArgumentException("Total bounties ($totalBounties) cannot exceed the number of available bounties ($availableBounties).")
+        }
+
+        // Validation 3 & 4: Unique and Valid Places
+        val placedPlayers = incomingResults.filter { it.place > 0 }
+        val places = placedPlayers.map { it.place }
+        val uniquePlaces = places.toSet()
+
+        if (places.size != uniquePlaces.size) {
+            throw IllegalArgumentException("Each player must have a unique place. No ties are allowed.")
+        }
+
+        for (result in placedPlayers) {
+            if (result.place < 1 || result.place > numPlayers) {
+                throw IllegalArgumentException("Place for player ${result.playerId} must be between 1 and $numPlayers.")
+            }
+        }
+
+        // Validation 5: First place kills
+        val firstPlacePlayerResult = incomingResults.find { it.place == 1 }
+        if (seasonSettings.trackKills && firstPlacePlayerResult != null && firstPlacePlayerResult.kills == 0) {
+            throw IllegalArgumentException("1st place must have > 0 kills.")
+        }
+
+        // Validation 6: Kills >= Bounties
+        for (result in incomingResults) {
+            if (seasonSettings.trackBounties && result.kills < result.bounties) {
+                throw IllegalArgumentException("Bounties for player ${result.playerId} cannot exceed kills.")
+            }
+        }
+
         val resultsMap = request.results.associateBy { it.playerId }
 
         game.liveGamePlayers.forEach { livePlayer ->
