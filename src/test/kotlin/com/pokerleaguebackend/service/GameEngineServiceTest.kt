@@ -686,4 +686,271 @@ class GameEngineServiceTest {
         // Then
         assertEquals(600000L, gameState.timer.timeRemainingInMillis)
     }
+
+    @Test
+    fun `updateGameResults_negativePlaceKillsBounties_throwsException`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+        )
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
+
+        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+            results = listOf(
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = -1, kills = 0, bounties = 0)
+            )
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season))
+
+        // When / Then
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            gameEngineService.updateGameResults(1, request)
+        }
+    }
+
+    @Test
+    fun `updateGameResults_totalKillsExceedsLimit_throwsException`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+        )
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
+
+        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+            results = listOf(
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 2, bounties = 0),
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 2, kills = 0, bounties = 0)
+            )
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season, trackKills = true))
+
+        // When / Then
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            gameEngineService.updateGameResults(1, request)
+        }
+    }
+
+    @Test
+    fun `updateGameResults_totalBountiesExceedsLimit_throwsException`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+        )
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1, hasBounty = false)) // No bounties available
+
+        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+            results = listOf(
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 1, bounties = 1)
+            )
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season, trackBounties = true))
+
+        // When / Then
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            gameEngineService.updateGameResults(1, request)
+        }
+    }
+
+    @Test
+    fun `updateGameResults_duplicatePlaces_throwsException`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+        )
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
+
+        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+            results = listOf(
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 0, bounties = 0),
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 1, kills = 0, bounties = 0) // Duplicate place
+            )
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season))
+
+        // When / Then
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            gameEngineService.updateGameResults(1, request)
+        }
+    }
+
+    @Test
+    fun `updateGameResults_invalidPlaceRange_throwsException`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+        )
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
+
+        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+            results = listOf(
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 2, kills = 0, bounties = 0) // Place out of range (numPlayers is 1)
+            )
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season))
+
+        // When / Then
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            gameEngineService.updateGameResults(1, request)
+        }
+    }
+
+    @Test
+    fun `updateGameResults_firstPlaceZeroKills_throwsException`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+        )
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
+
+        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+            results = listOf(
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 0, bounties = 0), // 1st place with 0 kills
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 2, kills = 1, bounties = 0)
+            )
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season, trackKills = true))
+
+        // When / Then
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            gameEngineService.updateGameResults(1, request)
+        }
+    }
+
+    @Test
+    fun `updateGameResults_bountiesExceedKills_throwsException`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+        )
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
+
+        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+            results = listOf(
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 0, bounties = 1) // Bounties > Kills
+            )
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season, trackBounties = true))
+
+        // When / Then
+        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+            gameEngineService.updateGameResults(1, request)
+        }
+    }
+
+    @Test
+    fun `updateGameResults_validInput_updatesStatsCorrectly`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val playerAccount3 = PlayerAccount(id = 3, email = "test3@test.com", password = "password", firstName = "Test", lastName = "User3")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        val player3 = LeagueMembership(id = 3, league = league, displayName = "Player 3", role = UserRole.PLAYER, playerAccount = playerAccount3)
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+        )
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1, hasBounty = true))
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2, hasBounty = false))
+        game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player3, hasBounty = false))
+
+        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+            results = listOf(
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 2, kills = 0, bounties = 0),
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 1, kills = 1, bounties = 1),
+                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 3, place = 3, kills = 0, bounties = 0)
+            )
+        )
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(gameRepository.save(game)).thenReturn(game)
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season, trackKills = true, trackBounties = true))
+        `when`(standingsService.getStandingsForSeason(1)).thenReturn(emptyList())
+
+        // When
+        val gameState = gameEngineService.updateGameResults(1, request)
+
+        // Then
+        val player1State = gameState.players.find { it.id == 1L }
+        val player2State = gameState.players.find { it.id == 2L }
+        val player3State = gameState.players.find { it.id == 3L }
+
+        assertNotNull(player1State)
+        assertEquals(2, player1State!!.place)
+        assertEquals(0, player1State.kills)
+        assertEquals(0, player1State.bounties)
+        assertTrue(player1State.isEliminated)
+
+        assertNotNull(player2State)
+        assertEquals(1, player2State!!.place)
+        assertEquals(1, player2State.kills)
+        assertEquals(1, player2State.bounties)
+        assertTrue(player2State.isEliminated)
+
+        assertNotNull(player3State)
+        assertEquals(3, player3State!!.place)
+        assertEquals(0, player3State.kills)
+        assertEquals(0, player3State.bounties)
+        assertTrue(player3State.isEliminated)
+    }
 }
