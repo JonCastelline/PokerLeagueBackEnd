@@ -336,4 +336,35 @@ class GameEngineService(
         game.timeRemainingInMillis = request.timeRemainingInMillis
         gameRepository.save(game)
     }
+
+    fun resetLevel(gameId: Long): GameStateResponse {
+        val game = gameRepository.findById(gameId)
+            .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
+
+        if (game.gameStatus != GameStatus.IN_PROGRESS && game.gameStatus != GameStatus.PAUSED) {
+            throw IllegalStateException("Game is not active.")
+        }
+
+        val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
+            ?: throw EntityNotFoundException("SeasonSettings not found for season id: ${game.season.id}")
+
+        game.timeRemainingInMillis = seasonSettings.durationSeconds * 1000L
+
+        val updatedGame = gameRepository.save(game)
+        return getGameState(updatedGame.id)
+    }
+
+    fun setTime(gameId: Long, request: com.pokerleaguebackend.payload.request.SetTimeRequest): GameStateResponse {
+        val game = gameRepository.findById(gameId)
+            .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
+
+        if (game.gameStatus != GameStatus.IN_PROGRESS && game.gameStatus != GameStatus.PAUSED) {
+            throw IllegalStateException("Game is not active.")
+        }
+
+        game.timeRemainingInMillis = request.timeRemainingInMillis
+
+        val updatedGame = gameRepository.save(game)
+        return getGameState(updatedGame.id)
+    }
 }
