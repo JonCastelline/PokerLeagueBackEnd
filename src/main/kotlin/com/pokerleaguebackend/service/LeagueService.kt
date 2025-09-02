@@ -524,6 +524,59 @@ class LeagueService(
     }
 
     @Transactional
+    fun removePlayerFromLeague(
+        leagueId: Long,
+        targetMembershipId: Long,
+        adminPlayerAccountId: Long
+    ): LeagueMembershipDto {
+        // 1. Authorization: Check if requestingPlayerAccountId is an owner or admin of the league
+        val requestingMembership = getLeagueMembership(leagueId, adminPlayerAccountId)
+        if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
+            throw AccessDeniedException("Only admins or owners can remove players from the league.")
+        }
+
+        if (!requestingMembership.isOwner && requestingMembership.role == UserRole.ADMIN) {
+            val league = leagueRepository.findById(leagueId)
+                .orElseThrow { LeagueNotFoundException("League not found.") }
+            if (!league.nonOwnerAdminsCanManageRoles) {
+                throw AccessDeniedException("Non-owner admins are not permitted to remove players in this league.")
+            }
+        }
+
+        // 2. Validation: Check if targetMembershipId exists and belongs to the specified league
+        val targetMembership = leagueMembershipRepository.findById(targetMembershipId)
+            .orElseThrow { LeagueNotFoundException("Target league membership not found.") }
+
+        if (targetMembership.league.id != leagueId) {
+            throw LeagueNotFoundException("Target league membership does not belong to the specified league.")
+        }
+
+        // 3. Validation: Prevent owner from removing themselves
+        if (targetMembership.isOwner && targetMembership.id == requestingMembership.id) {
+            throw IllegalArgumentException("An owner cannot remove themselves from the league.")
+        }
+
+        // 4. Logic: Set playerAccount = null and isActive = false
+        targetMembership.playerAccount = null
+        targetMembership.isActive = false
+        val updatedMembership = leagueMembershipRepository.save(targetMembership)
+
+        // 5. Return: Updated DTO
+        return LeagueMembershipDto(
+            id = updatedMembership.id,
+            playerAccountId = updatedMembership.playerAccount?.id,
+            displayName = updatedMembership.displayName,
+            iconUrl = updatedMembership.iconUrl,
+            role = updatedMembership.role,
+            isOwner = updatedMembership.isOwner,
+            email = updatedMembership.playerAccount?.email,
+            isActive = updatedMembership.isActive,
+            firstName = updatedMembership.playerAccount?.firstName,
+            lastName = updatedMembership.playerAccount?.lastName
+        )
+    }
+
+    @Transactional
     fun updateLeagueMembershipSettings(leagueId: Long, playerId: Long, settingsDto: LeagueMembershipSettingsDto): LeagueMembershipDto {
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerId)
             ?: throw AccessDeniedException("Player is not a member of this league or league not found.")

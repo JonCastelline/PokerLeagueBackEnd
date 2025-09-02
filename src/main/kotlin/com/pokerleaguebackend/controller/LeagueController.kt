@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipStatusRequest
@@ -148,6 +149,21 @@ class LeagueController(private val leagueService: LeagueService) {
             leagueId,
             leagueMembershipId,
             request.isActive,
+            playerAccount.id
+        )
+        return ResponseEntity.ok(updatedMembership)
+    }
+
+    @DeleteMapping("/{leagueId}/members/{leagueMembershipId}")
+    fun removePlayerFromLeague(
+        @PathVariable leagueId: Long,
+        @PathVariable leagueMembershipId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<LeagueMembershipDto> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val updatedMembership = leagueService.removePlayerFromLeague(
+            leagueId,
+            leagueMembershipId,
             playerAccount.id
         )
         return ResponseEntity.ok(updatedMembership)
