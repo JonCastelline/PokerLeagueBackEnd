@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
@@ -32,6 +33,16 @@ class PlayerSecurityAnswerController(
         val playerId = authenticationFacade.getAuthenticatedPlayerId()
         val questions = playerSecurityAnswerService.getSecurityQuestionsForPlayer(playerId)
         return ResponseEntity.ok(questions)
+    }
+
+    @GetMapping("/public/security-questions")
+    fun getSecurityQuestionsByEmail(@RequestParam email: String): ResponseEntity<*> {
+        return try {
+            val questions = playerSecurityAnswerService.getSecurityQuestionsByEmail(email)
+            ResponseEntity.ok(questions)
+        } catch (e: IllegalArgumentException) {
+            ResponseEntity.badRequest().body(e.message)
+        }
     }
 
     @PostMapping("/auth/forgot-password/verify-answers")

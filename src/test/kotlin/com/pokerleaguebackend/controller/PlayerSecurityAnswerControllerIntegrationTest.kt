@@ -269,4 +269,33 @@ class PlayerSecurityAnswerControllerIntegrationTest @Autowired constructor(
         val player = playerAccountRepository.findByEmail("nonexistent@example.com")
         assert(player == null)
     }
+
+    @Test
+    fun `should get security questions by email`() {
+        val securityQuestion1 = securityQuestionRepository.save(SecurityQuestion(questionText = "Unique Question 1 for test"))
+        val securityQuestion2 = securityQuestionRepository.save(SecurityQuestion(questionText = "Unique Question 2 for test"))
+        val answer1 = PlayerSecurityAnswer(playerAccount = testPlayer, securityQuestion = securityQuestion1, hashedAnswer = "hashed1")
+        val answer2 = PlayerSecurityAnswer(playerAccount = testPlayer, securityQuestion = securityQuestion2, hashedAnswer = "hashed2")
+        playerSecurityAnswerRepository.saveAll(listOf(answer1, answer2))
+
+        mockMvc.perform(
+            get("/api/public/security-questions")
+                .param("email", testPlayer.email)
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$[0].id").value(securityQuestion1.id))
+            .andExpect(jsonPath("$[0].questionText").value(securityQuestion1.questionText))
+            .andExpect(jsonPath("$[1].id").value(securityQuestion2.id))
+            .andExpect(jsonPath("$[1].questionText").value(securityQuestion2.questionText))
+    }
+
+    @Test
+    fun `should return bad request when getting security questions for non-existent email`() {
+        mockMvc.perform(
+            get("/api/public/security-questions")
+                .param("email", "nonexistent@example.com")
+        )
+            .andExpect(status().isBadRequest)
+            .andExpect(content().string("Player account not found"))
+    }
 }

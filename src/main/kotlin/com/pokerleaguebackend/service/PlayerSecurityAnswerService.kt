@@ -74,4 +74,11 @@ class PlayerSecurityAnswerService(
         return playerSecurityAnswerRepository.findByPlayerAccountId(playerId)
             .map { it.securityQuestion }
     }
+
+    fun getSecurityQuestionsByEmail(email: String): List<SecurityQuestion> {
+        val playerAccount = playerAccountRepository.findByEmail(email)
+            ?: throw IllegalArgumentException("Player account not found")
+        return playerSecurityAnswerRepository.findByPlayerAccountId(playerAccount.id)
+            .map { it.securityQuestion }
+    }
 }
