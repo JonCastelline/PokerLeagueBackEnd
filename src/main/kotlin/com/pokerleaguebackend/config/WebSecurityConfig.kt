@@ -72,6 +72,7 @@ class WebSecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFi
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { auth ->
                 auth.requestMatchers(AntPathRequestMatcher("/api/auth/**")).permitAll()
+                auth.requestMatchers(AntPathRequestMatcher("/api/public/**")).permitAll()
                 auth.requestMatchers(AntPathRequestMatcher("/api/games/*/calendar.ics")).permitAll()
                 auth.anyRequest().authenticated()
             }
