@@ -154,6 +154,36 @@ class LeagueController(private val leagueService: LeagueService) {
         return ResponseEntity.ok(updatedMembership)
     }
 
+    @PutMapping("/{leagueId}/members/{leagueMembershipId}/reset-display-name")
+    fun resetPlayerDisplayName(
+        @PathVariable leagueId: Long,
+        @PathVariable leagueMembershipId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<LeagueMembershipDto> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val updatedMembership = leagueService.resetPlayerDisplayName(
+            leagueId,
+            leagueMembershipId,
+            playerAccount.id
+        )
+        return ResponseEntity.ok(updatedMembership)
+    }
+
+    @PutMapping("/{leagueId}/members/{leagueMembershipId}/reset-icon-url")
+    fun resetPlayerIconUrl(
+        @PathVariable leagueId: Long,
+        @PathVariable leagueMembershipId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<LeagueMembershipDto> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val updatedMembership = leagueService.resetPlayerIconUrl(
+            leagueId,
+            leagueMembershipId,
+            playerAccount.id
+        )
+        return ResponseEntity.ok(updatedMembership)
+    }
+
     @DeleteMapping("/{leagueId}/members/{leagueMembershipId}")
     fun removePlayerFromLeague(
         @PathVariable leagueId: Long,

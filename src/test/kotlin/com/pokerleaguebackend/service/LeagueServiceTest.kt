@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
@@ -167,5 +168,93 @@ class LeagueServiceTest {
             membership.role == UserRole.PLAYER
         })
         assertEquals(league, joinedLeague)
+    }
+
+    @Test
+    fun `resetPlayerDisplayName should set displayName to null when called by owner`() {
+        val ownerAccount = PlayerAccount(id = 1, firstName = "Owner", lastName = "User", email = "owner@test.com", password = "password")
+        val playerAccount = PlayerAccount(id = 2, firstName = "Player", lastName = "User", email = "player@test.com", password = "password")
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
+        val ownerMembership = LeagueMembership(id = 1, playerAccount = ownerAccount, league = league, role = UserRole.ADMIN, isOwner = true, displayName = "Owner", iconUrl = null, isActive = true)
+        val targetMembership = LeagueMembership(id = 2, playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Target Player", iconUrl = null, isActive = true)
+
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 1)).thenReturn(ownerMembership)
+        `when`(leagueMembershipRepository.findById(2)).thenReturn(Optional.of(targetMembership))
+        `when`(leagueRepository.findById(1)).thenReturn(Optional.of(league)) // Needed for authorizeRoleManagement
+        `when`(leagueMembershipRepository.saveAndFlush(argThat { membership ->
+            membership.displayName == "${playerAccount.firstName} ${playerAccount.lastName}"
+        })).thenAnswer { invocation ->
+            val savedMembership = invocation.arguments[0] as LeagueMembership
+            LeagueMembership(
+                id = savedMembership.id,
+                playerAccount = savedMembership.playerAccount,
+                league = savedMembership.league,
+                displayName = "${playerAccount.firstName} ${playerAccount.lastName}",
+                iconUrl = savedMembership.iconUrl,
+                role = savedMembership.role,
+                isOwner = savedMembership.isOwner,
+                isActive = savedMembership.isActive
+            )
+        }
+
+        val result = leagueService.resetPlayerDisplayName(1, 2, 1)
+
+        assertEquals("${playerAccount.firstName} ${playerAccount.lastName}", result.displayName)
+        verify(leagueMembershipRepository).saveAndFlush(any<LeagueMembership>())
+    }
+
+    @Test
+    fun `resetPlayerIconUrl should set iconUrl to null when called by owner`() {
+        val ownerAccount = PlayerAccount(id = 1, firstName = "Owner", lastName = "User", email = "owner@test.com", password = "password")
+        val playerAccount = PlayerAccount(id = 2, firstName = "Player", lastName = "User", email = "player@test.com", password = "password")
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
+        val ownerMembership = LeagueMembership(id = 1, playerAccount = ownerAccount, league = league, role = UserRole.ADMIN, isOwner = true, displayName = "Owner", iconUrl = null, isActive = true)
+        val targetMembership = LeagueMembership(id = 2, playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Target Player", iconUrl = "http://example.com/icon.png", isActive = true)
+
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 1)).thenReturn(ownerMembership)
+        `when`(leagueMembershipRepository.findById(2)).thenReturn(Optional.of(targetMembership))
+        `when`(leagueRepository.findById(1)).thenReturn(Optional.of(league))
+        `when`(leagueMembershipRepository.save(any())).thenAnswer { it.arguments[0] }
+
+        val result = leagueService.resetPlayerIconUrl(1, 2, 1)
+
+        assertEquals(null, result.iconUrl)
+        verify(leagueMembershipRepository).save(argThat { membership -> membership.iconUrl == null })
+    }
+
+    @Test
+    fun `resetPlayerIconUrl should throw AccessDeniedException when called by non-admin`() {
+        val nonAdminAccount = PlayerAccount(id = 1, firstName = "NonAdmin", lastName = "User", email = "nonadmin@test.com", password = "password")
+        val playerAccount = PlayerAccount(id = 2, firstName = "Player", lastName = "User", email = "player@test.com", password = "password")
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null)
+        val nonAdminMembership = LeagueMembership(id = 1, playerAccount = nonAdminAccount, league = league, role = UserRole.PLAYER, isOwner = false, displayName = "NonAdmin", iconUrl = null, isActive = true)
+        val targetMembership = LeagueMembership(id = 2, playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Target Player", iconUrl = "http://example.com/icon.png", isActive = true)
+
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 1)).thenReturn(nonAdminMembership)
+        `when`(leagueMembershipRepository.findById(2)).thenReturn(Optional.of(targetMembership))
+        `when`(leagueRepository.findById(1)).thenReturn(Optional.of(league))
+
+        assertThrows<Exception> {
+            leagueService.resetPlayerIconUrl(1, 2, 1)
+        }
+    }
+
+    @Test
+    fun `resetPlayerIconUrl should throw AccessDeniedException when admin tries to reset owner`() {
+        val ownerAccount = PlayerAccount(id = 1, firstName = "Owner", lastName = "User", email = "owner@test.com", password = "password")
+        val adminAccount = PlayerAccount(id = 2, firstName = "Admin", lastName = "User", email = "admin@test.com", password = "password")
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = true)
+        val ownerMembership = LeagueMembership(id = 1, playerAccount = ownerAccount, league = league, role = UserRole.ADMIN, isOwner = true, displayName = "Owner", iconUrl = null, isActive = true)
+        val adminMembership = LeagueMembership(id = 2, playerAccount = adminAccount, league = league, role = UserRole.ADMIN, isOwner = false, displayName = "Admin", iconUrl = null, isActive = true)
+        val targetMembership = LeagueMembership(id = 1, playerAccount = ownerAccount, league = league, role = UserRole.ADMIN, isOwner = true, displayName = "Owner", iconUrl = "http://example.com/owner_icon.png", isActive = true)
+
+
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1, 2)).thenReturn(adminMembership)
+        `when`(leagueMembershipRepository.findById(1)).thenReturn(Optional.of(targetMembership))
+        `when`(leagueRepository.findById(1)).thenReturn(Optional.of(league))
+
+        assertThrows<Exception> {
+            leagueService.resetPlayerIconUrl(1, 1, 2)
+        }
     }
 }
