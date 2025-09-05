@@ -3,7 +3,6 @@ package com.pokerleaguebackend.model
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -20,7 +19,7 @@ data class LeagueMembership(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "player_account_id", nullable = true)
     var playerAccount: PlayerAccount?,
 

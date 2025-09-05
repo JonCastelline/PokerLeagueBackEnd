@@ -295,7 +295,7 @@ class LeagueService(
         }
         targetMembership.isOwner = newIsOwner
 
-        val updatedMembership = leagueMembershipRepository.saveAndFlush(targetMembership)
+        val updatedMembership = leagueMembershipRepository.save(targetMembership)
         return LeagueMembershipDto(
             id = updatedMembership.id,
             playerAccountId = updatedMembership.playerAccount?.id,
