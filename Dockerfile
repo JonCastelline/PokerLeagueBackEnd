@@ -26,4 +26,4 @@ EXPOSE 8080
 
 # Set the entry point to run the JAR file
 # Activate the 'prod' profile when running the application
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "build/libs/pokerleaguebackend-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "build/libs/PokerLeagueBackEnd-0.0.1-SNAPSHOT.jar"]
