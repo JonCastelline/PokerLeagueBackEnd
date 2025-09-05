@@ -24,19 +24,23 @@ import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import com.pokerleaguebackend.service.LeagueService
-import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import org.springframework.test.annotation.DirtiesContext
+import org.springframework.transaction.annotation.Transactional
 
 import com.pokerleaguebackend.payload.dto.LeagueSettingsDto
 import com.pokerleaguebackend.payload.dto.LeagueMembershipSettingsDto
 
+
+@Transactional
 @SpringBootTest(classes = [com.pokerleaguebackend.PokerLeagueBackendApplication::class])
 @AutoConfigureMockMvc
+@DirtiesContext(methodMode = DirtiesContext.MethodMode.BEFORE_METHOD)
 class LeagueControllerIntegrationTest @Autowired constructor(
     private val mockMvc: MockMvc,
     private val playerAccountRepository: PlayerAccountRepository,
@@ -45,7 +49,8 @@ class LeagueControllerIntegrationTest @Autowired constructor(
     private val jwtTokenProvider: JwtTokenProvider,
     private val leagueService: LeagueService,
     private val objectMapper: ObjectMapper,
-    private val seasonRepository: SeasonRepository,
+    private val entityManager: jakarta.persistence.EntityManager,
+    private val jdbcTemplate: org.springframework.jdbc.core.JdbcTemplate,
 ) {
 
     private var testPlayer: PlayerAccount? = null
@@ -53,20 +58,32 @@ class LeagueControllerIntegrationTest @Autowired constructor(
 
     @BeforeEach
     fun setup() {
-        // Clear all previous data
-        leagueMembershipRepository.deleteAll()
-        seasonRepository.deleteAll()
-        leagueRepository.deleteAll()
-        playerAccountRepository.deleteAll()
+        // Clear all previous data using native SQL delete
+        jdbcTemplate.execute("DELETE FROM player_security_answer")
+        jdbcTemplate.execute("DELETE FROM player_invites")
+        jdbcTemplate.execute("DELETE FROM game_results")
+        jdbcTemplate.execute("DELETE FROM live_game_player")
+        jdbcTemplate.execute("DELETE FROM game")
+        jdbcTemplate.execute("DELETE FROM league_home_content")
+        jdbcTemplate.execute("DELETE FROM league_membership")
+        jdbcTemplate.execute("DELETE FROM place_points")
+        jdbcTemplate.execute("DELETE FROM blind_levels")
+        jdbcTemplate.execute("DELETE FROM season_settings")
+        jdbcTemplate.execute("DELETE FROM season")
+        jdbcTemplate.execute("DELETE FROM league")
+        jdbcTemplate.execute("DELETE FROM player_account")
+        jdbcTemplate.execute("DELETE FROM security_question")
 
-        // Create a test player
+        // Create a test player with a unique email
         testPlayer = PlayerAccount(
             firstName = "Test",
             lastName = "Player",
-            email = "test.player@example.com",
+            email = "test.player.${java.util.UUID.randomUUID()}@example.com",
             password = "password"
         )
         playerAccountRepository.save(testPlayer!!)
+        entityManager.flush()
+        entityManager.clear()
 
         // Generate a token for the test player
         val authorities = listOf(SimpleGrantedAuthority(SecurityRole.USER.name))
@@ -474,5 +491,150 @@ class LeagueControllerIntegrationTest @Autowired constructor(
             .andExpect(jsonPath("$[0].lastName").value("Player"))
             .andExpect(jsonPath("$[1].firstName").value("John"))
             .andExpect(jsonPath("$[1].lastName").value("Doe"))
+    }
+
+    @Test
+    fun `should allow owner to reset player display name`() {
+        val league = leagueService.createLeague("Reset Display Name League", testPlayer!!.id)
+
+        val playerToReset = PlayerAccount(firstName = "Reset", lastName = "Me", email = "reset.me@example.com", password = "password")
+        playerAccountRepository.save(playerToReset)
+        leagueService.joinLeague(league.inviteCode, playerToReset.id)
+
+        val membershipToReset = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerToReset.id)
+            ?: throw IllegalStateException("Membership to reset not found.")
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/reset-display-name", league.id, membershipToReset.id)
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.displayName").value("${playerToReset.firstName} ${playerToReset.lastName}"))
+
+        val updatedMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerToReset.id)!!
+        assertEquals("${playerToReset.firstName} ${playerToReset.lastName}", updatedMembership.displayName)
+    }
+
+    @Test
+    fun `should allow admin to reset player display name when nonOwnerAdminsCanManageRoles is true`() {
+        val ownerPlayer = PlayerAccount(firstName = "Owner", lastName = "Admin", email = "owner.admin@example.com", password = "password")
+        playerAccountRepository.save(ownerPlayer)
+        val league = leagueService.createLeague("Admin Reset League", ownerPlayer.id)
+        league.nonOwnerAdminsCanManageRoles = true
+        leagueRepository.saveAndFlush(league)
+
+        val adminPlayer = PlayerAccount(firstName = "League", lastName = "Admin", email = "league.admin@example.com", password = "password")
+        playerAccountRepository.save(adminPlayer)
+        leagueService.joinLeague(league.inviteCode, adminPlayer.id) // Call joinLeague to create the membership
+        val adminMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, adminPlayer.id)
+            ?: throw IllegalStateException("Admin membership not found.")
+        leagueService.updateLeagueMembershipRole(league.id, adminMembership.id, UserRole.ADMIN, false, ownerPlayer.id)
+
+        val playerToReset = PlayerAccount(firstName = "Target", lastName = "Player", email = "target.player@example.com", password = "password")
+        playerAccountRepository.save(playerToReset)
+        leagueService.joinLeague(league.inviteCode, playerToReset.id)
+        val membershipToReset = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerToReset.id)
+            ?: throw IllegalStateException("Membership to reset not found.")
+
+        entityManager.flush()
+        entityManager.clear()
+
+        val adminToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(UserPrincipal(adminPlayer, emptyList()), "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.name))))
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/reset-display-name", league.id, membershipToReset.id)
+                .header("Authorization", "Bearer $adminToken")
+        )
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.displayName").value("${playerToReset.firstName} ${playerToReset.lastName}"))
+
+        entityManager.flush()
+        entityManager.clear()
+
+        // Verify the change in the database directly
+        val updatedMembership = leagueMembershipRepository.findById(membershipToReset.id).get()
+        assertEquals("${playerToReset.firstName} ${playerToReset.lastName}", updatedMembership.displayName)
+    }
+
+    @Test
+    fun `should prevent non-admin from resetting player display name`() {
+        val ownerPlayer = PlayerAccount(firstName = "Owner", lastName = "A", email = "owner.a@example.com", password = "password")
+        playerAccountRepository.save(ownerPlayer)
+        val league = leagueService.createLeague("Non-Admin Reset League", ownerPlayer.id)
+        leagueRepository.saveAndFlush(league)
+
+        val regularPlayer = PlayerAccount(firstName = "Regular", lastName = "Player", email = "regular.player@example.com", password = "password")
+        playerAccountRepository.save(regularPlayer)
+        leagueService.joinLeague(league.inviteCode, regularPlayer.id) // Call joinLeague to create the membership
+        val regularMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, regularPlayer.id)
+            ?: throw IllegalStateException("Regular membership not found.")
+        leagueMembershipRepository.saveAndFlush(regularMembership)
+
+        val playerToReset = PlayerAccount(firstName = "Target", lastName = "Player", email = "target.player@example.com", password = "password")
+        playerAccountRepository.save(playerToReset)
+        leagueService.joinLeague(league.inviteCode, playerToReset.id) // Call joinLeague to create the membership
+        val membershipToReset = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerToReset.id)
+            ?: throw IllegalStateException("Membership to reset not found.")
+        leagueMembershipRepository.saveAndFlush(membershipToReset) // Added this line
+
+        val regularPlayerToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(UserPrincipal(regularPlayer, emptyList()), "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.name))))
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/reset-display-name", league.id, membershipToReset.id)
+                .header("Authorization", "Bearer $regularPlayerToken")
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `should prevent admin from resetting owner display name`() {
+        val ownerPlayer = PlayerAccount(firstName = "Owner", lastName = "A", email = "owner.a@example.com", password = "password")
+        playerAccountRepository.save(ownerPlayer)
+        val league = leagueService.createLeague("Admin Reset Owner League", ownerPlayer.id)
+        leagueRepository.saveAndFlush(league)
+
+        val adminPlayer = PlayerAccount(firstName = "League", lastName = "Admin", email = "league.admin@example.com", password = "password")
+        playerAccountRepository.save(adminPlayer)
+        leagueService.joinLeague(league.inviteCode, adminPlayer.id) // Call joinLeague to create the membership
+        val adminMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, adminPlayer.id)
+            ?: throw IllegalStateException("Admin membership not found.")
+        leagueService.updateLeagueMembershipRole(league.id, adminMembership.id, UserRole.ADMIN, false, ownerPlayer.id)
+
+        val adminToken = jwtTokenProvider.generateToken(UsernamePasswordAuthenticationToken(UserPrincipal(adminPlayer, emptyList()), "password", listOf(SimpleGrantedAuthority(SecurityRole.USER.name))))
+
+        val ownerMembership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, ownerPlayer.id)
+            ?: throw IllegalStateException("Owner membership not found.")
+
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/reset-display-name", league.id, ownerMembership.id)
+                .header("Authorization", "Bearer $adminToken")
+        )
+            .andExpect(status().isForbidden)
+    }
+
+    @Test
+    fun `should prevent admin from resetting unregistered player display name`() {
+        val league = leagueService.createLeague("Test League for Unregistered Reset", testPlayer!!.id)
+
+        // Add an unregistered player
+        val requestBody = mapOf("displayName" to "Unregistered Player To Reset")
+        mockMvc.perform(
+            post("/api/leagues/{leagueId}/members/unregistered", league.id)
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(requestBody))
+        )
+            .andExpect(status().isCreated)
+
+        // Get the membership ID of the unregistered player
+        val unregisteredMembership = leagueMembershipRepository.findByLeagueIdAndDisplayNameAndPlayerAccountIsNull(league.id, "Unregistered Player To Reset")
+            ?: throw IllegalStateException("Unregistered player membership not found.")
+
+        // Attempt to reset the display name of the unregistered player
+        mockMvc.perform(
+            put("/api/leagues/{leagueId}/members/{leagueMembershipId}/reset-display-name", league.id, unregisteredMembership.id)
+                .header("Authorization", "Bearer $token")
+        )
+            .andExpect(status().isBadRequest) // Expecting 400 Bad Request for IllegalArgumentException
     }
 }

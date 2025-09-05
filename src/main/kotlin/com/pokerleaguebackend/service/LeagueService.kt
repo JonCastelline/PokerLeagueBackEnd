@@ -616,6 +616,78 @@ class LeagueService(
     }
 
     @Transactional
+    fun resetPlayerDisplayName(
+        leagueId: Long,
+        targetLeagueMembershipId: Long,
+        requestingPlayerAccountId: Long
+    ): LeagueMembershipDto {
+        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
+        val targetMembership = getTargetLeagueMembership(targetLeagueMembershipId, leagueId)
+
+        // Authorize the action
+        authorizeRoleManagement(requestingMembership, leagueId)
+
+        // An admin cannot reset the owner's display name
+        if (targetMembership.isOwner && !requestingMembership.isOwner) {
+            throw AccessDeniedException("Admins cannot reset the owner's display name.")
+        }
+
+        targetMembership.playerAccount?.let { player ->
+            targetMembership.displayName = "${player.firstName} ${player.lastName}"
+        } ?: run {
+            throw IllegalArgumentException("Cannot reset display name for unregistered players.")
+        }
+        val updatedMembership = leagueMembershipRepository.saveAndFlush(targetMembership)
+
+        return LeagueMembershipDto(
+            id = updatedMembership.id,
+            playerAccountId = updatedMembership.playerAccount?.id,
+            displayName = updatedMembership.displayName,
+            iconUrl = updatedMembership.iconUrl,
+            role = updatedMembership.role,
+            isOwner = updatedMembership.isOwner,
+            email = updatedMembership.playerAccount?.email,
+            isActive = updatedMembership.isActive,
+            firstName = updatedMembership.playerAccount?.firstName,
+            lastName = updatedMembership.playerAccount?.lastName
+        )
+    }
+
+    @Transactional
+    fun resetPlayerIconUrl(
+        leagueId: Long,
+        targetLeagueMembershipId: Long,
+        requestingPlayerAccountId: Long
+    ): LeagueMembershipDto {
+        val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
+        val targetMembership = getTargetLeagueMembership(targetLeagueMembershipId, leagueId)
+
+        // Authorize the action
+        authorizeRoleManagement(requestingMembership, leagueId)
+
+        // An admin cannot reset the owner's icon
+        if (targetMembership.isOwner && !requestingMembership.isOwner) {
+            throw AccessDeniedException("Admins cannot reset the owner's icon.")
+        }
+
+        targetMembership.iconUrl = null
+        val updatedMembership = leagueMembershipRepository.save(targetMembership)
+
+        return LeagueMembershipDto(
+            id = updatedMembership.id,
+            playerAccountId = updatedMembership.playerAccount?.id,
+            displayName = updatedMembership.displayName,
+            iconUrl = updatedMembership.iconUrl,
+            role = updatedMembership.role,
+            isOwner = updatedMembership.isOwner,
+            email = updatedMembership.playerAccount?.email,
+            isActive = updatedMembership.isActive,
+            firstName = updatedMembership.playerAccount?.firstName,
+            lastName = updatedMembership.playerAccount?.lastName
+        )
+    }
+
+    @Transactional
     fun invitePlayer(leagueId: Long, membershipId: Long, email: String, requestingPlayerAccountId: Long): String {
         val requestingMembership = getLeagueMembership(leagueId, requestingPlayerAccountId)
         if (!requestingMembership.isOwner && requestingMembership.role != UserRole.ADMIN) {
