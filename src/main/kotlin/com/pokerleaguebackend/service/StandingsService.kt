@@ -44,23 +44,6 @@ class StandingsService(
 
         val playerScores = mutableMapOf<Long, PlayerStandingsDto>()
 
-        // Initialize all league members for the season
-        val leagueMemberships = leagueMembershipRepository.findAllByLeagueId(season.league.id)
-        leagueMemberships.forEach { membership: LeagueMembership ->
-            playerScores[membership.id] = PlayerStandingsDto(
-                seasonId = season.id,
-                playerId = membership.id,
-                displayName = membership.displayName,
-                iconUrl = membership.iconUrl,
-                totalPoints = BigDecimal.ZERO,
-                placePointsEarned = BigDecimal.ZERO,
-                totalKills = 0,
-                totalBounties = 0,
-                gamesPlayed = 0,
-                isActive = membership.isActive
-            )
-        }
-
         allGameResults.forEach { result ->
             val standingsDto = playerScores.getOrPut(result.player.id) {
                 PlayerStandingsDto(
@@ -116,11 +99,7 @@ class StandingsService(
         }
 
         // Sort by total points (descending), then alphabetically by player name
-        val filteredStandings = playerScores.values.filter { standingsDto ->
-            standingsDto.isActive || standingsDto.gamesPlayed > 0
-        }
-
-        val sortedStandings = filteredStandings.sortedWith(compareByDescending<PlayerStandingsDto> { it.totalPoints }
+        val sortedStandings = playerScores.values.sortedWith(compareByDescending<PlayerStandingsDto> { it.totalPoints }
             .thenBy { it.displayName })
 
         // Assign ranks, handling ties
