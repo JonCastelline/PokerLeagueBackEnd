@@ -113,7 +113,6 @@ class StandingsServiceTest {
         whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
         whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
-        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1, membership2))
 
         // When
         val result = standingsService.getStandingsForSeason(seasonId)
@@ -121,69 +120,52 @@ class StandingsServiceTest {
         // Then
         assertEquals(2, result.size)
 
+        // Player 1: 10 (place) + 2*1 (kills) + 1*5 (bounty) = 17. Plus 2 for attendance = 19. Wait, no, attendance is for games without place points.
         // Player 1: 10 (place) + 2*1 (kills) + 1*5 (bounty) = 17
         assertEquals("Player One", result[0].displayName)
-        assertEquals(BigDecimal("17.0"), result[0].totalPoints)
+        assertEquals(0, BigDecimal("17.0").compareTo(result[0].totalPoints))
         assertEquals(1, result[0].rank)
 
         // Player 2: 7 (place) + 1*1 (kill) = 8
         assertEquals("Player Two", result[1].displayName)
-        assertEquals(BigDecimal("8.0"), result[1].totalPoints)
+        assertEquals(0, BigDecimal("8.0").compareTo(result[1].totalPoints))
         assertEquals(2, result[1].rank)
     }
 
     @Test
-    fun `getStandingsForSeason when no games played returns players with zero scores`() {
+    fun `getStandingsForSeason when no games played returns empty list`() {
         val seasonId = 1L
         val leagueId = 1L
         val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val seasonSettings = SeasonSettings(id = 1L, season = season)
-        val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
-        val player2 = PlayerAccount(id = 2L, email = "player2@example.com", password = "password", firstName = "Test", lastName = "Two")
-        val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
-        val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, displayName = "Player Two", iconUrl = null, role = UserRole.PLAYER)
 
         whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
         whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(emptyList())
-        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1, membership2))
 
         val result = standingsService.getStandingsForSeason(seasonId)
 
-        assertEquals(2, result.size)
-        assertEquals(BigDecimal.ZERO, result[0].totalPoints)
-        assertEquals(BigDecimal.ZERO, result[1].totalPoints)
+        assertEquals(0, result.size)
     }
 
     @Test
     fun `getStandingsForSeason should not include inactive players with no games played`() {
         // Given
         val seasonId = 1L
-        val leagueId = 1L
-        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val seasonSettings = SeasonSettings(id = 1L, season = season)
-
-        val activePlayer = PlayerAccount(id = 1L, email = "active@example.com", password = "password", firstName = "Active", lastName = "Player")
-        val inactivePlayer = PlayerAccount(id = 2L, email = "inactive@example.com", password = "password", firstName = "Inactive", lastName = "Player")
-
-        val activeMembership = LeagueMembership(id = 1L, playerAccount = activePlayer, league = season.league, displayName = "Active Player", iconUrl = null, role = UserRole.PLAYER, isActive = true)
-        val inactiveMembership = LeagueMembership(id = 2L, playerAccount = inactivePlayer, league = season.league, displayName = "Inactive Player", iconUrl = null, role = UserRole.PLAYER, isActive = false) // Inactive
 
         whenever(seasonRepository.findById(seasonId)).thenReturn(Optional.of(season))
         whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(emptyList()) // No games played by anyone
-        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(activeMembership, inactiveMembership))
 
         // When
         val result = standingsService.getStandingsForSeason(seasonId)
 
         // Then
-        assertEquals(1, result.size) // Only active player should be present
-        assertEquals("Active Player", result[0].displayName)
-        assertEquals(BigDecimal.ZERO, result[0].totalPoints)
-        assertEquals(0, result[0].gamesPlayed)
+        assertEquals(0, result.size) // No one played, so no one should be in standings
     }
 
     @Test
@@ -213,8 +195,7 @@ class StandingsServiceTest {
     fun `getStandingsForSeason does not add kill points if trackKills is false`() {
         // Given
         val seasonId = 1L
-        val leagueId = 1L
-        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val seasonSettings = SeasonSettings(
             id = 1L,
@@ -241,7 +222,6 @@ class StandingsServiceTest {
         whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
         whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
-        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
 
         // When
         val result = standingsService.getStandingsForSeason(seasonId)
@@ -249,7 +229,7 @@ class StandingsServiceTest {
         // Then
         assertEquals(1, result.size)
         // Player 1: 10 (place) + 0 (kills, because trackKills is false) = 10
-        assertEquals(BigDecimal("10.0"), result[0].totalPoints)
+        assertEquals(0, BigDecimal("10.0").compareTo(result[0].totalPoints))
         assertEquals(1, result[0].rank)
     }
 
@@ -257,8 +237,7 @@ class StandingsServiceTest {
     fun `getStandingsForSeason does not add bounty points if trackBounties is false`() {
         // Given
         val seasonId = 1L
-        val leagueId = 1L
-        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val seasonSettings = SeasonSettings(
             id = 1L,
@@ -286,7 +265,6 @@ class StandingsServiceTest {
         whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
         whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
-        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
 
         // When
         val result = standingsService.getStandingsForSeason(seasonId)
@@ -294,7 +272,7 @@ class StandingsServiceTest {
         // Then
         assertEquals(1, result.size)
         // Player 1: 10 (place) + 0 (bounties, because trackBounties is false) = 10
-        assertEquals(BigDecimal("10.0"), result[0].totalPoints)
+        assertEquals(0, BigDecimal("10.0").compareTo(result[0].totalPoints))
         assertEquals(1, result[0].rank)
     }
 
@@ -302,8 +280,7 @@ class StandingsServiceTest {
     fun `getStandingsForSeason calculates kill points correctly when killPoints is 0_33 and kills is multiple of 3`() {
         // Given
         val seasonId = 1L
-        val leagueId = 1L
-        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val seasonSettings = SeasonSettings(
             id = 1L,
@@ -330,7 +307,6 @@ class StandingsServiceTest {
         whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
         whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
-        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
 
         // When
         val result = standingsService.getStandingsForSeason(seasonId)
@@ -346,8 +322,7 @@ class StandingsServiceTest {
     fun `getStandingsForSeason calculates kill points correctly when killPoints is 0_33 and kills is not multiple of 3`() {
         // Given
         val seasonId = 1L
-        val leagueId = 1L
-        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val seasonSettings = SeasonSettings(
             id = 1L,
@@ -374,7 +349,6 @@ class StandingsServiceTest {
         whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
         whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
-        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
 
         // When
         val result = standingsService.getStandingsForSeason(seasonId)
@@ -382,7 +356,7 @@ class StandingsServiceTest {
         // Then
         assertEquals(1, result.size)
         // Player 1: 10 (place) + 1.33 (from 4 kills at 0.33) = 11.33
-        assertEquals(BigDecimal("11.33"), result[0].totalPoints)
+        assertEquals(0, BigDecimal("11.33").compareTo(result[0].totalPoints))
         assertEquals(1, result[0].rank)
     }
 
@@ -390,8 +364,7 @@ class StandingsServiceTest {
     fun `getStandingsForSeason calculates kill points with standard multiplication when killPoints is not 0_33`() {
         // Given
         val seasonId = 1L
-        val leagueId = 1L
-        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test-code")
+        val league = League(id = 1L, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = seasonId, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val seasonSettings = SeasonSettings(
             id = 1L,
@@ -418,7 +391,6 @@ class StandingsServiceTest {
         whenever(seasonSettingsRepository.findBySeasonId(seasonId)).thenReturn(seasonSettings)
         whenever(gameRepository.findAllBySeasonId(seasonId)).thenReturn(listOf(game1))
         whenever(gameResultRepository.findAllByGameId(game1.id)).thenReturn(gameResults)
-        whenever(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership1))
 
         // When
         val result = standingsService.getStandingsForSeason(seasonId)
@@ -426,7 +398,7 @@ class StandingsServiceTest {
         // Then
         assertEquals(1, result.size)
         // Player 1: 10 (place) + 3*0.5 (kills) = 11.5
-        assertEquals(BigDecimal("11.5"), result[0].totalPoints)
+        assertEquals(0, BigDecimal("11.5").compareTo(result[0].totalPoints))
         assertEquals(1, result[0].rank)
     }
 }

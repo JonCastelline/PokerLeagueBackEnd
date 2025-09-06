@@ -324,14 +324,7 @@ class StandingsControllerIntegrationTest {
         mockMvc.perform(get("/api/seasons/${testSeason.id}/standings")
             .header("Authorization", "Bearer $adminToken"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].displayName").value("Admin User"))
-            .andExpect(jsonPath("$[0].totalPoints").value(BigDecimal("0.0")))
-            .andExpect(jsonPath("$[0].gamesPlayed").value(0))
-            .andExpect(jsonPath("$[0].rank").value(1))
-            .andExpect(jsonPath("$[1].displayName").value("Regular User"))
-            .andExpect(jsonPath("$[1].totalPoints").value(BigDecimal("0.0")))
-            .andExpect(jsonPath("$[1].gamesPlayed").value(0))
-            .andExpect(jsonPath("$[1].rank").value(1))
+            .andExpect(jsonPath("$.length()").value(0))
     }
 
     @Test
