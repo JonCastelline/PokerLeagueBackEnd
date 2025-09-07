@@ -195,7 +195,9 @@ class SeasonSettingsControllerIntegrationTest {
                 PlacePointDto(place = 2, points = "7.0".toBigDecimal())
             ),
             warningSoundEnabled = true,
-            warningSoundTimeSeconds = 60
+            warningSoundTimeSeconds = 60,
+            playerEliminationEnabled = true,
+            playerTimerControlEnabled = true
         )
 
         mockMvc.perform(put("/api/seasons/${testSeason.id}/settings")
@@ -209,6 +211,8 @@ class SeasonSettingsControllerIntegrationTest {
             .andExpect(jsonPath("$.bountyPoints").value(3.0))
             .andExpect(jsonPath("$.durationSeconds").value(2400))
             .andExpect(jsonPath("$.bountyOnLeaderAbsenceRule").value("NEXT_HIGHEST_PLAYER"))
+            .andExpect(jsonPath("$.playerEliminationEnabled").value(true))
+            .andExpect(jsonPath("$.playerTimerControlEnabled").value(true))
             .andExpect(jsonPath("$.blindLevels", hasSize<Any>(2)))
             .andExpect(jsonPath("$.blindLevels[0].level").value(1))
             .andExpect(jsonPath("$.blindLevels[0].smallBlind").value(25))
@@ -226,6 +230,8 @@ class SeasonSettingsControllerIntegrationTest {
         assertEquals(0, BigDecimal("3.0").compareTo(fetchedSettings?.bountyPoints))
         assertEquals(2400, fetchedSettings?.durationSeconds)
         assertEquals(BountyOnLeaderAbsenceRule.NEXT_HIGHEST_PLAYER, fetchedSettings?.bountyOnLeaderAbsenceRule)
+        assertEquals(true, fetchedSettings?.playerEliminationEnabled)
+        assertEquals(true, fetchedSettings?.playerTimerControlEnabled)
         assertEquals(2, fetchedSettings?.blindLevels?.size)
         assertEquals(1, fetchedSettings?.blindLevels?.get(0)?.level)
         assertEquals(2, fetchedSettings?.placePoints?.size)
@@ -247,7 +253,9 @@ class SeasonSettingsControllerIntegrationTest {
             blindLevels = emptyList(),
             placePoints = emptyList(),
             warningSoundEnabled = true,
-            warningSoundTimeSeconds = 60
+            warningSoundTimeSeconds = 60,
+            playerEliminationEnabled = false,
+            playerTimerControlEnabled = false
         )
 
         mockMvc.perform(put("/api/seasons/${testSeason.id}/settings")
@@ -281,7 +289,9 @@ class SeasonSettingsControllerIntegrationTest {
             blindLevels = emptyList(),
             placePoints = emptyList(),
             warningSoundEnabled = true,
-            warningSoundTimeSeconds = 60
+            warningSoundTimeSeconds = 60,
+            playerEliminationEnabled = false,
+            playerTimerControlEnabled = false
         )
 
         mockMvc.perform(put("/api/seasons/${testSeason.id}/settings")
@@ -308,7 +318,9 @@ class SeasonSettingsControllerIntegrationTest {
             blindLevels = listOf(BlindLevelDto(level = 1, smallBlind = 100, bigBlind = 200)),
             placePoints = listOf(PlacePointDto(place = 1, points = "100.0".toBigDecimal())),
             warningSoundEnabled = true,
-            warningSoundTimeSeconds = 60
+            warningSoundTimeSeconds = 60,
+            playerEliminationEnabled = true,
+            playerTimerControlEnabled = true
         )
 
         // 2. Update the first season's settings to be custom
@@ -336,6 +348,8 @@ class SeasonSettingsControllerIntegrationTest {
             .andExpect(jsonPath("$.killPoints").value(5.0))
             .andExpect(jsonPath("$.bountyOnLeaderAbsenceRule").value("NEXT_HIGHEST_PLAYER"))
             .andExpect(jsonPath("$.startingStack").value(5000))
+            .andExpect(jsonPath("$.playerEliminationEnabled").value(true))
+            .andExpect(jsonPath("$.playerTimerControlEnabled").value(true))
             .andExpect(jsonPath("$.blindLevels", hasSize<Any>(1)))
             .andExpect(jsonPath("$.blindLevels[0].smallBlind").value(100))
             .andExpect(jsonPath("$.placePoints", hasSize<Any>(1)))

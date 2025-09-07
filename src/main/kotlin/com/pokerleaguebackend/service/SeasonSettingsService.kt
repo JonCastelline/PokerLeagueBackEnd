@@ -60,6 +60,8 @@ class SeasonSettingsService(
         existingSettings.startingStack = settingsDto.startingStack
         existingSettings.warningSoundEnabled = settingsDto.warningSoundEnabled
         existingSettings.warningSoundTimeSeconds = settingsDto.warningSoundTimeSeconds
+        existingSettings.playerEliminationEnabled = settingsDto.playerEliminationEnabled
+        existingSettings.playerTimerControlEnabled = settingsDto.playerTimerControlEnabled
 
         // Update blind levels
         existingSettings.blindLevels.clear()

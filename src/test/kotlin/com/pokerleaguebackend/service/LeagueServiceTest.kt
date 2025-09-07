@@ -4,6 +4,7 @@ import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.GameStatus
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -28,6 +29,7 @@ import org.mockito.kotlin.argThat
 import org.mockito.kotlin.verify
 import java.util.Date
 import java.util.Optional
+import java.sql.Time
 
 class LeagueServiceTest {
 
@@ -51,6 +53,9 @@ class LeagueServiceTest {
 
     @Mock
     private lateinit var playerInviteRepository: PlayerInviteRepository
+
+    @Mock
+    private lateinit var seasonSettingsRepository: com.pokerleaguebackend.repository.SeasonSettingsRepository
 
     @Mock
     private lateinit var env: Environment
@@ -256,5 +261,153 @@ class LeagueServiceTest {
         assertThrows<Exception> {
             leagueService.resetPlayerIconUrl(1, 1, 2)
         }
+    }
+
+    @Test
+    fun `isLeagueAdminOrTimerControlEnabled should return true if user is admin`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Admin", lastName = "User", email = "admin@test.com", password = "password", paid = false)
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
+        val game = com.pokerleaguebackend.model.Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.ADMIN, displayName = "Admin", isOwner = false)
+
+        `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
+        `when`(playerAccountRepository.findByEmail(playerAccount.email)).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerAccount.id)).thenReturn(membership)
+
+        assertTrue(leagueService.isLeagueAdminOrTimerControlEnabled(game.id, playerAccount.email))
+    }
+
+    @Test
+    fun `isLeagueAdminOrTimerControlEnabled should return true if user is owner`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Owner", lastName = "User", email = "owner@test.com", password = "password", paid = false)
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
+        val game = com.pokerleaguebackend.model.Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Owner", isOwner = true)
+
+        `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
+        `when`(playerAccountRepository.findByEmail(playerAccount.email)).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerAccount.id)).thenReturn(membership)
+
+        assertTrue(leagueService.isLeagueAdminOrTimerControlEnabled(game.id, playerAccount.email))
+    }
+
+    @Test
+    fun `isLeagueAdminOrTimerControlEnabled should return true if playerTimerControlEnabled is true for regular user`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Player", lastName = "User", email = "player@test.com", password = "password", paid = false)
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
+        val game = com.pokerleaguebackend.model.Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Player", isOwner = false)
+        val seasonSettings = com.pokerleaguebackend.model.SeasonSettings(season = season, playerTimerControlEnabled = true)
+
+        `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
+        `when`(playerAccountRepository.findByEmail(playerAccount.email)).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerAccount.id)).thenReturn(membership)
+        `when`(seasonSettingsRepository.findBySeasonId(season.id)).thenReturn(seasonSettings)
+
+        assertTrue(leagueService.isLeagueAdminOrTimerControlEnabled(game.id, playerAccount.email))
+    }
+
+    @Test
+    fun `isLeagueAdminOrTimerControlEnabled should return false if playerTimerControlEnabled is false for regular user`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Player", lastName = "User", email = "player@test.com", password = "password", paid = false)
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
+        val game = com.pokerleaguebackend.model.Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Player", isOwner = false)
+        val seasonSettings = com.pokerleaguebackend.model.SeasonSettings(season = season, playerTimerControlEnabled = false)
+
+        `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
+        `when`(playerAccountRepository.findByEmail(playerAccount.email)).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerAccount.id)).thenReturn(membership)
+        `when`(seasonSettingsRepository.findBySeasonId(season.id)).thenReturn(seasonSettings)
+
+        assertFalse(leagueService.isLeagueAdminOrTimerControlEnabled(game.id, playerAccount.email))
+    }
+
+    @Test
+    fun `isLeagueAdminOrTimerControlEnabled should return false if game not found`() {
+        val gameId = 1L
+        val username = "admin@test.com"
+
+        `when`(gameRepository.findById(gameId)).thenReturn(Optional.empty())
+
+        assertFalse(leagueService.isLeagueAdminOrTimerControlEnabled(gameId, username))
+    }
+
+    @Test
+    fun `isLeagueAdminOrEliminationControlEnabled should return true if user is admin`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Admin", lastName = "User", email = "admin@test.com", password = "password", paid = false)
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
+        val game = com.pokerleaguebackend.model.Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.ADMIN, displayName = "Admin", isOwner = false)
+
+        `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
+        `when`(playerAccountRepository.findByEmail(playerAccount.email)).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerAccount.id)).thenReturn(membership)
+
+        assertTrue(leagueService.isLeagueAdminOrEliminationControlEnabled(game.id, playerAccount.email))
+    }
+
+    @Test
+    fun `isLeagueAdminOrEliminationControlEnabled should return true if user is owner`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Owner", lastName = "User", email = "owner@test.com", password = "password", paid = false)
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
+        val game = com.pokerleaguebackend.model.Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Owner", isOwner = true)
+
+        `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
+        `when`(playerAccountRepository.findByEmail(playerAccount.email)).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerAccount.id)).thenReturn(membership)
+
+        assertTrue(leagueService.isLeagueAdminOrEliminationControlEnabled(game.id, playerAccount.email))
+    }
+
+    @Test
+    fun `isLeagueAdminOrEliminationControlEnabled should return true if playerEliminationEnabled is true for regular user`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Player", lastName = "User", email = "player@test.com", password = "password", paid = false)
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
+        val game = com.pokerleaguebackend.model.Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Player", isOwner = false)
+        val seasonSettings = com.pokerleaguebackend.model.SeasonSettings(season = season, playerEliminationEnabled = true)
+
+        `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
+        `when`(playerAccountRepository.findByEmail(playerAccount.email)).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerAccount.id)).thenReturn(membership)
+        `when`(seasonSettingsRepository.findBySeasonId(season.id)).thenReturn(seasonSettings)
+
+        assertTrue(leagueService.isLeagueAdminOrEliminationControlEnabled(game.id, playerAccount.email))
+    }
+
+    @Test
+    fun `isLeagueAdminOrEliminationControlEnabled should return false if playerEliminationEnabled is false for regular user`() {
+        val playerAccount = PlayerAccount(id = 1, firstName = "Player", lastName = "User", email = "player@test.com", password = "password", paid = false)
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
+        val season = com.pokerleaguebackend.model.Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
+        val game = com.pokerleaguebackend.model.Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Player", isOwner = false)
+        val seasonSettings = com.pokerleaguebackend.model.SeasonSettings(season = season, playerEliminationEnabled = false)
+
+        `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
+        `when`(playerAccountRepository.findByEmail(playerAccount.email)).thenReturn(playerAccount)
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(league.id, playerAccount.id)).thenReturn(membership)
+        `when`(seasonSettingsRepository.findBySeasonId(season.id)).thenReturn(seasonSettings)
+
+        assertFalse(leagueService.isLeagueAdminOrEliminationControlEnabled(game.id, playerAccount.email))
+    }
+
+    @Test
+    fun `isLeagueAdminOrEliminationControlEnabled should return false if game not found`() {
+        val gameId = 1L
+        val username = "admin@test.com"
+
+        `when`(gameRepository.findById(gameId)).thenReturn(Optional.empty())
+
+        assertFalse(leagueService.isLeagueAdminOrEliminationControlEnabled(gameId, username))
     }
 }

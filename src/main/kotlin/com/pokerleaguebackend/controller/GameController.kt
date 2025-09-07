@@ -124,43 +124,43 @@ class GameController(
         return ResponseEntity.ok(gameState)
     }
 
-    @PostMapping("/games/{gameId}/live/pause")
-    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+        @PostMapping("/games/{gameId}/live/pause")
+    @PreAuthorize("@leagueService.isLeagueAdminOrTimerControlEnabled(#gameId, principal.username)")
     fun pauseGame(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.pauseGame(gameId)
         return ResponseEntity.ok(gameState)
     }
 
     @PostMapping("/games/{gameId}/live/resume")
-    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    @PreAuthorize("@leagueService.isLeagueAdminOrTimerControlEnabled(#gameId, principal.username)")
     fun resumeGame(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.resumeGame(gameId)
         return ResponseEntity.ok(gameState)
     }
 
     @PostMapping("/games/{gameId}/live/eliminate")
-    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    @PreAuthorize("@leagueService.isLeagueAdminOrEliminationControlEnabled(#gameId, principal.username)")
     fun eliminatePlayer(@PathVariable gameId: Long, @RequestBody request: EliminatePlayerRequest): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.eliminatePlayer(gameId, request)
         return ResponseEntity.ok(gameState)
     }
 
     @PostMapping("/games/{gameId}/live/undo")
-    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    @PreAuthorize("@leagueService.isLeagueAdminOrEliminationControlEnabled(#gameId, principal.username)")
     fun undoElimination(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.undoElimination(gameId)
         return ResponseEntity.ok(gameState)
     }
 
     @PostMapping("/games/{gameId}/live/next-level")
-    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    @PreAuthorize("@leagueService.isLeagueAdminOrTimerControlEnabled(#gameId, principal.username)")
     fun nextLevel(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.nextLevel(gameId)
         return ResponseEntity.ok(gameState)
     }
 
     @PostMapping("/games/{gameId}/live/previous-level")
-    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    @PreAuthorize("@leagueService.isLeagueAdminOrTimerControlEnabled(#gameId, principal.username)")
     fun previousLevel(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.previousLevel(gameId)
         return ResponseEntity.ok(gameState)
@@ -184,21 +184,21 @@ class GameController(
     }
 
     @PutMapping("/games/{gameId}/live/timer")
-    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    @PreAuthorize("@leagueService.isLeagueAdminOrTimerControlEnabled(#gameId, principal.username)")
     fun updateTimer(@PathVariable gameId: Long, @RequestBody request: com.pokerleaguebackend.payload.request.UpdateTimerRequest): ResponseEntity<Unit> {
         gameEngineService.updateTimer(gameId, request)
         return ResponseEntity.ok().build()
     }
 
     @PostMapping("/games/{gameId}/live/reset-level")
-    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    @PreAuthorize("@leagueService.isLeagueAdminOrTimerControlEnabled(#gameId, principal.username)")
     fun resetLevel(@PathVariable gameId: Long): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.resetLevel(gameId)
         return ResponseEntity.ok(gameState)
     }
 
     @PostMapping("/games/{gameId}/live/set-time")
-    @PreAuthorize("@leagueService.isLeagueAdminByGame(#gameId, principal.username)")
+    @PreAuthorize("@leagueService.isLeagueAdminOrTimerControlEnabled(#gameId, principal.username)")
     fun setTime(@PathVariable gameId: Long, @RequestBody request: com.pokerleaguebackend.payload.request.SetTimeRequest): ResponseEntity<GameStateResponse> {
         val gameState = gameEngineService.setTime(gameId, request)
         return ResponseEntity.ok(gameState)
