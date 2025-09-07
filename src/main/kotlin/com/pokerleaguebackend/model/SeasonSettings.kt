@@ -42,6 +42,9 @@ data class SeasonSettings(
     var warningSoundEnabled: Boolean = false,
     var warningSoundTimeSeconds: Int = 60,
 
+    var playerEliminationEnabled: Boolean = false,
+    var playerTimerControlEnabled: Boolean = false,
+
     @OneToMany(mappedBy = "seasonSettings", cascade = [CascadeType.ALL], orphanRemoval = true)
     @JsonManagedReference
     var blindLevels: MutableList<BlindLevel> = mutableListOf(),

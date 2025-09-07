@@ -16,6 +16,7 @@ import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.SeasonRepository
 import com.pokerleaguebackend.repository.LeagueHomeContentRepository
 import com.pokerleaguebackend.repository.PlayerInviteRepository
+import com.pokerleaguebackend.repository.SeasonSettingsRepository
 import com.pokerleaguebackend.exception.DuplicatePlayerException
 import com.pokerleaguebackend.exception.LeagueNotFoundException
 import org.springframework.security.access.AccessDeniedException
@@ -41,6 +42,7 @@ class LeagueService(
     private val seasonRepository: SeasonRepository,
     private val leagueHomeContentRepository: LeagueHomeContentRepository,
     private val playerInviteRepository: PlayerInviteRepository,
+    private val seasonSettingsRepository: SeasonSettingsRepository,
     private val entityManager: EntityManager
 ) {
 
@@ -808,5 +810,27 @@ class LeagueService(
             displayNameToClaim = invite.leagueMembership.displayName ?: "Unknown Player",
             email = invite.email
         )
+    }
+
+    fun isLeagueAdminOrTimerControlEnabled(gameId: Long, username: String): Boolean {
+        val game = gameRepository.findById(gameId).orElse(null) ?: return false
+        val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(game.season.league.id, playerAccount.id)
+        if (membership?.role == UserRole.ADMIN || membership?.isOwner == true) {
+            return true
+        }
+        val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
+        return seasonSettings?.playerTimerControlEnabled ?: false
+    }
+
+    fun isLeagueAdminOrEliminationControlEnabled(gameId: Long, username: String): Boolean {
+        val game = gameRepository.findById(gameId).orElse(null) ?: return false
+        val playerAccount = playerAccountRepository.findByEmail(username) ?: return false
+        val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(game.season.league.id, playerAccount.id)
+        if (membership?.role == UserRole.ADMIN || membership?.isOwner == true) {
+            return true
+        }
+        val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
+        return seasonSettings?.playerEliminationEnabled ?: false
     }
 }

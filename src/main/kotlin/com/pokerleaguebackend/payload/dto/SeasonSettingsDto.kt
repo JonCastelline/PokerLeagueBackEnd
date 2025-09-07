@@ -15,6 +15,8 @@ data class SeasonSettingsDto(
     val startingStack: Int,
     val warningSoundEnabled: Boolean,
     val warningSoundTimeSeconds: Int,
+    val playerEliminationEnabled: Boolean,
+    val playerTimerControlEnabled: Boolean,
     val blindLevels: List<BlindLevelDto>,
     val placePoints: List<PlacePointDto>
 )
