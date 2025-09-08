@@ -9,7 +9,7 @@ import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.BlindLevel
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.payload.request.CreateGameRequest
 import com.pokerleaguebackend.payload.request.StartGameRequest
 import com.pokerleaguebackend.payload.request.UpdateTimerRequest

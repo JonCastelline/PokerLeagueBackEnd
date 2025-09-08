@@ -1,7 +1,7 @@
 package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.GameResult
-import com.pokerleaguebackend.model.GameStatus
+import com.pokerleaguebackend.model.enums.GameStatus
 import com.pokerleaguebackend.model.LiveGamePlayer
 import com.pokerleaguebackend.payload.request.EliminatePlayerRequest
 import com.pokerleaguebackend.payload.request.StartGameRequest

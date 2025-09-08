@@ -1,5 +1,6 @@
 package com.pokerleaguebackend.model
 
+import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import jakarta.persistence.Entity

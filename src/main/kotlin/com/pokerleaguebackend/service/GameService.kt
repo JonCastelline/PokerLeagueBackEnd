@@ -10,7 +10,7 @@ import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 import biweekly.Biweekly
 import biweekly.ICalendar
 import biweekly.component.VEvent

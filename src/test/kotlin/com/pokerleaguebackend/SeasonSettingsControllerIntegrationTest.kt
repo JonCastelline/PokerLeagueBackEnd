@@ -1,7 +1,7 @@
 package com.pokerleaguebackend
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.pokerleaguebackend.model.BountyOnLeaderAbsenceRule
+import com.pokerleaguebackend.model.enums.BountyOnLeaderAbsenceRule
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.PlayerAccount
@@ -35,7 +35,7 @@ import java.math.BigDecimal
 import java.util.Date
 
 import org.springframework.transaction.annotation.Transactional
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 
 @SpringBootTest
 @AutoConfigureMockMvc

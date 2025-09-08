@@ -13,7 +13,8 @@ import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.PlayerInviteRepository
 import com.pokerleaguebackend.payload.response.LoginResponse
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
+import com.pokerleaguebackend.model.enums.InviteStatus
 import com.pokerleaguebackend.payload.request.AddUnregisteredPlayerRequest
 import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.model.LeagueMembership
@@ -171,7 +172,7 @@ class PlayerClaimProfileIntegrationTest {
         assertEquals("newuser@example.com", updatedMembership.playerAccount!!.email)
 
         val invite = playerInviteRepository.findByToken(token)!!
-        assertEquals(com.pokerleaguebackend.model.InviteStatus.ACCEPTED, invite.status)
+        assertEquals(InviteStatus.ACCEPTED, invite.status)
     }
 
     @Test
@@ -229,7 +230,7 @@ class PlayerClaimProfileIntegrationTest {
         assertEquals(existingUser.id, updatedMembership.playerAccount!!.id)
 
         val invite = playerInviteRepository.findById(inviteId).get()
-        assertEquals(com.pokerleaguebackend.model.InviteStatus.ACCEPTED, invite.status)
+        assertEquals(InviteStatus.ACCEPTED, invite.status)
     }
 
     @Test

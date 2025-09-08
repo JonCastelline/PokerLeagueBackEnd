@@ -3,8 +3,8 @@ package com.pokerleaguebackend.service
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
-import com.pokerleaguebackend.model.UserRole
-import com.pokerleaguebackend.model.GameStatus
+import com.pokerleaguebackend.model.enums.UserRole
+import com.pokerleaguebackend.model.enums.GameStatus
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository

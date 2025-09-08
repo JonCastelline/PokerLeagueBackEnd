@@ -2,7 +2,7 @@ package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.payload.request.CreateSeasonRequest
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 import java.util.Date
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository

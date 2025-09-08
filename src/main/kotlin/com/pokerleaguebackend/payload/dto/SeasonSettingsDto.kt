@@ -1,6 +1,6 @@
 package com.pokerleaguebackend.payload.dto
 
-import com.pokerleaguebackend.model.BountyOnLeaderAbsenceRule
+import com.pokerleaguebackend.model.enums.BountyOnLeaderAbsenceRule
 import java.math.BigDecimal
 
 data class SeasonSettingsDto(

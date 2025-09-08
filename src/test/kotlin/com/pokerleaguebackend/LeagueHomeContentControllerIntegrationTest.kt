@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueHomeContent
 import com.pokerleaguebackend.model.PlayerAccount
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.payload.dto.LeagueHomeContentDto
 import com.pokerleaguebackend.repository.LeagueHomeContentRepository

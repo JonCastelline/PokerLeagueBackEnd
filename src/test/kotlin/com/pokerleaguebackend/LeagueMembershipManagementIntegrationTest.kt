@@ -1,11 +1,10 @@
-
 package com.pokerleaguebackend
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.payload.request.TransferLeagueOwnershipRequest
 import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipRoleRequest

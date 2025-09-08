@@ -1,5 +1,6 @@
 package com.pokerleaguebackend.model
 
+import com.pokerleaguebackend.model.enums.InviteStatus
 import java.util.Date
 import jakarta.persistence.Entity
 import jakarta.persistence.Table

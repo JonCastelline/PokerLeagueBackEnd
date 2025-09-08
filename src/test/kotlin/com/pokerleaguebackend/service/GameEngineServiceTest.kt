@@ -2,14 +2,14 @@ package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.Game
 import com.pokerleaguebackend.model.GameResult
-import com.pokerleaguebackend.model.GameStatus
+import com.pokerleaguebackend.model.enums.GameStatus
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.LiveGamePlayer
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.SeasonSettings
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.payload.request.EliminatePlayerRequest
 import com.pokerleaguebackend.payload.request.StartGameRequest
 import com.pokerleaguebackend.repository.GameRepository

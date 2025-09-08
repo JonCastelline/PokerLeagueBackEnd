@@ -1,6 +1,6 @@
 package com.pokerleaguebackend.payload.response
 
-import com.pokerleaguebackend.model.GameStatus
+import com.pokerleaguebackend.model.enums.GameStatus
 import com.pokerleaguebackend.payload.dto.BlindLevelDto
 
 data class GameStateResponse(
