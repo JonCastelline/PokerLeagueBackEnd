@@ -1,7 +1,7 @@
 package com.pokerleaguebackend.repository
 
 import com.pokerleaguebackend.model.PlayerInvite
-import com.pokerleaguebackend.model.InviteStatus
+import com.pokerleaguebackend.model.enums.InviteStatus
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 import java.util.Date

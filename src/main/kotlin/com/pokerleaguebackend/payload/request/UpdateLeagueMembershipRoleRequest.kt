@@ -1,6 +1,6 @@
 package com.pokerleaguebackend.payload.request
 
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 
 data class UpdateLeagueMembershipRoleRequest(
     val leagueMembershipId: Long,

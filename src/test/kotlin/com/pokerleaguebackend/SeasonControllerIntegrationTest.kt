@@ -29,7 +29,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delet
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.payload.request.UpdateSeasonRequest
 import java.util.Date

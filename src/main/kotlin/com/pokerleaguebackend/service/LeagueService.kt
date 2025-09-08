@@ -3,9 +3,9 @@ package com.pokerleaguebackend.service
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
-import com.pokerleaguebackend.model.UserRole
 import com.pokerleaguebackend.model.PlayerInvite
-import com.pokerleaguebackend.model.InviteStatus
+import com.pokerleaguebackend.model.enums.InviteStatus
+import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.payload.dto.LeagueMembershipDto
 import com.pokerleaguebackend.payload.dto.LeagueDto
 import com.pokerleaguebackend.payload.dto.PlayerInviteDto

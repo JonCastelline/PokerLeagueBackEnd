@@ -1,4 +1,4 @@
-package com.pokerleaguebackend.model
+package com.pokerleaguebackend.model.enums
 
 enum class BountyOnLeaderAbsenceRule {
     NO_BOUNTY,

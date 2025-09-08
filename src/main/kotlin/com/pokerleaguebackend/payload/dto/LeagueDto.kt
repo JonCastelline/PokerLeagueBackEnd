@@ -1,6 +1,6 @@
 package com.pokerleaguebackend.payload.dto
 
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 
 data class LeagueDto(
     val id: Long,

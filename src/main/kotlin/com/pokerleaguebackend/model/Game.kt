@@ -1,5 +1,7 @@
 package com.pokerleaguebackend.model
 
+import com.pokerleaguebackend.model.enums.GameStatus
+
 import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
@@ -15,12 +17,7 @@ import jakarta.persistence.CascadeType
 import java.sql.Time
 import java.util.Date
 
-enum class GameStatus {
-    SCHEDULED,
-    IN_PROGRESS,
-    PAUSED,
-    COMPLETED
-}
+
 
 @Entity
 @Table(name = "game")

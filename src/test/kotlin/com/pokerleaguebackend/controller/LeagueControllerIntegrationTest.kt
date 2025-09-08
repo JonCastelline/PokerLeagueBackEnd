@@ -3,7 +3,7 @@ package com.pokerleaguebackend.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.payload.request.CreateLeagueRequest
 import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipStatusRequest

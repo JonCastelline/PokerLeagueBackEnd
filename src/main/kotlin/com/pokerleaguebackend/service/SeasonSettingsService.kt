@@ -1,7 +1,7 @@
 package com.pokerleaguebackend.service
 
 import com.pokerleaguebackend.model.BlindLevel
-import com.pokerleaguebackend.model.BountyOnLeaderAbsenceRule
+import com.pokerleaguebackend.model.enums.BountyOnLeaderAbsenceRule
 import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.PlacePoint
 import com.pokerleaguebackend.model.Season
@@ -12,7 +12,7 @@ import com.pokerleaguebackend.repository.SeasonRepository
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import com.pokerleaguebackend.model.UserRole
+import com.pokerleaguebackend.model.enums.UserRole
 import java.math.BigDecimal
 
 @Service

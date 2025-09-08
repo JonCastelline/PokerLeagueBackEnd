@@ -1,5 +1,6 @@
 package com.pokerleaguebackend.model
 
+import com.pokerleaguebackend.model.enums.BountyOnLeaderAbsenceRule
 import com.fasterxml.jackson.annotation.JsonManagedReference
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.CascadeType
