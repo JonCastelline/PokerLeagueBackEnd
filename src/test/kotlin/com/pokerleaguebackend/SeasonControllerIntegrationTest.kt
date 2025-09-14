@@ -5,11 +5,13 @@ import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.LeagueMembership
+import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.payload.request.CreateSeasonRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.repository.SeasonRepository
+import com.pokerleaguebackend.repository.SeasonSettingsRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -57,6 +59,9 @@ class SeasonControllerIntegrationTest {
     private lateinit var seasonRepository: SeasonRepository
 
     @Autowired
+    private lateinit var seasonSettingsRepository: SeasonSettingsRepository
+
+    @Autowired
     private lateinit var leagueMembershipRepository: LeagueMembershipRepository
 
     @Autowired
@@ -73,6 +78,7 @@ class SeasonControllerIntegrationTest {
     @BeforeEach
     fun setup() {
         leagueMembershipRepository.deleteAll()
+        seasonSettingsRepository.deleteAll()
         seasonRepository.deleteAll()
         leagueRepository.deleteAll()
         playerAccountRepository.deleteAll()
@@ -192,5 +198,29 @@ class SeasonControllerIntegrationTest {
         // Verify the season is deleted
         val deletedSeason = seasonRepository.findById(season.id)
         assert(deletedSeason.isEmpty)
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `deleteSeason with settings should delete season and settings`() {
+        val season = seasonRepository.save(Season(
+            seasonName = "Season to Delete",
+            startDate = Date(),
+            endDate = Date(),
+            league = testLeague
+        ))
+        seasonSettingsRepository.save(SeasonSettings(season = season))
+
+        mockMvc.perform(delete("/api/leagues/{leagueId}/seasons/{seasonId}", testLeague.id, season.id)
+            .with(user(adminPrincipal)))
+            .andExpect(status().isNoContent())
+
+        // Verify the season is deleted
+        val deletedSeason = seasonRepository.findById(season.id)
+        assert(deletedSeason.isEmpty)
+
+        // Verify the season settings are deleted
+        val deletedSettings = seasonSettingsRepository.findBySeasonId(season.id)
+        assert(deletedSettings == null)
     }
 }
