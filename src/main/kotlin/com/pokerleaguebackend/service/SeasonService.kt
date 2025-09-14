@@ -14,13 +14,16 @@ import org.springframework.stereotype.Service
 import java.util.NoSuchElementException
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.payload.request.UpdateSeasonRequest
+import com.pokerleaguebackend.repository.SeasonSettingsRepository
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class SeasonService @Autowired constructor(
     private val seasonRepository: SeasonRepository,
     private val leagueRepository: LeagueRepository,
     private val leagueMembershipRepository: LeagueMembershipRepository,
-    private val gameRepository: GameRepository
+    private val gameRepository: GameRepository,
+    private val seasonSettingsRepository: SeasonSettingsRepository
 ) {
 
     private val logger = LoggerFactory.getLogger(SeasonService::class.java)
@@ -108,6 +111,7 @@ class SeasonService @Autowired constructor(
         return seasonRepository.save(season)
     }
 
+    @Transactional
     fun deleteSeason(leagueId: Long, seasonId: Long, playerAccountId: Long) {
         val membership = leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, playerAccountId)
             ?: throw AccessDeniedException("Player is not a member of this league")
@@ -128,6 +132,7 @@ class SeasonService @Autowired constructor(
             throw IllegalStateException("Cannot delete season with existing games.")
         }
 
+        seasonSettingsRepository.deleteBySeasonId(seasonId)
         seasonRepository.delete(season)
     }
 }
