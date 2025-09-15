@@ -1,5 +1,6 @@
 package com.pokerleaguebackend.model
 
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
@@ -17,7 +18,9 @@ data class Season(
     val id: Long = 0,
 
     var seasonName: String,
+    @Column(columnDefinition = "DATE")
     var startDate: Date,
+    @Column(columnDefinition = "DATE")
     var endDate: Date,
     var isFinalized: Boolean = false,
 
