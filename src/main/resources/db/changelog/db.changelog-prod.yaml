@@ -1,0 +1,35 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/db.changelog-master.yaml
+  - changeSet:
+      id: 3-add-membership-constraints
+      author: gemini
+      changes:
+        - createIndex:
+            indexName: idx_registered_player_unique_membership
+            tableName: league_membership
+            unique: true
+            columns:
+              - column:
+                  name: player_account_id
+              - column:
+                  name: league_id
+            where: player_account_id IS NOT NULL
+        - createIndex:
+            indexName: idx_unregistered_player_unique_membership
+            tableName: league_membership
+            unique: true
+            columns:
+              - column:
+                  name: league_id
+              - column:
+                  name: display_name
+            where: player_account_id IS NULL
+        - createIndex:
+            indexName: idx_one_owner_per_league
+            tableName: league_membership
+            unique: true
+            columns:
+              - column:
+                  name: league_id
+            where: is_owner = TRUE

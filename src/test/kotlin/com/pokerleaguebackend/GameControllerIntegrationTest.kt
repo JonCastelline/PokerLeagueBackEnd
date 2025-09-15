@@ -145,26 +145,30 @@ class GameControllerIntegrationTest {
             league = testLeague
         ))
 
-        val blindLevel1 = BlindLevel(
-            smallBlind = 10,
-            bigBlind = 20,
-            level = 1
-        )
-        val blindLevel2 = BlindLevel(
-            smallBlind = 20,
-            bigBlind = 40,
-            level = 2
-        )
-
-        seasonSettingsRepository.save(SeasonSettings(
+        val settings = SeasonSettings(
             season = testSeason,
             durationSeconds = 600,
             trackKills = true,
             trackBounties = true,
             warningSoundEnabled = true,
-            warningSoundTimeSeconds = 30,
-            blindLevels = mutableListOf(blindLevel1, blindLevel2)
-        ))
+            warningSoundTimeSeconds = 30
+        )
+
+        val blindLevel1 = BlindLevel(
+            smallBlind = 10,
+            bigBlind = 20,
+            level = 1,
+            seasonSettings = settings
+        )
+        val blindLevel2 = BlindLevel(
+            smallBlind = 20,
+            bigBlind = 40,
+            level = 2,
+            seasonSettings = settings
+        )
+        settings.blindLevels = mutableListOf(blindLevel1, blindLevel2)
+
+        seasonSettingsRepository.save(settings)
     }
 
     @Test
