@@ -1,0 +1,490 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1-create-initial-schema
+      author: gemini
+      changes:
+        - createTable:
+            tableName: player_account
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: first_name
+                  type: VARCHAR(255)
+              - column:
+                  name: last_name
+                  type: VARCHAR(255)
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: password
+                  type: VARCHAR(100)
+              - column:
+                  name: paid
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - createTable:
+            tableName: league
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: league_name
+                  type: VARCHAR(255)
+              - column:
+                  name: invite_code
+                  type: VARCHAR(255)
+                  constraints:
+                    unique: true
+              - column:
+                  name: expiration_date
+                  type: TIMESTAMP
+              - column:
+                  name: non_owner_admins_can_manage_roles
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - createTable:
+            tableName: season
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: season_name
+                  type: VARCHAR(255)
+              - column:
+                  name: start_date
+                  type: DATE
+              - column:
+                  name: end_date
+                  type: DATE
+              - column:
+                  name: is_finalized
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+              - column:
+                  name: league_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_season_league
+                    references: league(id)
+        - createTable:
+            tableName: season_settings
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: season_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_seasonsettings_season
+                    references: season(id)
+              - column:
+                  name: track_kills
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+              - column:
+                  name: track_bounties
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+              - column:
+                  name: kill_points
+                  type: DECIMAL(10, 2)
+                  defaultValueNumeric: 0.0
+              - column:
+                  name: bounty_points
+                  type: DECIMAL(10, 2)
+                  defaultValueNumeric: 0.0
+              - column:
+                  name: duration_seconds
+                  type: INT
+                  defaultValueNumeric: 1200
+              - column:
+                  name: bounty_on_leader_absence_rule
+                  type: VARCHAR(255)
+                  defaultValue: NO_BOUNTY
+              - column:
+                  name: enable_attendance_points
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+              - column:
+                  name: attendance_points
+                  type: DECIMAL(10, 2)
+                  defaultValueNumeric: 1.0
+              - column:
+                  name: starting_stack
+                  type: INT
+                  defaultValueNumeric: 1500
+              - column:
+                  name: warning_sound_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+              - column:
+                  name: warning_sound_time_seconds
+                  type: INT
+                  defaultValueNumeric: 60
+              - column:
+                  name: player_elimination_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+              - column:
+                  name: player_timer_control_enabled
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+        - createTable:
+            tableName: blind_levels
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: level
+                  type: INT
+              - column:
+                  name: small_blind
+                  type: INT
+              - column:
+                  name: big_blind
+                  type: INT
+              - column:
+                  name: season_settings_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_blindlevels_seasonsettings
+                    references: season_settings(id)
+        - createTable:
+            tableName: place_points
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: place
+                  type: INT
+              - column:
+                  name: points
+                  type: DECIMAL(10, 2)
+              - column:
+                  name: season_settings_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_placepoints_seasonsettings
+                    references: season_settings(id)
+        - createTable:
+            tableName: league_membership
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: player_account_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_leaguemembership_playeraccount
+                    references: player_account(id)
+              - column:
+                  name: league_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_leaguemembership_league
+                    references: league(id)
+              - column:
+                  name: display_name
+                  type: VARCHAR(255)
+              - column:
+                  name: icon_url
+                  type: VARCHAR(2048)
+              - column:
+                  name: role
+                  type: VARCHAR(255)
+              - column:
+                  name: is_owner
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+              - column:
+                  name: is_active
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+        - createTable:
+            tableName: game
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: game_name
+                  type: VARCHAR(255)
+              - column:
+                  name: game_date
+                  type: DATE
+              - column:
+                  name: game_time
+                  type: TIME
+              - column:
+                  name: game_location
+                  type: VARCHAR(255)
+              - column:
+                  name: season_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_game_season
+                    references: season(id)
+              - column:
+                  name: game_status
+                  type: VARCHAR(255)
+                  defaultValue: SCHEDULED
+              - column:
+                  name: time_remaining_in_millis
+                  type: BIGINT
+              - column:
+                  name: current_level_index
+                  type: INT
+        - createTable:
+            tableName: live_game_player
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: game_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_livegameplayer_game
+                    references: game(id)
+              - column:
+                  name: player_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_livegameplayer_leaguemembership
+                    references: league_membership(id)
+              - column:
+                  name: is_playing
+                  type: BOOLEAN
+                  defaultValueBoolean: true
+              - column:
+                  name: is_eliminated
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+              - column:
+                  name: place
+                  type: INT
+              - column:
+                  name: kills
+                  type: INT
+                  defaultValueNumeric: 0
+              - column:
+                  name: bounties
+                  type: INT
+                  defaultValueNumeric: 0
+              - column:
+                  name: has_bounty
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+              - column:
+                  name: eliminated_by_player_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_livegameplayer_eliminatedby
+                    references: live_game_player(id)
+        - createTable:
+            tableName: game_results
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: game_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_gameresults_game
+                    references: game(id)
+              - column:
+                  name: player_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_gameresults_leaguemembership
+                    references: league_membership(id)
+              - column:
+                  name: place
+                  type: INT
+              - column:
+                  name: kills
+                  type: INT
+              - column:
+                  name: bounties
+                  type: INT
+              - column:
+                  name: bounty_placed_on_player_id
+                  type: BIGINT
+                  constraints:
+                    foreignKeyName: fk_gameresults_bountyplacedon
+                    references: league_membership(id)
+        - createTable:
+            tableName: league_home_content
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: league_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    unique: true
+                    foreignKeyName: fk_leaguehomecontent_league
+                    references: league(id)
+              - column:
+                  name: content
+                  type: TEXT
+              - column:
+                  name: logo_image_url
+                  type: VARCHAR(2048)
+              - column:
+                  name: last_updated
+                  type: TIMESTAMP
+        - createTable:
+            tableName: player_invites
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: league_membership_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_playerinvites_leaguemembership
+                    references: league_membership(id)
+              - column:
+                  name: email
+                  type: VARCHAR(255)
+              - column:
+                  name: token
+                  type: VARCHAR(255)
+                  constraints:
+                    unique: true
+              - column:
+                  name: status
+                  type: VARCHAR(255)
+                  defaultValue: PENDING
+              - column:
+                  name: expiration_date
+                  type: TIMESTAMP
+        - createTable:
+            tableName: security_question
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: question_text
+                  type: VARCHAR(255)
+                  constraints:
+                    unique: true
+                    nullable: false
+        - createTable:
+            tableName: player_security_answer
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: player_account_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_playersecurityanswer_playeraccount
+                    references: player_account(id)
+              - column:
+                  name: security_question_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_playersecurityanswer_securityquestion
+                    references: security_question(id)
+              - column:
+                  name: hashed_answer
+                  type: VARCHAR(255)
+
+  - changeSet:
+      id: 2-add-player-security-answer-constraint
+      author: gemini
+      changes:
+        - addUniqueConstraint:
+            tableName: player_security_answer
+            columnNames: player_account_id, security_question_id
+            constraintName: uc_playersecurityanswer_player_question

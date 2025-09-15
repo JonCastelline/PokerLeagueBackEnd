@@ -36,6 +36,9 @@ import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.payload.request.UpdateSeasonRequest
 import java.util.Date
 import org.springframework.test.annotation.DirtiesContext
+import org.springframework.test.web.servlet.result.MockMvcResultHandlers
+import java.time.LocalDate
+import java.time.ZoneId
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -135,13 +138,13 @@ class SeasonControllerIntegrationTest {
         val activeSeason = Season(
             seasonName = "Active Season",
             startDate = Date(System.currentTimeMillis() - 100000), // Started recently
-            endDate = Date(System.currentTimeMillis() + 100000), // Ends in future
+            endDate = Date.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()), // Ends tomorrow
             league = testLeague
         )
         seasonRepository.save(activeSeason)
 
         mockMvc.perform(get("/api/leagues/{leagueId}/seasons/active", testLeague.id)
-            .with(user(adminPrincipal))) // Explicitly set the user principal
+            .with(user(adminPrincipal)))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.seasonName").value("Active Season"))
     }
