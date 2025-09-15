@@ -3,6 +3,7 @@ package com.pokerleaguebackend.model
 import com.pokerleaguebackend.model.enums.GameStatus
 
 import com.fasterxml.jackson.annotation.JsonManagedReference
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Table
 import jakarta.persistence.Id
@@ -27,6 +28,7 @@ data class Game(
     val id: Long = 0,
 
     var gameName: String,
+    @Column(columnDefinition = "DATE")
     var gameDate: Date,
     var gameTime: Time,
     var gameLocation: String? = null,
