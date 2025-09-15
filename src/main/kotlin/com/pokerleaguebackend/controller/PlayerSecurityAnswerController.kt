@@ -6,6 +6,10 @@ import com.pokerleaguebackend.payload.request.VerifySecurityAnswerRequest
 import com.pokerleaguebackend.payload.request.ResetPasswordRequest
 import com.pokerleaguebackend.payload.request.VerifyAndResetPasswordRequest
 import com.pokerleaguebackend.security.AuthenticationFacade
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -21,6 +25,12 @@ class PlayerSecurityAnswerController(
     private val authenticationFacade: AuthenticationFacade
 ) {
 
+    @Tag(name = "Player Account")
+    @Operation(summary = "Set or update security answers for the current player")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Security answers set successfully"),
+        ApiResponse(responseCode = "400", description = "Invalid request data")
+    ])
     @PostMapping("/player-accounts/me/security-answers")
     fun setSecurityAnswer(@RequestBody request: SetSecurityAnswerRequest): ResponseEntity<Void> {
         val playerId = authenticationFacade.getAuthenticatedPlayerId()
@@ -28,6 +38,11 @@ class PlayerSecurityAnswerController(
         return ResponseEntity.ok().build()
     }
 
+    @Tag(name = "Player Account")
+    @Operation(summary = "Get the security questions that the current player has answered")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successfully retrieved answered questions")
+    ])
     @GetMapping("/player-accounts/me/security-questions")
     fun getSecurityQuestionsForPlayer(): ResponseEntity<*> {
         val playerId = authenticationFacade.getAuthenticatedPlayerId()
@@ -35,6 +50,12 @@ class PlayerSecurityAnswerController(
         return ResponseEntity.ok(questions)
     }
 
+    @Tag(name = "Public")
+    @Operation(summary = "Get the security questions for a user by email", description = "Publicly accessible endpoint to fetch the questions a user must answer for password recovery.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successfully retrieved questions"),
+        ApiResponse(responseCode = "400", description = "User not found or has no security questions set up")
+    ])
     @GetMapping("/public/security-questions")
     fun getSecurityQuestionsByEmail(@RequestParam email: String): ResponseEntity<*> {
         return try {
@@ -45,6 +66,12 @@ class PlayerSecurityAnswerController(
         }
     }
 
+    @Tag(name = "Authentication")
+    @Operation(summary = "Verify security answers and reset password", description = "Allows a user to reset their password by correctly answering their security questions.")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Password reset successfully"),
+        ApiResponse(responseCode = "400", description = "Security answer verification failed or invalid request")
+    ])
     @PostMapping("/auth/forgot-password/verify-answers")
     fun verifySecurityAnswersAndResetPassword(@RequestBody request: VerifyAndResetPasswordRequest): ResponseEntity<*> {
         val verifyRequests = request.answers
