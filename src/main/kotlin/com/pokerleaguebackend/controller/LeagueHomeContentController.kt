@@ -5,6 +5,10 @@ import com.pokerleaguebackend.payload.dto.LeagueHomeContentDto
 import com.pokerleaguebackend.service.LeagueHomeContentService
 import com.pokerleaguebackend.service.LeagueService
 import com.pokerleaguebackend.security.UserPrincipal
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -17,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
+@Tag(name = "League Home Content", description = "Endpoints for managing the content displayed on a league's home screen")
 @RestController
 @RequestMapping("/api/leagues/{leagueId}/home-content")
 class LeagueHomeContentController @Autowired constructor(
@@ -24,12 +29,22 @@ class LeagueHomeContentController @Autowired constructor(
     private val leagueService: LeagueService
 ) {
 
+    @Operation(summary = "Get the home screen content for a league")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successfully retrieved home content"),
+        ApiResponse(responseCode = "404", description = "League not found or no content has been set")
+    ])
     @GetMapping
     fun getLeagueHomeContent(@PathVariable leagueId: Long): ResponseEntity<LeagueHomeContent> {
         val leagueHomeContent = leagueHomeContentService.getLeagueHomeContent(leagueId)
         return leagueHomeContent?.let { ResponseEntity.ok(it) } ?: ResponseEntity.notFound().build()
     }
 
+    @Operation(summary = "Update the home screen content for a league")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successfully updated home content"),
+        ApiResponse(responseCode = "403", description = "User is not an admin of the league")
+    ])
     @PutMapping
     fun updateLeagueHomeContent(
         @PathVariable leagueId: Long,

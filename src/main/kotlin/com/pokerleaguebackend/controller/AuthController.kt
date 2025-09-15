@@ -10,6 +10,10 @@ import com.pokerleaguebackend.payload.response.ApiResponse
 import com.pokerleaguebackend.service.PlayerAccountService
 import com.pokerleaguebackend.service.LeagueService
 import com.pokerleaguebackend.security.JwtTokenProvider
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.responses.ApiResponse as SwaggerApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
@@ -25,6 +29,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import java.net.URI
 import jakarta.validation.Valid
 
+@Tag(name = "Authentication", description = "Endpoints for user authentication, registration, and invite handling")
 @RestController
 @RequestMapping("/api/auth")
 class AuthController(
@@ -34,6 +39,11 @@ class AuthController(
     private val leagueService: LeagueService
 ) {
 
+    @Operation(summary = "Authenticate a user", description = "Logs in a user with their email and password, returning a JWT token if successful.")
+    @ApiResponses(value = [
+        SwaggerApiResponse(responseCode = "200", description = "Successfully authenticated"),
+        SwaggerApiResponse(responseCode = "401", description = "Invalid email or password")
+    ])
     @PostMapping("/signin")
     fun authenticateUser(@Valid @RequestBody loginRequest: LoginRequest): ResponseEntity<*> {
         try {
@@ -56,6 +66,11 @@ class AuthController(
         }
     }
 
+    @Operation(summary = "Register a new user", description = "Creates a new player account.")
+    @ApiResponses(value = [
+        SwaggerApiResponse(responseCode = "201", description = "User registered successfully"),
+        SwaggerApiResponse(responseCode = "400", description = "Invalid sign-up information or email already exists")
+    ])
     @PostMapping("/signup")
     fun registerUser(@Valid @RequestBody signUpRequest: SignUpRequest): ResponseEntity<ApiResponse> {
         return try {
@@ -71,6 +86,12 @@ class AuthController(
         }
     }
 
+    @Operation(summary = "Register and claim an unregistered player profile", description = "Creates a new player account and links it to an existing unregistered player profile using an invite token.")
+    @ApiResponses(value = [
+        SwaggerApiResponse(responseCode = "201", description = "User registered and profile claimed successfully"),
+        SwaggerApiResponse(responseCode = "400", description = "Invalid request data"),
+        SwaggerApiResponse(responseCode = "404", description = "League or invite token not found")
+    ])
     @PostMapping("/register-and-claim")
     fun registerAndClaim(@Valid @RequestBody registerAndClaimRequest: RegisterAndClaimRequest): ResponseEntity<ApiResponse> {
         return try {
@@ -92,6 +113,11 @@ class AuthController(
         }
     }
 
+    @Operation(summary = "Get public details for an invite token", description = "Retrieves non-sensitive details about a league invitation, such as league name and the name of the invited player, to display on the registration page.")
+    @ApiResponses(value = [
+        SwaggerApiResponse(responseCode = "200", description = "Successfully retrieved invite details"),
+        SwaggerApiResponse(responseCode = "404", description = "Invite token not found or expired")
+    ])
     @GetMapping("/invite-details/{token}")
     fun getInviteDetails(@PathVariable token: String): ResponseEntity<PublicPlayerInviteDto> {
         return try {
