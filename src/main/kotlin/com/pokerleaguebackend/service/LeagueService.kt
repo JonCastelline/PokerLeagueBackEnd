@@ -129,6 +129,7 @@ class LeagueService(
             league = league,
             displayName = "${player.firstName} ${player.lastName}",
             role = UserRole.PLAYER,
+            isOwner = false,
             isActive = true
         )
         leagueMembershipRepository.save(membership)
@@ -464,6 +465,7 @@ class LeagueService(
             isOwner = false,
             isActive = true // Added
         )
+        logger.info("Attempting to save new membership: {}", newMembership.toString())
         val savedMembership = leagueMembershipRepository.save(newMembership)
         logger.info("Saved new unregistered membership with ID: {}", savedMembership.id)
         leagueMembershipRepository.flush()
