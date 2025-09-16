@@ -5,12 +5,14 @@ import com.pokerleaguebackend.payload.request.SetSecurityAnswerRequest
 import com.pokerleaguebackend.payload.request.VerifySecurityAnswerRequest
 import com.pokerleaguebackend.payload.request.ResetPasswordRequest
 import com.pokerleaguebackend.payload.request.VerifyAndResetPasswordRequest
-import com.pokerleaguebackend.security.AuthenticationFacade
+import com.pokerleaguebackend.security.UserPrincipal
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -21,8 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 @RestController
 @RequestMapping("/api")
 class PlayerSecurityAnswerController(
-    private val playerSecurityAnswerService: PlayerSecurityAnswerService,
-    private val authenticationFacade: AuthenticationFacade
+    private val playerSecurityAnswerService: PlayerSecurityAnswerService
 ) {
 
     @Tag(name = "Player Account")
@@ -32,9 +33,12 @@ class PlayerSecurityAnswerController(
         ApiResponse(responseCode = "400", description = "Invalid request data")
     ])
     @PostMapping("/player-accounts/me/security-answers")
-    fun setSecurityAnswer(@RequestBody request: SetSecurityAnswerRequest): ResponseEntity<Void> {
-        val playerId = authenticationFacade.getAuthenticatedPlayerId()
-        playerSecurityAnswerService.setSecurityAnswer(playerId, request)
+    fun setSecurityAnswer(
+        @RequestBody request: SetSecurityAnswerRequest,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<Void> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        playerSecurityAnswerService.setSecurityAnswer(playerAccount.id, request)
         return ResponseEntity.ok().build()
     }
 
@@ -44,9 +48,9 @@ class PlayerSecurityAnswerController(
         ApiResponse(responseCode = "200", description = "Successfully retrieved answered questions")
     ])
     @GetMapping("/player-accounts/me/security-questions")
-    fun getSecurityQuestionsForPlayer(): ResponseEntity<*> {
-        val playerId = authenticationFacade.getAuthenticatedPlayerId()
-        val questions = playerSecurityAnswerService.getSecurityQuestionsForPlayer(playerId)
+    fun getSecurityQuestionsForPlayer(@AuthenticationPrincipal userDetails: UserDetails): ResponseEntity<*> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val questions = playerSecurityAnswerService.getSecurityQuestionsForPlayer(playerAccount.id)
         return ResponseEntity.ok(questions)
     }
 
