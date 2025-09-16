@@ -33,3 +33,14 @@ databaseChangeLog:
               - column:
                   name: league_id
             where: is_owner = TRUE
+  - changeSet:
+      id: 4-recreate-owner-constraint
+      author: gemini
+      changes:
+        - dropIndex:
+            indexName: idx_one_owner_per_league
+            tableName: league_membership
+        - sql:
+            sql: CREATE UNIQUE INDEX idx_one_owner_per_league ON public.league_membership (league_id) WHERE is_owner = TRUE;
+            endDelimiter: ;
+            stripComments: true
