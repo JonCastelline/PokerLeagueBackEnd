@@ -13,5 +13,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  backend:
+    build: .
+    container_name: poker-league-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pokerleaguedev
+      SPRING_DATASOURCE_USERNAME: pokeruser
+      SPRING_DATASOURCE_PASSWORD: pokerpassword
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    depends_on:
+      - postgres
+
 volumes:
   postgres_data:

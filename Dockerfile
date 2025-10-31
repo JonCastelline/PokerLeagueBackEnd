@@ -1,29 +1,17 @@
-# Use a base image with Java 17 (or your project's Java version)
-FROM openjdk:17-jdk-slim
-
-# Set the working directory inside the container
+# Stage 1: Build the application
+FROM gradle:jdk17 AS builder
 WORKDIR /app
-
-# Copy the Gradle wrapper files
-COPY gradlew .
+COPY build.gradle settings.gradle ./
+COPY gradlew ./gradlew
+COPY gradle ./gradle
 RUN chmod +x gradlew
-COPY gradle gradle
+RUN ./gradlew dependencies
+COPY src ./src
+RUN ./gradlew bootJar --no-daemon
 
-# Copy the build.gradle and settings.gradle files
-COPY build.gradle .
-COPY settings.gradle .
-
-# Copy the source code
-COPY src src
-
-# Build the application
-# Use --no-daemon to prevent Gradle from running a daemon, which is better for Docker builds
-# Use -x test to skip tests during the Docker build, as tests should be run in CI
-RUN ./gradlew bootJar -x test
-
-# Expose the port your Spring Boot application runs on (default is 8080)
+# Stage 2: Run the application
+FROM eclipse-temurin:17-jre-jammy
+WORKDIR /app
+COPY --from=builder /app/build/libs/*.jar app.jar
 EXPOSE 8080
-
-# Set the entry point to run the JAR file
-# Activate the 'prod' profile when running the application
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "build/libs/PokerLeagueBackEnd-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
