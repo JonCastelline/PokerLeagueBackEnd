@@ -23,6 +23,7 @@ services:
       SPRING_DATASOURCE_USERNAME: pokeruser
       SPRING_DATASOURCE_PASSWORD: pokerpassword
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      app.jwtSecret: your-super-secret-jwt-key-for-development
     depends_on:
       - postgres
 
