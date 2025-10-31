@@ -22,7 +22,8 @@ class JwtAuthenticationFilter(
     private val jwtLogger = LoggerFactory.getLogger(JwtAuthenticationFilter::class.java)
 
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
-        return request.requestURI.startsWith("/api/games/") && request.requestURI.endsWith("/calendar.ics")
+        val path = request.requestURI
+        return path.startsWith("/actuator") || (path.startsWith("/api/games/") && path.endsWith("/calendar.ics"))
     }
 
     override fun doFilterInternal(
