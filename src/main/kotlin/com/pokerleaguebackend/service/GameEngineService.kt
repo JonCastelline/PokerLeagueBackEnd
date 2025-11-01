@@ -15,6 +15,8 @@ import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.SeasonSettingsRepository
+import com.pokerleaguebackend.payload.request.UpdateTimerRequest
+import com.pokerleaguebackend.payload.request.SetTimeRequest
 import org.springframework.stereotype.Service
 import jakarta.persistence.EntityNotFoundException
 
@@ -384,7 +386,7 @@ class GameEngineService(
         gameRepository.save(game)
     }
 
-    fun updateTimer(gameId: Long, request: com.pokerleaguebackend.payload.request.UpdateTimerRequest) {
+    fun updateTimer(gameId: Long, request: UpdateTimerRequest) {
         val game = gameRepository.findById(gameId)
             .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
 
@@ -413,7 +415,7 @@ class GameEngineService(
         return getGameState(updatedGame.id)
     }
 
-    fun setTime(gameId: Long, request: com.pokerleaguebackend.payload.request.SetTimeRequest): GameStateResponse {
+    fun setTime(gameId: Long, request: SetTimeRequest): GameStateResponse {
         val game = gameRepository.findById(gameId)
             .orElseThrow { EntityNotFoundException("Game not found with id: $gameId") }
 

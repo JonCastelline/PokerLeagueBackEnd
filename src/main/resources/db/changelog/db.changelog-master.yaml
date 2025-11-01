@@ -491,7 +491,7 @@ databaseChangeLog:
               - column:
                   name: calendar_token
                   type: VARCHAR(36)
-                  defaultValueComputed: "gen_random_uuid()"
+                  defaultValueComputed: "random_uuid()"
                   constraints:
                     unique: true
                     nullable: false

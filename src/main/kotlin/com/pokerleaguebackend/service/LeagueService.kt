@@ -9,6 +9,7 @@ import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.payload.dto.LeagueMembershipDto
 import com.pokerleaguebackend.payload.dto.LeagueDto
 import com.pokerleaguebackend.payload.dto.PlayerInviteDto
+import com.pokerleaguebackend.payload.dto.PublicPlayerInviteDto
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -804,9 +805,9 @@ class LeagueService(
         playerInviteRepository.flush()
     }
 
-    fun getInviteDetailsByToken(token: String): com.pokerleaguebackend.payload.dto.PublicPlayerInviteDto {
+    fun getInviteDetailsByToken(token: String): PublicPlayerInviteDto {
         val invite = validateAndGetInvite(token)
-        return com.pokerleaguebackend.payload.dto.PublicPlayerInviteDto(
+        return PublicPlayerInviteDto(
             leagueName = invite.leagueMembership.league.leagueName ?: "Unknown League",
             displayNameToClaim = invite.leagueMembership.displayName ?: "Unknown Player",
             email = invite.email
