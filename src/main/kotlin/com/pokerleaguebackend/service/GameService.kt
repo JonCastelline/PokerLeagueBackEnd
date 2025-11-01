@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse
 import java.sql.Time
 import java.time.ZoneId
 import java.util.Date
+import java.util.UUID
 
 @Service
 class GameService(
@@ -62,6 +63,7 @@ class GameService(
             gameDate = if (request.gameDate != null) Date.from(request.gameDate.atStartOfDay(ZoneId.systemDefault()).toInstant()) else Date(),
             gameTime = if (request.gameTime != null) Time.valueOf(request.gameTime) else Time(System.currentTimeMillis()),
             gameLocation = request.gameLocation,
+            calendarToken = UUID.randomUUID().toString(),
             season = season
         )
 
@@ -169,9 +171,9 @@ class GameService(
         return gameRepository.findAllBySeasonId(seasonId)
     }
 
-    fun getGameCalendar(gameId: Long, response: HttpServletResponse) {
-        val game = gameRepository.findById(gameId)
-            .orElseThrow { IllegalArgumentException("Game not found") }
+    fun getGameCalendar(calendarToken: String, response: HttpServletResponse) {
+        val game = gameRepository.findByCalendarToken(calendarToken)
+            ?: throw IllegalArgumentException("Game not found")
 
         val ical = ICalendar()
         val event = VEvent()

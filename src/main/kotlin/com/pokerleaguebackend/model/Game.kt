@@ -17,6 +17,7 @@ import jakarta.persistence.OneToMany
 import jakarta.persistence.CascadeType
 import java.sql.Time
 import java.util.Date
+import java.util.UUID
 
 
 
@@ -32,6 +33,9 @@ data class Game(
     var gameDate: Date,
     var gameTime: Time,
     var gameLocation: String? = null,
+
+    @Column(name = "calendar_token", unique = true, nullable = false)
+    var calendarToken: String = UUID.randomUUID().toString(),
 
     @Enumerated(EnumType.STRING)
     var gameStatus: GameStatus = GameStatus.SCHEDULED,
