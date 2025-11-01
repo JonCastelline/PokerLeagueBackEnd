@@ -8,6 +8,7 @@ import com.pokerleaguebackend.payload.request.InvitePlayerRequest
 import com.pokerleaguebackend.payload.request.LoginRequest
 import com.pokerleaguebackend.payload.request.SignUpRequest
 import com.pokerleaguebackend.payload.request.JoinLeagueRequest
+import com.pokerleaguebackend.payload.request.RegisterAndClaimRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -19,6 +20,7 @@ import com.pokerleaguebackend.payload.request.AddUnregisteredPlayerRequest
 import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.payload.dto.LeagueMembershipDto
+import com.pokerleaguebackend.payload.dto.PlayerInviteDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
@@ -156,7 +158,7 @@ class PlayerClaimProfileIntegrationTest {
         val token = deepLink.substringAfter("token=")
 
         // 3. Claim
-        val claimRequest = com.pokerleaguebackend.payload.request.RegisterAndClaimRequest("New", "User", "newuser@example.com", "password", token)
+        val claimRequest = RegisterAndClaimRequest("New", "User", "newuser@example.com", "password", token)
         mockMvc.post("/api/auth/register-and-claim") {
             contentType = MediaType.APPLICATION_JSON
             content = objectMapper.writeValueAsString(claimRequest)
@@ -213,7 +215,7 @@ class PlayerClaimProfileIntegrationTest {
         }.andExpect {
             status { isOk() }
         }.andReturn()
-        val invites = objectMapper.readValue(invitesResult.response.contentAsString, Array<com.pokerleaguebackend.payload.dto.PlayerInviteDto>::class.java)
+        val invites = objectMapper.readValue(invitesResult.response.contentAsString, Array<PlayerInviteDto>::class.java)
         assertEquals(1, invites.size)
         val inviteId = invites[0].inviteId
 

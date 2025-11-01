@@ -10,8 +10,12 @@ import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.enums.UserRole
+import com.pokerleaguebackend.model.BlindLevel
 import com.pokerleaguebackend.payload.request.EliminatePlayerRequest
 import com.pokerleaguebackend.payload.request.StartGameRequest
+import com.pokerleaguebackend.payload.request.UpdateGameResultsRequest
+import com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest
+import com.pokerleaguebackend.payload.request.SetTimeRequest
 import com.pokerleaguebackend.repository.GameRepository
 import com.pokerleaguebackend.repository.GameResultRepository
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
@@ -479,8 +483,8 @@ class GameEngineServiceTest {
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val blindLevels = listOf(
-            com.pokerleaguebackend.model.BlindLevel(level = 1, smallBlind = 10, bigBlind = 20),
-            com.pokerleaguebackend.model.BlindLevel(level = 2, smallBlind = 20, bigBlind = 40)
+            BlindLevel(level = 1, smallBlind = 10, bigBlind = 20),
+            BlindLevel(level = 2, smallBlind = 20, bigBlind = 40)
         )
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
         val game = Game(
@@ -509,8 +513,8 @@ class GameEngineServiceTest {
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val blindLevels = listOf(
-            com.pokerleaguebackend.model.BlindLevel(level = 1, smallBlind = 10, bigBlind = 20),
-            com.pokerleaguebackend.model.BlindLevel(level = 2, smallBlind = 20, bigBlind = 40)
+            BlindLevel(level = 1, smallBlind = 10, bigBlind = 20),
+            BlindLevel(level = 2, smallBlind = 20, bigBlind = 40)
         )
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
         val game = Game(
@@ -538,8 +542,8 @@ class GameEngineServiceTest {
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val blindLevels = listOf(
-            com.pokerleaguebackend.model.BlindLevel(level = 1, smallBlind = 10, bigBlind = 20),
-            com.pokerleaguebackend.model.BlindLevel(level = 2, smallBlind = 20, bigBlind = 40)
+            BlindLevel(level = 1, smallBlind = 10, bigBlind = 20),
+            BlindLevel(level = 2, smallBlind = 20, bigBlind = 40)
         )
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
         val game = Game(
@@ -568,7 +572,7 @@ class GameEngineServiceTest {
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val blindLevels = listOf(
-            com.pokerleaguebackend.model.BlindLevel(level = 1, smallBlind = 10, bigBlind = 20)
+            BlindLevel(level = 1, smallBlind = 10, bigBlind = 20)
         )
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
         val game = Game(
@@ -607,10 +611,10 @@ class GameEngineServiceTest {
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1, place = 1, kills = 1, bounties = 1))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2, place = 2, kills = 0, bounties = 0))
 
-        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+        val request = UpdateGameResultsRequest(
             results = listOf(
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 2, kills = 0, bounties = 0),
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 1, kills = 1, bounties = 1)
+                PlayerResultUpdateRequest(playerId = 1, place = 2, kills = 0, bounties = 0),
+                PlayerResultUpdateRequest(playerId = 2, place = 1, kills = 1, bounties = 1)
             )
         )
 
@@ -673,7 +677,7 @@ class GameEngineServiceTest {
             gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
             currentLevelIndex = 1, timeRemainingInMillis = 5000L
         )
-        val request = com.pokerleaguebackend.payload.request.SetTimeRequest(timeRemainingInMillis = 600000L) // 10 minutes
+        val request = SetTimeRequest(timeRemainingInMillis = 600000L) // 10 minutes
 
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
         `when`(gameRepository.save(game)).thenReturn(game)
@@ -700,9 +704,9 @@ class GameEngineServiceTest {
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
 
-        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+        val request = UpdateGameResultsRequest(
             results = listOf(
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = -1, kills = 0, bounties = 0)
+                PlayerResultUpdateRequest(playerId = 1, place = -1, kills = 0, bounties = 0)
             )
         )
 
@@ -731,10 +735,10 @@ class GameEngineServiceTest {
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
 
-        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+        val request = UpdateGameResultsRequest(
             results = listOf(
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 2, bounties = 0),
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 2, kills = 0, bounties = 0)
+                PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 2, bounties = 0),
+                PlayerResultUpdateRequest(playerId = 2, place = 2, kills = 0, bounties = 0)
             )
         )
 
@@ -760,9 +764,9 @@ class GameEngineServiceTest {
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1, hasBounty = false)) // No bounties available
 
-        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+        val request = UpdateGameResultsRequest(
             results = listOf(
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 1, bounties = 1)
+                PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 1, bounties = 1)
             )
         )
 
@@ -791,10 +795,10 @@ class GameEngineServiceTest {
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
 
-        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+        val request = UpdateGameResultsRequest(
             results = listOf(
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 0, bounties = 0),
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 1, kills = 0, bounties = 0) // Duplicate place
+                PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 0, bounties = 0),
+                PlayerResultUpdateRequest(playerId = 2, place = 1, kills = 0, bounties = 0) // Duplicate place
             )
         )
 
@@ -820,9 +824,9 @@ class GameEngineServiceTest {
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
 
-        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+        val request = UpdateGameResultsRequest(
             results = listOf(
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 2, kills = 0, bounties = 0) // Place out of range (numPlayers is 1)
+                PlayerResultUpdateRequest(playerId = 1, place = 2, kills = 0, bounties = 0) // Place out of range (numPlayers is 1)
             )
         )
 
@@ -851,10 +855,10 @@ class GameEngineServiceTest {
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
 
-        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+        val request = UpdateGameResultsRequest(
             results = listOf(
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 0, bounties = 0), // 1st place with 0 kills
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 2, kills = 1, bounties = 0)
+                PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 0, bounties = 0), // 1st place with 0 kills
+                PlayerResultUpdateRequest(playerId = 2, place = 2, kills = 1, bounties = 0)
             )
         )
 
@@ -880,9 +884,9 @@ class GameEngineServiceTest {
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
 
-        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+        val request = UpdateGameResultsRequest(
             results = listOf(
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 0, bounties = 1) // Bounties > Kills
+                PlayerResultUpdateRequest(playerId = 1, place = 1, kills = 0, bounties = 1) // Bounties > Kills
             )
         )
 
@@ -914,11 +918,11 @@ class GameEngineServiceTest {
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2, hasBounty = false))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player3, hasBounty = false))
 
-        val request = com.pokerleaguebackend.payload.request.UpdateGameResultsRequest(
+        val request = UpdateGameResultsRequest(
             results = listOf(
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 1, place = 2, kills = 0, bounties = 0),
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 2, place = 1, kills = 1, bounties = 1),
-                com.pokerleaguebackend.payload.request.PlayerResultUpdateRequest(playerId = 3, place = 3, kills = 0, bounties = 0)
+                PlayerResultUpdateRequest(playerId = 1, place = 2, kills = 0, bounties = 0),
+                PlayerResultUpdateRequest(playerId = 2, place = 1, kills = 1, bounties = 1),
+                PlayerResultUpdateRequest(playerId = 3, place = 3, kills = 0, bounties = 0)
             )
         )
 

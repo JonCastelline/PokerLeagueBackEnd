@@ -6,6 +6,7 @@ import com.pokerleaguebackend.payload.dto.PlayerAccountDetailsDto
 import com.pokerleaguebackend.payload.request.RegisterAndClaimRequest
 import com.pokerleaguebackend.payload.request.SignUpRequest
 import com.pokerleaguebackend.repository.PlayerAccountRepository
+import com.pokerleaguebackend.exception.DuplicatePlayerException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -43,9 +44,9 @@ class PlayerAccountService(
     }
 
     @Transactional
-    fun registerUser(signUpRequest: com.pokerleaguebackend.payload.request.SignUpRequest): PlayerAccount {
+    fun registerUser(signUpRequest: SignUpRequest): PlayerAccount {
         if (playerAccountRepository.findByEmail(signUpRequest.email) != null) {
-            throw com.pokerleaguebackend.exception.DuplicatePlayerException("Email address already in use!")
+            throw DuplicatePlayerException("Email address already in use!")
         }
 
         val playerAccount = PlayerAccount(
@@ -67,7 +68,7 @@ class PlayerAccountService(
         }
 
         if (playerAccountRepository.findByEmail(request.email) != null) {
-            throw com.pokerleaguebackend.exception.DuplicatePlayerException("Email address already in use!")
+            throw DuplicatePlayerException("Email address already in use!")
         }
 
         val playerAccount = PlayerAccount(

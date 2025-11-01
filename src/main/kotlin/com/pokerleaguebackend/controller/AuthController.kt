@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.controller
 
 import com.pokerleaguebackend.exception.LeagueNotFoundException
+import com.pokerleaguebackend.exception.DuplicatePlayerException
 import com.pokerleaguebackend.payload.dto.PublicPlayerInviteDto
 import com.pokerleaguebackend.payload.request.SignUpRequest
 import com.pokerleaguebackend.payload.request.LoginRequest
@@ -10,6 +11,7 @@ import com.pokerleaguebackend.payload.response.ApiResponse
 import com.pokerleaguebackend.service.PlayerAccountService
 import com.pokerleaguebackend.service.LeagueService
 import com.pokerleaguebackend.security.JwtTokenProvider
+import com.pokerleaguebackend.security.UserPrincipal
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.responses.ApiResponses
 import io.swagger.v3.oas.annotations.responses.ApiResponse as SwaggerApiResponse
@@ -59,7 +61,7 @@ class AuthController(
             SecurityContextHolder.getContext().authentication = authentication
 
             val jwt = tokenProvider.generateToken(authentication)
-            val userPrincipal = authentication.principal as com.pokerleaguebackend.security.UserPrincipal
+            val userPrincipal = authentication.principal as UserPrincipal
             val playerAccount = userPrincipal.playerAccount
 
             return ResponseEntity.ok(LoginResponse(jwt, playerAccount.id, playerAccount.firstName, playerAccount.lastName, playerAccount.email))
@@ -84,7 +86,7 @@ class AuthController(
                 .buildAndExpand(result.email).toUri()
 
             ResponseEntity.created(location).body(ApiResponse(true, "User registered successfully!"))
-        } catch (e: com.pokerleaguebackend.exception.DuplicatePlayerException) {
+        } catch (e: DuplicatePlayerException) {
             ResponseEntity(ApiResponse(false, e.message ?: "An error occurred"), HttpStatus.BAD_REQUEST)
         }
     }
@@ -105,9 +107,9 @@ class AuthController(
                 .buildAndExpand(result.email).toUri()
 
             ResponseEntity.created(location).body(ApiResponse(true, "User registered and profile claimed successfully!"))
-        } catch (e: com.pokerleaguebackend.exception.DuplicatePlayerException) {
+        } catch (e: DuplicatePlayerException) {
             ResponseEntity(ApiResponse(false, e.message ?: "An error occurred"), HttpStatus.BAD_REQUEST)
-        } catch (e: com.pokerleaguebackend.exception.LeagueNotFoundException) {
+        } catch (e: LeagueNotFoundException) {
             ResponseEntity(ApiResponse(false, e.message ?: "An error occurred"), HttpStatus.NOT_FOUND)
         } catch (e: IllegalStateException) {
             ResponseEntity(ApiResponse(false, e.message ?: "An error occurred"), HttpStatus.BAD_REQUEST)
