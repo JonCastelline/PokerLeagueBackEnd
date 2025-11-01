@@ -39,6 +39,8 @@ class AuthController(
     private val leagueService: LeagueService
 ) {
 
+    private val logger = org.slf4j.LoggerFactory.getLogger(AuthController::class.java)
+
     @Operation(summary = "Authenticate a user", description = "Logs in a user with their email and password, returning a JWT token if successful.")
     @ApiResponses(value = [
         SwaggerApiResponse(responseCode = "200", description = "Successfully authenticated"),
@@ -62,6 +64,7 @@ class AuthController(
 
             return ResponseEntity.ok(LoginResponse(jwt, playerAccount.id, playerAccount.firstName, playerAccount.lastName, playerAccount.email))
         } catch (ex: Exception) {
+            logger.error("Authentication failed for email: {}", loginRequest.email, ex)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse(false, "Invalid email or password"))
         }
     }
