@@ -64,7 +64,7 @@ class AuthController(
             val userPrincipal = authentication.principal as UserPrincipal
             val playerAccount = userPrincipal.playerAccount
 
-            return ResponseEntity.ok(LoginResponse(jwt, playerAccount.id, playerAccount.firstName, playerAccount.lastName, playerAccount.email))
+            return ResponseEntity.ok(LoginResponse(jwt, playerAccount.id, playerAccount.firstName, playerAccount.lastName, playerAccount.email, playerAccount.lastLeague?.id))
         } catch (ex: Exception) {
             logger.error("Authentication failed for email: {}", loginRequest.email, ex)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse(false, "Invalid email or password"))

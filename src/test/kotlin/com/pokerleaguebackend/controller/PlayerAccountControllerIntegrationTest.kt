@@ -20,8 +20,12 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
+import com.pokerleaguebackend.repository.LeagueRepository
+import com.pokerleaguebackend.model.League
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.annotation.DirtiesContext
+import java.sql.Timestamp
 
 @SpringBootTest(classes = [com.pokerleaguebackend.PokerLeagueBackendApplication::class])
 @AutoConfigureMockMvc
@@ -29,6 +33,7 @@ import org.springframework.test.annotation.DirtiesContext
 class PlayerAccountControllerIntegrationTest @Autowired constructor(
     private val mockMvc: MockMvc,
     private val playerAccountRepository: PlayerAccountRepository,
+    private val leagueRepository: LeagueRepository,
     private val jwtTokenProvider: JwtTokenProvider,
     private val objectMapper: ObjectMapper,
     private val passwordEncoder: PasswordEncoder
@@ -40,6 +45,7 @@ class PlayerAccountControllerIntegrationTest @Autowired constructor(
     @BeforeEach
     fun setup() {
         playerAccountRepository.deleteAll()
+        leagueRepository.deleteAll()
 
         testPlayer = PlayerAccount(
             firstName = "Test",
@@ -105,5 +111,21 @@ class PlayerAccountControllerIntegrationTest @Autowired constructor(
                 .content(objectMapper.writeValueAsString(passwordChangeRequest))
         )
             .andExpect(status().isBadRequest)
+    }
+
+    @Test
+    fun `should update last league`() {
+        val league = leagueRepository.save(League(leagueName = "Test League", inviteCode = "123456", expirationDate = Timestamp.valueOf(java.time.LocalDateTime.now().plusDays(1))))
+
+        mockMvc.perform(
+            put("/api/player-accounts/me/last-league")
+                .header("Authorization", "Bearer $token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(league.id.toString())
+        )
+            .andExpect(status().isOk)
+
+        val updatedPlayer = playerAccountRepository.findById(testPlayer!!.id).get()
+        assertEquals(league.id, updatedPlayer.lastLeague?.id)
     }
 }

@@ -13,6 +13,15 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.post
 
 import org.springframework.transaction.annotation.Transactional
+import java.sql.Timestamp
+import java.time.LocalDateTime
+
+import com.pokerleaguebackend.model.League
+import com.pokerleaguebackend.model.PlayerAccount
+import com.pokerleaguebackend.repository.LeagueRepository
+import com.pokerleaguebackend.repository.PlayerAccountRepository
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.junit.jupiter.api.BeforeEach
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -24,6 +33,21 @@ class AuthControllerIntegrationTest {
 
     @Autowired
     private lateinit var objectMapper: ObjectMapper
+
+    @Autowired
+    private lateinit var playerAccountRepository: PlayerAccountRepository
+
+    @Autowired
+    private lateinit var leagueRepository: LeagueRepository
+
+    @Autowired
+    private lateinit var passwordEncoder: PasswordEncoder
+
+    @BeforeEach
+    fun setup() {
+        playerAccountRepository.deleteAll()
+        leagueRepository.deleteAll()
+    }
 
     @Test
     fun `should register a new user and then log in`() {
@@ -56,6 +80,34 @@ class AuthControllerIntegrationTest {
         }.andExpect {
             status { isOk() }
             jsonPath("$.accessToken") { exists() }
+        }
+    }
+
+    @Test
+    fun `should return last league id on login`() {
+        val league = leagueRepository.save(League(leagueName = "Test League", inviteCode = "123456", expirationDate = Timestamp.valueOf(LocalDateTime.now().plusDays(1))))
+        val player = playerAccountRepository.save(
+            PlayerAccount(
+                firstName = "Test",
+                lastName = "Player",
+                email = "test.player.login@example.com",
+                password = passwordEncoder.encode("password"),
+                lastLeague = league
+            )
+        )
+
+        val loginRequest = LoginRequest(
+            email = player.email,
+            password = "password"
+        )
+
+        mockMvc.post("/api/auth/signin") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(loginRequest)
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.accessToken") { exists() }
+            jsonPath("$.lastLeagueId") { value(league.id) }
         }
     }
 }

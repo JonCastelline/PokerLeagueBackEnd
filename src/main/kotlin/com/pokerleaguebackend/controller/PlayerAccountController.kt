@@ -88,4 +88,14 @@ class PlayerAccountController(
         leagueService.acceptInvite(inviteId, playerAccount.id)
         return ResponseEntity.noContent().build()
     }
+
+    @PutMapping("/me/last-league")
+    fun updateLastLeague(
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestBody leagueId: Long
+    ): ResponseEntity<Unit> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        playerAccountService.updateLastLeague(playerAccount.id, leagueId)
+        return ResponseEntity.ok().build()
+    }
 }
