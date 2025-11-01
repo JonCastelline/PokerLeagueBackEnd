@@ -5,9 +5,9 @@ services:
     image: postgres:13
     container_name: poker-league-db
     environment:
-      POSTGRES_USER: pokeruser
-      POSTGRES_PASSWORD: pokerpassword
-      POSTGRES_DB: pokerleaguedev
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
     volumes:
@@ -19,12 +19,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/pokerleaguedev
-      SPRING_DATASOURCE_USERNAME: pokeruser
-      SPRING_DATASOURCE_PASSWORD: pokerpassword
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      app.jwtSecret: your-super-secret-jwt-key-for-development
-      app.jwtExpirationInMs: 86400000
+      app.jwtSecret: ${APP_JWT_SECRET}
+      app.jwtExpirationInMs: ${APP_JWT_EXPIRATION_MS}
     depends_on:
       - postgres
 
