@@ -4,7 +4,7 @@ databaseChangeLog:
       author: gemini
       changes:
         - sql:
-            sql: CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+            sql: CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA public;
   - changeSet:
       id: 1-create-initial-schema
       author: gemini
