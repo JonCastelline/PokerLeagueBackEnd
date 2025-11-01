@@ -331,8 +331,8 @@ class GameController(
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "Successfully generated calendar file")
     ])
-    @GetMapping("/games/{gameId}/calendar.ics")
-    fun getGameCalendar(@PathVariable gameId: Long, response: HttpServletResponse) {
-        gameService.getGameCalendar(gameId, response)
+    @GetMapping("/games/calendar/{calendarToken}.ics")
+    fun getGameCalendar(@PathVariable calendarToken: String, response: HttpServletResponse) {
+        gameService.getGameCalendar(calendarToken, response)
     }
 }

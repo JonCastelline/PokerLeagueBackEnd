@@ -28,14 +28,15 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.http.MediaType
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.test.context.support.WithMockUser
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers
 import java.time.LocalDate
@@ -612,8 +613,9 @@ class GameControllerIntegrationTest {
             season = testSeason
         ))
 
-        mockMvc.perform(get("/api/games/${game.id}/calendar.ics"))
+        mockMvc.perform(get("/api/games/calendar/${game.calendarToken}.ics"))
             .andExpect(status().isOk)
             .andExpect(header().string("Content-Type", "text/calendar"))
+
     }
 }

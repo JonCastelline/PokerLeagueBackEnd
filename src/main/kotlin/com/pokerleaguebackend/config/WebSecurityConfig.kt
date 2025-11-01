@@ -73,7 +73,7 @@ class WebSecurityConfig(private val jwtAuthenticationFilter: JwtAuthenticationFi
                     .requestMatchers(
                         AntPathRequestMatcher("/api/auth/**"),
                         AntPathRequestMatcher("/api/public/**"),
-                        AntPathRequestMatcher("/api/games/*/calendar.ics"),
+                        AntPathRequestMatcher("/api/games/calendar/**.ics"),
                         // Swagger UI / OpenAPI paths
                         AntPathRequestMatcher("/v3/api-docs"),
                         AntPathRequestMatcher("/v3/api-docs/**"),

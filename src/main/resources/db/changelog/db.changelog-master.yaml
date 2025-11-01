@@ -285,6 +285,7 @@ databaseChangeLog:
               - column:
                   name: current_level_index
                   type: INT
+
         - createTable:
             tableName: live_game_player
             columns:
@@ -479,6 +480,20 @@ databaseChangeLog:
               - column:
                   name: hashed_answer
                   type: VARCHAR(255)
+
+  - changeSet:
+      id: 2-add-calendar-token-to-game
+      author: gemini
+      changes:
+        - addColumn:
+            tableName: game
+            columns:
+              - column:
+                  name: calendar_token
+                  type: VARCHAR(36)
+                  constraints:
+                    unique: true
+                    nullable: false
 
   - changeSet:
       id: 2-add-player-security-answer-constraint
