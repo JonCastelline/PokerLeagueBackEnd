@@ -504,3 +504,17 @@ databaseChangeLog:
             tableName: player_security_answer
             columnNames: player_account_id, security_question_id
             constraintName: uc_playersecurityanswer_player_question
+  - changeSet:
+      id: 3-add-last-league-id-to-player-account
+      author: gemini
+      changes:
+        - addColumn:
+            tableName: player_account
+            columns:
+              - column:
+                  name: last_league_id
+                  type: BIGINT
+                  constraints:
+                    nullable: true
+                    foreignKeyName: fk_player_account_last_league
+                    references: league(id)

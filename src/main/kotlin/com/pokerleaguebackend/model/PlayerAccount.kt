@@ -5,6 +5,8 @@ import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
 import jakarta.persistence.Table
 
 @Entity
@@ -22,5 +24,9 @@ data class PlayerAccount(
 
     @Column(length = 100)
     var password: String? = null,
-    val paid: Boolean = false
+    val paid: Boolean = false,
+
+    @ManyToOne
+    @JoinColumn(name = "last_league_id")
+    var lastLeague: League? = null
 )

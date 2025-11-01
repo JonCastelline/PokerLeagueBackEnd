@@ -6,6 +6,7 @@ import com.pokerleaguebackend.payload.dto.PlayerAccountDetailsDto
 import com.pokerleaguebackend.payload.request.RegisterAndClaimRequest
 import com.pokerleaguebackend.payload.request.SignUpRequest
 import com.pokerleaguebackend.repository.PlayerAccountRepository
+import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.exception.DuplicatePlayerException
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
@@ -15,7 +16,8 @@ import org.springframework.transaction.annotation.Transactional
 class PlayerAccountService(
     private val playerAccountRepository: PlayerAccountRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val leagueService: LeagueService
+    private val leagueService: LeagueService,
+    private val leagueRepository: LeagueRepository
 ) {
 
     @Transactional
@@ -83,5 +85,17 @@ class PlayerAccountService(
         leagueService.claimInvite(invite, newPlayerAccount)
 
         return newPlayerAccount
+    }
+
+    @Transactional
+    fun updateLastLeague(playerId: Long, leagueId: Long) {
+        val playerAccount = playerAccountRepository.findById(playerId)
+            .orElseThrow { NoSuchElementException("Player account not found") }
+
+        val league = leagueRepository.findById(leagueId)
+            .orElseThrow { NoSuchElementException("League not found") }
+
+        playerAccount.lastLeague = league
+        playerAccountRepository.save(playerAccount)
     }
 }
