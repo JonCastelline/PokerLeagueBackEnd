@@ -1,11 +1,5 @@
 databaseChangeLog:
   - changeSet:
-      id: 0-enable-pgcrypto-extension
-      author: gemini
-      changes:
-        - sql:
-            sql: CREATE EXTENSION IF NOT EXISTS "pgcrypto" SCHEMA public;
-  - changeSet:
       id: 1-create-initial-schema
       author: gemini
       changes:
@@ -497,7 +491,6 @@ databaseChangeLog:
               - column:
                   name: calendar_token
                   type: VARCHAR(36)
-                  defaultValueComputed: "random_uuid()"
                   constraints:
                     unique: true
                     nullable: false
