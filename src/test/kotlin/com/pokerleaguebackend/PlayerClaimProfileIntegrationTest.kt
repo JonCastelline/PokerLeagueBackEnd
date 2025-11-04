@@ -21,7 +21,6 @@ import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.payload.dto.LeagueMembershipDto
 import com.pokerleaguebackend.payload.dto.PlayerInviteDto
-import com.pokerleaguebackend.payload.dto.AcceptInviteResponseDto
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.BeforeEach
@@ -223,7 +222,7 @@ class PlayerClaimProfileIntegrationTest {
         mockMvc.post("/api/player-accounts/me/invites/$inviteId/accept") {
             header("Authorization", "Bearer $existingUserToken")
         }.andExpect {
-            status { isOk() }
+            status { isNoContent() }
         }
 
         // 3. Verify
@@ -285,110 +284,5 @@ class PlayerClaimProfileIntegrationTest {
         }.andExpect {
             status { isNotFound() }
         }
-    }
-
-    @Test
-    fun `test accept invite and update last league`() {
-        // 1. Setup
-        val ownerToken = login(LoginRequest("owner@example.com", "password"))
-
-        // Create league 1
-        val createLeague1Request = CreateLeagueRequest("Test League 1")
-        val league1Result = mockMvc.post("/api/leagues") {
-            header("Authorization", "Bearer $ownerToken")
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(createLeague1Request)
-        }.andReturn()
-        val league1 = objectMapper.readValue(league1Result.response.contentAsString, League::class.java)
-
-        // Create league 2
-        val createLeague2Request = CreateLeagueRequest("Test League 2")
-        val league2Result = mockMvc.post("/api/leagues") {
-            header("Authorization", "Bearer $ownerToken")
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(createLeague2Request)
-        }.andReturn()
-        val league2 = objectMapper.readValue(league2Result.response.contentAsString, League::class.java)
-
-        // Create a player
-        val player = playerAccountRepository.save(PlayerAccount(firstName = "Player", lastName = "User", email = "player@example.com", password = passwordEncoder.encode("password")))
-        val playerToken = login(LoginRequest("player@example.com", "password"))
-
-        // Invite player to league 1
-        val addUnregisteredPlayerRequest1 = AddUnregisteredPlayerRequest("Unregistered Player 1")
-        val unregisteredPlayerResult1 = mockMvc.post("/api/leagues/${league1.id}/members/unregistered") {
-            header("Authorization", "Bearer $ownerToken")
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(addUnregisteredPlayerRequest1)
-        }.andReturn()
-        val unregisteredPlayerMembershipDto1 = objectMapper.readValue(unregisteredPlayerResult1.response.contentAsString, LeagueMembershipDto::class.java)
-
-        val inviteRequest1 = InvitePlayerRequest(player.email)
-        mockMvc.post("/api/leagues/${league1.id}/members/${unregisteredPlayerMembershipDto1.id}/invite") {
-            header("Authorization", "Bearer $ownerToken")
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(inviteRequest1)
-        }.andExpect {
-            status { isOk() }
-        }
-
-        // 2. Accept invite for league 1
-        val invitesResult1 = mockMvc.get("/api/player-accounts/me/invites") {
-            header("Authorization", "Bearer $playerToken")
-        }.andReturn()
-        val invites1 = objectMapper.readValue(invitesResult1.response.contentAsString, Array<PlayerInviteDto>::class.java)
-        val inviteId1 = invites1[0].inviteId
-
-        val result = mockMvc.post("/api/player-accounts/me/invites/$inviteId1/accept") {
-            header("Authorization", "Bearer $playerToken")
-        }.andExpect {
-            status { isOk() }
-        }.andReturn()
-
-        val response = objectMapper.readValue(result.response.contentAsString, AcceptInviteResponseDto::class.java)
-        assertEquals(league1.id, response.leagueId)
-
-        // 3. Verify last league is league 1
-        entityManager.flush()
-        entityManager.clear()
-        val updatedPlayer1 = playerAccountRepository.findById(player.id).get()
-        assertEquals(league1.id, updatedPlayer1.lastLeague?.id)
-
-        // 4. Invite player to league 2
-        val addUnregisteredPlayerRequest2 = AddUnregisteredPlayerRequest("Unregistered Player 2")
-        val unregisteredPlayerResult2 = mockMvc.post("/api/leagues/${league2.id}/members/unregistered") {
-            header("Authorization", "Bearer $ownerToken")
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(addUnregisteredPlayerRequest2)
-        }.andReturn()
-        val unregisteredPlayerMembershipDto2 = objectMapper.readValue(unregisteredPlayerResult2.response.contentAsString, LeagueMembershipDto::class.java)
-
-        val inviteRequest2 = InvitePlayerRequest(player.email)
-        mockMvc.post("/api/leagues/${league2.id}/members/${unregisteredPlayerMembershipDto2.id}/invite") {
-            header("Authorization", "Bearer $ownerToken")
-            contentType = MediaType.APPLICATION_JSON
-            content = objectMapper.writeValueAsString(inviteRequest2)
-        }.andExpect {
-            status { isOk() }
-        }
-
-        // 5. Accept invite for league 2
-        val invitesResult2 = mockMvc.get("/api/player-accounts/me/invites") {
-            header("Authorization", "Bearer $playerToken")
-        }.andReturn()
-        val invites2 = objectMapper.readValue(invitesResult2.response.contentAsString, Array<PlayerInviteDto>::class.java)
-        val inviteId2 = invites2.find { it.leagueId == league2.id }!!.inviteId
-
-        mockMvc.post("/api/player-accounts/me/invites/$inviteId2/accept") {
-            header("Authorization", "Bearer $playerToken")
-        }.andExpect {
-            status { isOk() }
-        }
-
-        // 6. Verify last league is league 2
-        entityManager.flush()
-        entityManager.clear()
-        val updatedPlayer2 = playerAccountRepository.findById(player.id).get()
-        assertEquals(league2.id, updatedPlayer2.lastLeague?.id)
     }
 }

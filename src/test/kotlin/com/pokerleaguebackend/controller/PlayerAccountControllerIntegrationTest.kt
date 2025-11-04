@@ -3,7 +3,6 @@ package com.pokerleaguebackend.controller
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.pokerleaguebackend.payload.dto.PasswordChangeDto
 import com.pokerleaguebackend.payload.dto.PlayerAccountDetailsDto
-import com.pokerleaguebackend.payload.request.UpdateLastLeagueRequest
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import com.pokerleaguebackend.security.JwtTokenProvider
@@ -122,7 +121,7 @@ class PlayerAccountControllerIntegrationTest @Autowired constructor(
             put("/api/player-accounts/me/last-league")
                 .header("Authorization", "Bearer $token")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(UpdateLastLeagueRequest(league.id)))
+                .content(league.id.toString())
         )
             .andExpect(status().isOk)
 

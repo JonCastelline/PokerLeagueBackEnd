@@ -740,7 +740,7 @@ class LeagueService(
     }
 
     @Transactional
-    fun acceptInvite(inviteId: Long, requestingPlayerAccountId: Long): Long {
+    fun acceptInvite(inviteId: Long, requestingPlayerAccountId: Long) {
         val invite = playerInviteRepository.findById(inviteId)
             .orElseThrow { LeagueNotFoundException("Invite not found.") }
         entityManager.refresh(invite) // Explicitly refresh the invite
@@ -771,8 +771,6 @@ class LeagueService(
         invite.status = InviteStatus.ACCEPTED
         playerInviteRepository.save(invite)
         playerInviteRepository.flush()
-
-        return membership.league.id
     }
 
     fun validateAndGetInvite(token: String): PlayerInvite {

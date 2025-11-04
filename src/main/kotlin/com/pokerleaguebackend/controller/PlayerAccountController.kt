@@ -1,10 +1,7 @@
 package com.pokerleaguebackend.controller
 
-import com.pokerleaguebackend.payload.dto.AcceptInviteResponseDto
 import com.pokerleaguebackend.payload.dto.PasswordChangeDto
 import com.pokerleaguebackend.payload.dto.PlayerAccountDetailsDto
-import com.pokerleaguebackend.payload.request.UpdateLastLeagueRequest
-import com.pokerleaguebackend.security.JwtTokenProvider
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.PlayerAccountService
 import com.pokerleaguebackend.service.LeagueService
@@ -29,8 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/player-accounts")
 class PlayerAccountController(
     private val playerAccountService: PlayerAccountService,
-    private val leagueService: LeagueService,
-    private val jwtTokenProvider: JwtTokenProvider
+    private val leagueService: LeagueService
 ) {
 
     @Operation(summary = "Update current player's account details")
@@ -87,21 +83,19 @@ class PlayerAccountController(
     fun acceptInvite(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable inviteId: Long
-    ): ResponseEntity<AcceptInviteResponseDto> {
+    ): ResponseEntity<Void> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
-        val leagueId = leagueService.acceptInvite(inviteId, playerAccount.id)
-        playerAccountService.updateLastLeague(playerAccount.id, leagueId)
-        val newToken = jwtTokenProvider.generateToken(playerAccount.email)
-        return ResponseEntity.ok(AcceptInviteResponseDto(token = newToken, leagueId = leagueId))
+        leagueService.acceptInvite(inviteId, playerAccount.id)
+        return ResponseEntity.noContent().build()
     }
 
     @PutMapping("/me/last-league")
     fun updateLastLeague(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @RequestBody updateLastLeagueRequest: UpdateLastLeagueRequest
+        @RequestBody leagueId: Long
     ): ResponseEntity<Unit> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
-        playerAccountService.updateLastLeague(playerAccount.id, updateLastLeagueRequest.leagueId)
+        playerAccountService.updateLastLeague(playerAccount.id, leagueId)
         return ResponseEntity.ok().build()
     }
 }
