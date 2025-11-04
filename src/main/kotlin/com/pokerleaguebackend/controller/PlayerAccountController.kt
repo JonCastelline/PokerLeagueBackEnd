@@ -75,7 +75,7 @@ class PlayerAccountController(
 
     @Operation(summary = "Accept a league invitation")
     @ApiResponses(value = [
-        ApiResponse(responseCode = "204", description = "Invite accepted successfully"),
+        ApiResponse(responseCode = "200", description = "Invite accepted successfully"),
         ApiResponse(responseCode = "403", description = "Invite does not belong to the current user"),
         ApiResponse(responseCode = "404", description = "Invite not found")
     ])
@@ -83,10 +83,11 @@ class PlayerAccountController(
     fun acceptInvite(
         @AuthenticationPrincipal userDetails: UserDetails,
         @PathVariable inviteId: Long
-    ): ResponseEntity<Void> {
+    ): ResponseEntity<Long> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
-        leagueService.acceptInvite(inviteId, playerAccount.id)
-        return ResponseEntity.noContent().build()
+        val leagueId = leagueService.acceptInvite(inviteId, playerAccount.id)
+        playerAccountService.updateLastLeague(playerAccount.id, leagueId)
+        return ResponseEntity.ok(leagueId)
     }
 
     @PutMapping("/me/last-league")

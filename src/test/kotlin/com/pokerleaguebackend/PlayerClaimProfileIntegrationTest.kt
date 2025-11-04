@@ -222,7 +222,7 @@ class PlayerClaimProfileIntegrationTest {
         mockMvc.post("/api/player-accounts/me/invites/$inviteId/accept") {
             header("Authorization", "Bearer $existingUserToken")
         }.andExpect {
-            status { isNoContent() }
+            status { isOk() }
         }
 
         // 3. Verify
