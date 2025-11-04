@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.post
 import org.springframework.transaction.annotation.Transactional
 import java.sql.Timestamp
 import java.time.LocalDateTime
+import java.util.UUID
 
 import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.PlayerAccount
@@ -85,7 +86,7 @@ class AuthControllerIntegrationTest {
 
     @Test
     fun `should return last league id on login`() {
-        val league = leagueRepository.save(League(leagueName = "Test League", inviteCode = "123456", expirationDate = Timestamp.valueOf(LocalDateTime.now().plusDays(1))))
+        val league = leagueRepository.save(League(leagueName = "Test League", inviteCode = UUID.randomUUID().toString(), expirationDate = Timestamp.valueOf(LocalDateTime.now().plusDays(1))))
         val player = playerAccountRepository.save(
             PlayerAccount(
                 firstName = "Test",
