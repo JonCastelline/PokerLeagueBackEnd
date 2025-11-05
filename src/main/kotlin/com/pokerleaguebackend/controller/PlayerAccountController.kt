@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
+import com.pokerleaguebackend.payload.request.UpdateLastLeagueRequest
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -93,10 +94,10 @@ class PlayerAccountController(
     @PutMapping("/me/last-league")
     fun updateLastLeague(
         @AuthenticationPrincipal userDetails: UserDetails,
-        @RequestBody leagueId: Long
+        @RequestBody updateLastLeagueRequest: UpdateLastLeagueRequest
     ): ResponseEntity<Unit> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
-        playerAccountService.updateLastLeague(playerAccount.id, leagueId)
+        playerAccountService.updateLastLeague(playerAccount.id, updateLastLeagueRequest.leagueId)
         return ResponseEntity.ok().build()
     }
 }
