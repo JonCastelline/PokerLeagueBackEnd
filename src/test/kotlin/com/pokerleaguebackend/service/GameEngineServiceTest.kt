@@ -34,11 +34,13 @@ import org.mockito.Mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.junit.jupiter.MockitoExtension
-import java.sql.Time
+import java.time.Instant
 import java.util.Date
+import java.sql.Time
 import java.util.Optional
 import java.math.BigDecimal
 import com.pokerleaguebackend.payload.dto.PlayerStandingsDto
+import org.junit.jupiter.api.assertThrows
 
 @ExtendWith(MockitoExtension::class)
 class GameEngineServiceTest {
@@ -69,7 +71,7 @@ class GameEngineServiceTest {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDateTime = Instant.now())
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
@@ -102,7 +104,7 @@ class GameEngineServiceTest {
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             timeRemainingInMillis = 1200 * 1000L
         )
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
@@ -125,7 +127,7 @@ class GameEngineServiceTest {
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.PAUSED,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             timeRemainingInMillis = 1000 * 1000L
         )
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
@@ -152,7 +154,7 @@ class GameEngineServiceTest {
         val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
@@ -186,7 +188,7 @@ class GameEngineServiceTest {
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
@@ -221,7 +223,7 @@ class GameEngineServiceTest {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDateTime = Instant.now())
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
@@ -259,12 +261,12 @@ class GameEngineServiceTest {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
-        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = false) // trackBounties is false
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDateTime = Instant.now())
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
         val players = listOf(player1)
         val request = StartGameRequest(playerIds = players.map { it.id })
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
 
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
@@ -285,7 +287,7 @@ class GameEngineServiceTest {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDateTime = Instant.now())
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
@@ -312,7 +314,7 @@ class GameEngineServiceTest {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDateTime = Instant.now())
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
@@ -342,7 +344,7 @@ class GameEngineServiceTest {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDateTime = Instant.now())
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
@@ -373,7 +375,7 @@ class GameEngineServiceTest {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDateTime = Instant.now())
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
         val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
@@ -408,7 +410,7 @@ class GameEngineServiceTest {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS, gameDateTime = Instant.now())
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
@@ -444,7 +446,7 @@ class GameEngineServiceTest {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
         val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
-        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game = Game(id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.SCHEDULED, gameDateTime = Instant.now())
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, trackBounties = true)
         val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
         val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
@@ -489,7 +491,7 @@ class GameEngineServiceTest {
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             currentLevelIndex = 0, timeRemainingInMillis = 5000L
         )
 
@@ -519,7 +521,7 @@ class GameEngineServiceTest {
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.PAUSED,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             currentLevelIndex = 1, timeRemainingInMillis = 5000L
         )
 
@@ -548,7 +550,7 @@ class GameEngineServiceTest {
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             currentLevelIndex = 1, // Already at max level (index 1)
             timeRemainingInMillis = 5000L
         )
@@ -577,7 +579,7 @@ class GameEngineServiceTest {
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200, blindLevels = blindLevels.toMutableList())
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             currentLevelIndex = 0, // Already at first level
             timeRemainingInMillis = 3000L
         )
@@ -606,7 +608,7 @@ class GameEngineServiceTest {
         val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1, place = 1, kills = 1, bounties = 1))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2, place = 2, kills = 0, bounties = 0))
@@ -649,7 +651,7 @@ class GameEngineServiceTest {
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             currentLevelIndex = 0, timeRemainingInMillis = 5000L // 5 seconds left
         )
 
@@ -674,7 +676,7 @@ class GameEngineServiceTest {
         val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.PAUSED,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             currentLevelIndex = 1, timeRemainingInMillis = 5000L
         )
         val request = SetTimeRequest(timeRemainingInMillis = 600000L) // 10 minutes
@@ -700,7 +702,7 @@ class GameEngineServiceTest {
         val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
 
@@ -714,7 +716,7 @@ class GameEngineServiceTest {
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season))
 
         // When / Then
-        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+        assertThrows<IllegalArgumentException> {
             gameEngineService.updateGameResults(1, request)
         }
     }
@@ -730,7 +732,7 @@ class GameEngineServiceTest {
         val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
@@ -746,7 +748,7 @@ class GameEngineServiceTest {
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season, trackKills = true))
 
         // When / Then
-        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+        assertThrows<IllegalArgumentException> {
             gameEngineService.updateGameResults(1, request)
         }
     }
@@ -760,7 +762,7 @@ class GameEngineServiceTest {
         val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1, hasBounty = false)) // No bounties available
 
@@ -774,7 +776,7 @@ class GameEngineServiceTest {
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season, trackBounties = true))
 
         // When / Then
-        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+        assertThrows<IllegalArgumentException> {
             gameEngineService.updateGameResults(1, request)
         }
     }
@@ -790,7 +792,7 @@ class GameEngineServiceTest {
         val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
@@ -806,7 +808,7 @@ class GameEngineServiceTest {
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season))
 
         // When / Then
-        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+        assertThrows<IllegalArgumentException> {
             gameEngineService.updateGameResults(1, request)
         }
     }
@@ -820,7 +822,7 @@ class GameEngineServiceTest {
         val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
 
@@ -834,7 +836,7 @@ class GameEngineServiceTest {
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season))
 
         // When / Then
-        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+        assertThrows<IllegalArgumentException> {
             gameEngineService.updateGameResults(1, request)
         }
     }
@@ -850,7 +852,7 @@ class GameEngineServiceTest {
         val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2))
@@ -866,7 +868,7 @@ class GameEngineServiceTest {
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season, trackKills = true))
 
         // When / Then
-        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+        assertThrows<IllegalArgumentException> {
             gameEngineService.updateGameResults(1, request)
         }
     }
@@ -880,7 +882,7 @@ class GameEngineServiceTest {
         val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1))
 
@@ -894,7 +896,7 @@ class GameEngineServiceTest {
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(SeasonSettings(id = 1, season = season, trackBounties = true))
 
         // When / Then
-        org.junit.jupiter.api.assertThrows<IllegalArgumentException> {
+        assertThrows<IllegalArgumentException> {
             gameEngineService.updateGameResults(1, request)
         }
     }
@@ -912,7 +914,7 @@ class GameEngineServiceTest {
         val player3 = LeagueMembership(id = 3, league = league, displayName = "Player 3", role = UserRole.PLAYER, playerAccount = playerAccount3)
         val game = Game(
             id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
-            gameDate = Date(), gameTime = Time(System.currentTimeMillis())
+            gameDateTime = Instant.now()
         )
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player1, hasBounty = true))
         game.liveGamePlayers.add(LiveGamePlayer(game = game, player = player2, hasBounty = false))

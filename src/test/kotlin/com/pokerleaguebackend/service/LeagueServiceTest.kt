@@ -34,6 +34,7 @@ import org.mockito.kotlin.verify
 import java.util.Date
 import java.util.Optional
 import java.sql.Time
+import java.time.Instant
 
 class LeagueServiceTest {
 
@@ -272,7 +273,7 @@ class LeagueServiceTest {
         val playerAccount = PlayerAccount(id = 1, firstName = "Admin", lastName = "User", email = "admin@test.com", password = "password", paid = false)
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
         val season = Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
-        val game = Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val game = Game(id = 1, season = season, gameName = "Game 1", gameDateTime = Instant.now(), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.ADMIN, displayName = "Admin", isOwner = false)
 
         `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
@@ -287,7 +288,7 @@ class LeagueServiceTest {
         val playerAccount = PlayerAccount(id = 1, firstName = "Owner", lastName = "User", email = "owner@test.com", password = "password", paid = false)
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
         val season = Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
-        val game = Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val game = Game(id = 1, season = season, gameName = "Game 1", gameDateTime = Instant.now(), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Owner", isOwner = true)
 
         `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
@@ -302,7 +303,7 @@ class LeagueServiceTest {
         val playerAccount = PlayerAccount(id = 1, firstName = "Player", lastName = "User", email = "player@test.com", password = "password", paid = false)
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
         val season = Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
-        val game = Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val game = Game(id = 1, season = season, gameName = "Game 1", gameDateTime = Instant.now(), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Player", isOwner = false)
         val seasonSettings = SeasonSettings(season = season, playerTimerControlEnabled = true)
 
@@ -319,7 +320,7 @@ class LeagueServiceTest {
         val playerAccount = PlayerAccount(id = 1, firstName = "Player", lastName = "User", email = "player@test.com", password = "password", paid = false)
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
         val season = Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
-        val game = Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val game = Game(id = 1, season = season, gameName = "Game 1", gameDateTime = Instant.now(), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Player", isOwner = false)
         val seasonSettings = SeasonSettings(season = season, playerTimerControlEnabled = false)
 
@@ -346,7 +347,7 @@ class LeagueServiceTest {
         val playerAccount = PlayerAccount(id = 1, firstName = "Admin", lastName = "User", email = "admin@test.com", password = "password", paid = false)
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
         val season = Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
-        val game = Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val game = Game(id = 1, season = season, gameName = "Game 1", gameDateTime = Instant.now(), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.ADMIN, displayName = "Admin", isOwner = false)
 
         `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
@@ -361,7 +362,7 @@ class LeagueServiceTest {
         val playerAccount = PlayerAccount(id = 1, firstName = "Owner", lastName = "User", email = "owner@test.com", password = "password", paid = false)
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
         val season = Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
-        val game = Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val game = Game(id = 1, season = season, gameName = "Game 1", gameDateTime = Instant.now(), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Owner", isOwner = true)
 
         `when`(gameRepository.findById(game.id)).thenReturn(Optional.of(game))
@@ -376,7 +377,7 @@ class LeagueServiceTest {
         val playerAccount = PlayerAccount(id = 1, firstName = "Player", lastName = "User", email = "player@test.com", password = "password", paid = false)
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
         val season = Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
-        val game = Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val game = Game(id = 1, season = season, gameName = "Game 1", gameDateTime = Instant.now(), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Player", isOwner = false)
         val seasonSettings = SeasonSettings(season = season, playerEliminationEnabled = true)
 
@@ -393,7 +394,7 @@ class LeagueServiceTest {
         val playerAccount = PlayerAccount(id = 1, firstName = "Player", lastName = "User", email = "player@test.com", password = "password", paid = false)
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = false)
         val season = Season(id = 1, league = league, seasonName = "2025", startDate = Date(), endDate = Date(), isFinalized = false)
-        val game = Game(id = 1, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
+        val game = Game(id = 1, season = season, gameName = "Game 1", gameDateTime = Instant.now(), gameLocation = null, gameStatus = GameStatus.SCHEDULED, timeRemainingInMillis = null, currentLevelIndex = null)
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Player", isOwner = false)
         val seasonSettings = SeasonSettings(season = season, playerEliminationEnabled = false)
 

@@ -39,11 +39,11 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers
+import java.time.Instant
+import java.time.ZoneOffset
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneId
 import java.util.Date
-import java.sql.Time
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -176,8 +176,7 @@ class GameControllerIntegrationTest {
     fun `createGame should create a new game as admin`() {
         val createGameRequest = CreateGameRequest(
             gameName = null,
-            gameDate = LocalDate.now(),
-            gameTime = LocalTime.now(),
+            gameDateTime = Instant.now(),
             gameLocation = null
         )
 
@@ -194,8 +193,7 @@ class GameControllerIntegrationTest {
     fun `createGame should return forbidden for regular user`() {
         val createGameRequest = CreateGameRequest(
             gameName = null,
-            gameDate = LocalDate.now(),
-            gameTime = LocalTime.now(),
+            gameDateTime = Instant.now(),
             gameLocation = null
         )
 
@@ -210,8 +208,7 @@ class GameControllerIntegrationTest {
     fun `recordGameResults should record results as admin`() {
         val game = gameRepository.save(Game(
             gameName = "Game for Results",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
@@ -247,8 +244,7 @@ class GameControllerIntegrationTest {
     fun `recordGameResults should return forbidden for regular user`() {
         val game = gameRepository.save(Game(
             gameName = "Game for Results Forbidden",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
@@ -274,8 +270,7 @@ class GameControllerIntegrationTest {
     fun `getGameResults should return results for game member`() {
         val game = gameRepository.save(Game(
             gameName = "Game to Get Results",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
@@ -301,14 +296,12 @@ class GameControllerIntegrationTest {
     fun `getGameHistory should return games for season member`() {
         gameRepository.save(Game(
             gameName = "History Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
         gameRepository.save(Game(
             gameName = "History Game 2",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now().plusSeconds(3600), // Ensure different times for sorting
             season = testSeason
         ))
 
@@ -323,8 +316,7 @@ class GameControllerIntegrationTest {
     fun `createGame should assign sequential game names`() {
         val createGameRequest = CreateGameRequest(
             gameName = null,
-            gameDate = LocalDate.now(),
-            gameTime = LocalTime.now(),
+            gameDateTime = Instant.now(),
             gameLocation = null
         )
 
@@ -355,8 +347,7 @@ class GameControllerIntegrationTest {
         // Attempt to create a game in the finalized season
         val createGameRequest = CreateGameRequest(
             gameName = null,
-            gameDate = LocalDate.now(),
-            gameTime = LocalTime.now(),
+            gameDateTime = Instant.now(),
             gameLocation = null
         )
 
@@ -371,16 +362,14 @@ class GameControllerIntegrationTest {
     fun `updateGame should update an existing game as admin`() {
         val game = gameRepository.save(Game(
             gameName = "Original Game Name",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             gameLocation = "Original Location",
             season = testSeason
         ))
 
         val updateGameRequest = CreateGameRequest(
             gameName = "Updated Game Name",
-            gameDate = LocalDate.now().plusDays(1),
-            gameTime = LocalTime.now().plusHours(1),
+            gameDateTime = Instant.now().plusSeconds(86400 + 3600), // +1 day, +1 hour
             gameLocation = "Updated Location"
         )
 
@@ -397,15 +386,13 @@ class GameControllerIntegrationTest {
     fun `updateGame should return bad request for gameDate outside season`() {
         val game = gameRepository.save(Game(
             gameName = "Game for Invalid Date",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
         val updateGameRequest = CreateGameRequest(
             gameName = "Updated Game Name",
-            gameDate = LocalDate.now().plusYears(10), // Date far outside season
-            gameTime = LocalTime.now(),
+            gameDateTime = Instant.now().plusSeconds(365 * 24 * 3600 * 10), // 10 years in future
             gameLocation = "Some Location"
         )
 
@@ -421,15 +408,13 @@ class GameControllerIntegrationTest {
     fun `updateGame should return forbidden for regular user`() {
         val game = gameRepository.save(Game(
             gameName = "Game for Forbidden Update",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
         val updateGameRequest = CreateGameRequest(
             gameName = "Attempted Update",
-            gameDate = LocalDate.now(),
-            gameTime = LocalTime.now(),
+            gameDateTime = Instant.now(),
             gameLocation = "Forbidden Location"
         )
 
@@ -445,8 +430,7 @@ class GameControllerIntegrationTest {
         val nonExistentGameId = 9999L
         val updateGameRequest = CreateGameRequest(
             gameName = "Non Existent",
-            gameDate = LocalDate.now(),
-            gameTime = LocalTime.now(),
+            gameDateTime = Instant.now(),
             gameLocation = "Anywhere"
         )
 
@@ -461,8 +445,7 @@ class GameControllerIntegrationTest {
     fun `updateGame in finalized season should return conflict`() {
         val game = gameRepository.save(Game(
             gameName = "Game in Finalized Season",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
@@ -473,8 +456,7 @@ class GameControllerIntegrationTest {
 
         val updateGameRequest = CreateGameRequest(
             gameName = "Attempted Update in Finalized Season",
-            gameDate = LocalDate.now(),
-            gameTime = LocalTime.now(),
+            gameDateTime = Instant.now(),
             gameLocation = "Finalized Location"
         )
 
@@ -490,8 +472,7 @@ class GameControllerIntegrationTest {
     fun `deleteGame should allow admin to delete a game with no results`() {
         val game = gameRepository.save(Game(
             gameName = "Deletable Game",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
@@ -504,8 +485,7 @@ class GameControllerIntegrationTest {
     fun `deleteGame should return conflict if game has results`() {
         val game = gameRepository.save(Game(
             gameName = "Game With Results",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
         gameResultRepository.save(GameResult(
@@ -526,8 +506,7 @@ class GameControllerIntegrationTest {
     fun `deleteGame should return forbidden for regular user`() {
         val game = gameRepository.save(Game(
             gameName = "Game For Forbidden Delete",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
@@ -549,8 +528,7 @@ class GameControllerIntegrationTest {
     fun `deleteGame should return conflict if season is finalized`() {
         val game = gameRepository.save(Game(
             gameName = "Game In Finalized Season",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
@@ -569,8 +547,7 @@ class GameControllerIntegrationTest {
         // Arrange: Create and start a game
         val game = gameRepository.save(Game(
             gameName = "Live Game",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 
@@ -608,8 +585,7 @@ class GameControllerIntegrationTest {
     fun `getGameCalendar should return ics file for league member`() {
         val game = gameRepository.save(Game(
             gameName = "Calendar Test Game",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
 

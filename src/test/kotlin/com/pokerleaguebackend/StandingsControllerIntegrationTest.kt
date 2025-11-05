@@ -32,7 +32,7 @@ import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPat
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import java.math.BigDecimal
-import java.sql.Time
+import java.time.Instant
 import java.util.Date
 
 @SpringBootTest
@@ -170,8 +170,7 @@ class StandingsControllerIntegrationTest {
         // Given
         val game1 = gameRepository.save(Game(
             gameName = "Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
         gameResultRepository.saveAll(listOf(
@@ -181,8 +180,7 @@ class StandingsControllerIntegrationTest {
 
         val game2 = gameRepository.save(Game(
             gameName = "Game 2",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now().plusSeconds(3600),
             season = testSeason
         ))
         gameResultRepository.saveAll(listOf(
@@ -216,8 +214,7 @@ class StandingsControllerIntegrationTest {
 
         val game1 = gameRepository.save(Game(
             gameName = "Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
         gameResultRepository.saveAll(listOf(
@@ -252,8 +249,7 @@ class StandingsControllerIntegrationTest {
 
         val game1 = gameRepository.save(Game(
             gameName = "Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
         gameResultRepository.saveAll(listOf(
@@ -283,8 +279,7 @@ class StandingsControllerIntegrationTest {
         // Given
         val game1 = gameRepository.save(Game(
             gameName = "Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
         gameResultRepository.saveAll(listOf(
@@ -332,8 +327,7 @@ class StandingsControllerIntegrationTest {
         // Given
         val game1 = gameRepository.save(Game(
             gameName = "Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
         gameResultRepository.saveAll(listOf(
@@ -343,8 +337,7 @@ class StandingsControllerIntegrationTest {
 
         val game2 = gameRepository.save(Game(
             gameName = "Game 2",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now().plusSeconds(3600),
             season = testSeason
         ))
         gameResultRepository.saveAll(listOf(
@@ -378,8 +371,7 @@ class StandingsControllerIntegrationTest {
 
         val game1 = gameRepository.save(Game(
             gameName = "Game 1",
-            gameDate = Date(),
-            gameTime = Time(System.currentTimeMillis()),
+            gameDateTime = Instant.now(),
             season = testSeason
         ))
         gameResultRepository.saveAll(listOf(
