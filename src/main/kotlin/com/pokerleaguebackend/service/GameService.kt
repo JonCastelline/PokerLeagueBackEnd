@@ -177,7 +177,8 @@ class GameService(
         val event = VEvent()
 
         event.setSummary(game.gameName)
-        event.setDateStart(Date.from(game.gameDateTime))
+        // Set the date and time with UTC timezone
+        event.setDateStart(Date.from(game.gameDateTime), true)
         game.gameLocation?.let {
             event.setLocation(it)
         }
