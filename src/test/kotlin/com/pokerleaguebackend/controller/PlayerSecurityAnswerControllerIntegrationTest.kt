@@ -56,7 +56,12 @@ class PlayerSecurityAnswerControllerIntegrationTest @Autowired constructor(
 
     @BeforeEach
     fun setup() {
+        // Clean dependent tables in an order that respects foreign key constraints.
+        // Some test runners (or gradle rerun behavior) may re-use the same in-memory DB between runs,
+        // so explicitly remove rows from tables that reference player_account to avoid FK violations.
         jdbcTemplate.execute("DELETE FROM player_security_answer")
+        jdbcTemplate.execute("DELETE FROM player_invites")
+        jdbcTemplate.execute("DELETE FROM league_membership")
         jdbcTemplate.execute("DELETE FROM security_question")
         jdbcTemplate.execute("DELETE FROM player_account")
 

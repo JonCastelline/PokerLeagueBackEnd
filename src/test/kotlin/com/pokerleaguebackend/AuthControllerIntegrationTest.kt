@@ -22,6 +22,7 @@ import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.junit.jupiter.api.BeforeEach
+import java.util.UUID
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -85,7 +86,7 @@ class AuthControllerIntegrationTest {
 
     @Test
     fun `should return last league id on login`() {
-        val league = leagueRepository.save(League(leagueName = "Test League", inviteCode = "123456", expirationDate = Timestamp.valueOf(LocalDateTime.now().plusDays(1))))
+        val league = leagueRepository.save(League(leagueName = "Test League", inviteCode = UUID.randomUUID().toString(), expirationDate = Timestamp.valueOf(LocalDateTime.now().plusDays(1))))
         val player = playerAccountRepository.save(
             PlayerAccount(
                 firstName = "Test",
