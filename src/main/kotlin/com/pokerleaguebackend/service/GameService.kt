@@ -15,7 +15,7 @@ import biweekly.Biweekly
 import biweekly.ICalendar
 import biweekly.component.VEvent
 import jakarta.servlet.http.HttpServletResponse
-import java.sql.Time
+import java.time.Instant
 import java.time.ZoneId
 import java.util.Date
 import java.util.UUID
@@ -44,15 +44,15 @@ class GameService(
             throw IllegalStateException("Cannot add games to a finalized season.")
         }
 
-        // Validate gameDate against season's start and end dates
-        request.gameDate?.let {
-            val gameLocalDate = it
-            val seasonStartDate = season.startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-            val seasonEndDate = season.endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+        val gameDateTime = request.gameDateTime ?: Instant.now()
 
-            if (gameLocalDate.isBefore(seasonStartDate) || gameLocalDate.isAfter(seasonEndDate)) {
-                throw IllegalArgumentException("Game date must be within the season's start and end dates.")
-            }
+        // Validate gameDateTime against season's start and end dates
+        val gameDate = gameDateTime.atZone(ZoneId.of("UTC")).toLocalDate()
+        val seasonStartDate = season.startDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+        val seasonEndDate = season.endDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+
+        if (gameDate.isBefore(seasonStartDate) || gameDate.isAfter(seasonEndDate)) {
+            throw IllegalArgumentException("Game date must be within the season's start and end dates.")
         }
 
         val defaultGameName = "Game ${gameRepository.countBySeasonId(seasonId) + 1}"
@@ -60,8 +60,7 @@ class GameService(
 
         val newGame = Game(
             gameName = gameNameToUse,
-            gameDate = if (request.gameDate != null) Date.from(request.gameDate.atStartOfDay(ZoneId.systemDefault()).toInstant()) else Date(),
-            gameTime = if (request.gameTime != null) Time.valueOf(request.gameTime) else Time(System.currentTimeMillis()),
+            gameDateTime = gameDateTime,
             gameLocation = request.gameLocation,
             calendarToken = UUID.randomUUID().toString(),
             season = season
@@ -93,20 +92,19 @@ class GameService(
             throw IllegalStateException("Cannot update games in a finalized season.")
         }
 
-        // Validate gameDate against season's start and end dates
-        request.gameDate?.let {
-            val gameLocalDate = it
-            val seasonStartDate = season.startDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
-            val seasonEndDate = season.endDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+        val gameDateTime = request.gameDateTime ?: existingGame.gameDateTime
 
-            if (gameLocalDate.isBefore(seasonStartDate) || gameLocalDate.isAfter(seasonEndDate)) {
-                throw IllegalArgumentException("Game date must be within the season's start and end dates.")
-            }
+        // Validate gameDateTime against season's start and end dates
+        val gameDate = gameDateTime.atZone(ZoneId.of("UTC")).toLocalDate()
+        val seasonStartDate = season.startDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+        val seasonEndDate = season.endDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+
+        if (gameDate.isBefore(seasonStartDate) || gameDate.isAfter(seasonEndDate)) {
+            throw IllegalArgumentException("Game date must be within the season's start and end dates.")
         }
 
         existingGame.gameName = request.gameName ?: existingGame.gameName
-        existingGame.gameDate = if (request.gameDate != null) Date.from(request.gameDate.atStartOfDay(ZoneId.systemDefault()).toInstant()) else existingGame.gameDate
-        existingGame.gameTime = if (request.gameTime != null) Time.valueOf(request.gameTime) else existingGame.gameTime
+        existingGame.gameDateTime = gameDateTime
         existingGame.gameLocation = request.gameLocation
 
         return gameRepository.save(existingGame)
@@ -179,18 +177,7 @@ class GameService(
         val event = VEvent()
 
         event.setSummary(game.gameName)
-
-        // Combine date and time
-        val gameDateTime = java.util.Calendar.getInstance()
-        gameDateTime.time = game.gameDate
-        val timeCal = java.util.Calendar.getInstance()
-        timeCal.time = game.gameTime
-        gameDateTime.set(java.util.Calendar.HOUR_OF_DAY, timeCal.get(java.util.Calendar.HOUR_OF_DAY))
-        gameDateTime.set(java.util.Calendar.MINUTE, timeCal.get(java.util.Calendar.MINUTE))
-        gameDateTime.set(java.util.Calendar.SECOND, timeCal.get(java.util.Calendar.SECOND))
-
-        event.setDateStart(gameDateTime.time)
-
+        event.setDateStart(Date.from(game.gameDateTime))
         game.gameLocation?.let {
             event.setLocation(it)
         }

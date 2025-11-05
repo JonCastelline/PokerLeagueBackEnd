@@ -517,3 +517,19 @@ databaseChangeLog:
                     nullable: true
                     foreignKeyName: fk_player_account_last_league
                     references: league(id)
+  - changeSet:
+      id: 4-refactor-game-datetime
+      author: gemini
+      changes:
+        - addColumn:
+            tableName: game
+            columns:
+              - column:
+                  name: game_date_time
+                  type: TIMESTAMP
+        - dropColumn:
+            tableName: game
+            columnName: game_date
+        - dropColumn:
+            tableName: game
+            columnName: game_time

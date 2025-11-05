@@ -31,6 +31,7 @@ import java.math.BigDecimal
 import java.sql.Time
 import java.util.Date
 import java.util.Optional
+import java.time.Instant
 
 @ExtendWith(MockitoExtension::class)
 class StandingsServiceTest {
@@ -103,7 +104,7 @@ class StandingsServiceTest {
         val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
         val membership2 = LeagueMembership(id = 2L, playerAccount = player2, league = season.league, displayName = "Player Two", iconUrl = null, role = UserRole.PLAYER)
 
-        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDateTime = Instant.now())
         val gameResults = listOf(
             GameResult(game = game1, player = membership1, place = 1, kills = 2, bounties = 1, bountyPlacedOnPlayer = null),
             GameResult(game = game1, player = membership2, place = 2, kills = 1, bounties = 0, bountyPlacedOnPlayer = null)
@@ -213,7 +214,7 @@ class StandingsServiceTest {
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
         val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
 
-        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDateTime = Instant.now())
         val gameResults = listOf(
             GameResult(game = game1, player = membership1, place = 1, kills = 5, bounties = 0, bountyPlacedOnPlayer = null) // Player has kills
         )
@@ -256,7 +257,7 @@ class StandingsServiceTest {
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
         val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
 
-        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDateTime = Instant.now())
         val gameResults = listOf(
             GameResult(game = game1, player = membership1, place = 1, kills = 0, bounties = 3, bountyPlacedOnPlayer = null) // Player has bounties
         )
@@ -298,7 +299,7 @@ class StandingsServiceTest {
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
         val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
 
-        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDateTime = Instant.now())
         val gameResults = listOf(
             GameResult(game = game1, player = membership1, place = 1, kills = 3, bounties = 0, bountyPlacedOnPlayer = null) // 3 kills
         )
@@ -340,7 +341,7 @@ class StandingsServiceTest {
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
         val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
 
-        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDateTime = Instant.now())
         val gameResults = listOf(
             GameResult(game = game1, player = membership1, place = 1, kills = 4, bounties = 0, bountyPlacedOnPlayer = null) // 4 kills
         )
@@ -382,7 +383,7 @@ class StandingsServiceTest {
         val player1 = PlayerAccount(id = 1L, email = "player1@example.com", password = "password", firstName = "Player", lastName = "One")
         val membership1 = LeagueMembership(id = 1L, playerAccount = player1, league = season.league, displayName = "Player One", iconUrl = null, role = UserRole.PLAYER)
 
-        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDate = Date(), gameTime = Time(System.currentTimeMillis()))
+        val game1 = Game(id = 1L, season = season, gameName = "Game 1", gameDateTime = Instant.now())
         val gameResults = listOf(
             GameResult(game = game1, player = membership1, place = 1, kills = 3, bounties = 0, bountyPlacedOnPlayer = null) // 3 kills
         )

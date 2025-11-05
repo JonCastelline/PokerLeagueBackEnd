@@ -1,7 +1,6 @@
 package com.pokerleaguebackend.model
 
 import com.pokerleaguebackend.model.enums.GameStatus
-
 import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -15,11 +14,8 @@ import jakarta.persistence.ManyToOne
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.CascadeType
-import java.sql.Time
-import java.util.Date
+import java.time.Instant
 import java.util.UUID
-
-
 
 @Entity
 @Table(name = "game")
@@ -29,9 +25,7 @@ data class Game(
     val id: Long = 0,
 
     var gameName: String,
-    @Column(columnDefinition = "DATE")
-    var gameDate: Date,
-    var gameTime: Time,
+    var gameDateTime: Instant,
     var gameLocation: String? = null,
 
     @Column(name = "calendar_token", unique = true, nullable = false)
@@ -40,7 +34,6 @@ data class Game(
     @Enumerated(EnumType.STRING)
     var gameStatus: GameStatus = GameStatus.SCHEDULED,
 
-    
     var timeRemainingInMillis: Long? = null,
     var currentLevelIndex: Int? = 0,
 
