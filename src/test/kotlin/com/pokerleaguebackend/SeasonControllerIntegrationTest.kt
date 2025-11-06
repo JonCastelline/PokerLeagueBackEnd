@@ -151,6 +151,36 @@ class SeasonControllerIntegrationTest {
 
     @Test
     @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `should prioritize non-casual active season over casual active season`() {
+        // Create a casual active season
+        val casualSeason = Season(
+            seasonName = "Casual Games",
+            startDate = Date.from(LocalDate.now().minusYears(1).atStartOfDay(ZoneId.systemDefault()).toInstant()), // Started a year ago
+            endDate = Date.from(LocalDate.now().plusYears(1).atStartOfDay(ZoneId.systemDefault()).toInstant()), // Ends a year from now
+            league = testLeague,
+            isCasual = true
+        )
+        seasonRepository.save(casualSeason)
+
+        // Create a non-casual active season
+        val nonCasualSeason = Season(
+            seasonName = "Non-Casual Active Season",
+            startDate = Date.from(LocalDate.now().minusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()), // Started yesterday
+            endDate = Date.from(LocalDate.now().plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant()), // Ends tomorrow
+            league = testLeague,
+            isCasual = false
+        )
+        seasonRepository.save(nonCasualSeason)
+
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/active", testLeague.id)
+            .with(user(adminPrincipal)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.seasonName").value("Non-Casual Active Season"))
+            .andExpect(jsonPath("$.id").value(nonCasualSeason.id))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
     fun `should return 404 if no active season found`() {
         // Ensure no active seasons exist for testLeague
         seasonRepository.deleteAll()
