@@ -171,7 +171,9 @@ class GameService(
     }
 
     fun getAllGamesBySeason(seasonId: Long): List<Game> {
-        return gameRepository.findAllBySeasonId(seasonId)
+        val games = gameRepository.findAllBySeasonId(seasonId)
+        println("GameService.getAllGamesBySeason: Retrieved ${games.size} games for seasonId: $seasonId") // Debug log
+        return games
     }
 
     fun getGameCalendar(calendarToken: String, response: HttpServletResponse) {
