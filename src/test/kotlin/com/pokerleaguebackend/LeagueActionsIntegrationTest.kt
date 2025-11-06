@@ -19,6 +19,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.test.context.ActiveProfiles
 import com.pokerleaguebackend.model.enums.UserRole
+import org.springframework.jdbc.core.JdbcTemplate
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
@@ -37,6 +38,9 @@ class LeagueActionsIntegrationTest {
     lateinit var leagueMembershipRepository: LeagueMembershipRepository
 
     @Autowired
+    lateinit var jdbcTemplate: JdbcTemplate
+
+    @Autowired
     lateinit var passwordEncoder: PasswordEncoder
 
     private var testUserToken: String? = null
@@ -45,9 +49,18 @@ class LeagueActionsIntegrationTest {
 
     @BeforeEach
     fun setUp() {
-        leagueMembershipRepository.deleteAll()
-        leagueRepository.deleteAll()
-        playerAccountRepository.deleteAll()
+        // Clean DB tables in FK-safe order to avoid constraint violations when tests are re-run
+        jdbcTemplate.execute("DELETE FROM player_security_answer")
+        jdbcTemplate.execute("DELETE FROM player_invites")
+        jdbcTemplate.execute("DELETE FROM game_results")
+        jdbcTemplate.execute("DELETE FROM live_game_player")
+        jdbcTemplate.execute("DELETE FROM league_home_content")
+        jdbcTemplate.execute("DELETE FROM league_membership")
+        jdbcTemplate.execute("DELETE FROM season_settings")
+        jdbcTemplate.execute("DELETE FROM game")
+        jdbcTemplate.execute("DELETE FROM season")
+        jdbcTemplate.execute("DELETE FROM league")
+        jdbcTemplate.execute("DELETE FROM player_account")
 
         // Create a test user and log them in
         testUser = PlayerAccount(

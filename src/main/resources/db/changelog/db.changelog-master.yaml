@@ -533,3 +533,16 @@ databaseChangeLog:
         - dropColumn:
             tableName: game
             columnName: game_time
+  - changeSet:
+      id: add-is_casual-to-season
+      author: gemini
+      changes:
+        - addColumn:
+            tableName: season
+            columns:
+              - column:
+                  name: is_casual
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
