@@ -89,7 +89,7 @@ class LeagueService(
         val casualSeason = Season(
             seasonName = "Casual Games",
             startDate = Date(), // Start date can be now
-            endDate = Date(Long.MAX_VALUE), // Effectively never ends
+            endDate = Date(253402297199000L), // Set to 9999-12-31 23:59:59 UTC, effectively never ends within DB limits
             isFinalized = false,
             isCasual = true, // Mark as casual
             league = savedLeague
