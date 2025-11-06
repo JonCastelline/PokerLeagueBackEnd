@@ -10,6 +10,7 @@ import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.BlindLevel
 import com.pokerleaguebackend.model.enums.UserRole
+import com.pokerleaguebackend.model.enums.GameStatus
 import com.pokerleaguebackend.payload.request.CreateGameRequest
 import com.pokerleaguebackend.payload.request.StartGameRequest
 import com.pokerleaguebackend.payload.request.UpdateTimerRequest
@@ -293,23 +294,27 @@ class GameControllerIntegrationTest {
     }
 
     @Test
-    fun `getGameHistory should return games for season member`() {
+    fun `getGameHistory should return only completed games for season member`() {
+        // Create a completed game
         gameRepository.save(Game(
-            gameName = "History Game 1",
+            gameName = "Completed History Game 1",
             gameDateTime = Instant.now(),
-            season = testSeason
+            season = testSeason,
+            gameStatus = GameStatus.COMPLETED
         ))
+        // Create a scheduled game (should not be returned by getGameHistory)
         gameRepository.save(Game(
-            gameName = "History Game 2",
-            gameDateTime = Instant.now().plusSeconds(3600), // Ensure different times for sorting
-            season = testSeason
+            gameName = "Scheduled History Game 2",
+            gameDateTime = Instant.now().plusSeconds(3600),
+            season = testSeason,
+            gameStatus = GameStatus.SCHEDULED
         ))
 
         mockMvc.perform(get("/api/seasons/${testSeason.id}/games")
             .header("Authorization", "Bearer $regularUserToken"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$[0].gameName").value("History Game 1"))
-            .andExpect(jsonPath("$[1].gameName").value("History Game 2"))
+            .andExpect(jsonPath("$.length()").value(1)) // Expect only one completed game
+            .andExpect(jsonPath("$[0].gameName").value("Completed History Game 1"))
     }
 
     @Test
@@ -593,5 +598,35 @@ class GameControllerIntegrationTest {
             .andExpect(status().isOk)
             .andExpect(header().string("Content-Type", "text/calendar"))
 
+    }
+    @Test
+    fun `getAllGamesBySeason should return all games for season member`() {
+        // Create games with different statuses
+        gameRepository.save(Game(
+            gameName = "All Games - Completed",
+            gameDateTime = Instant.now().minusSeconds(3600),
+            season = testSeason,
+            gameStatus = GameStatus.COMPLETED
+        ))
+        gameRepository.save(Game(
+            gameName = "All Games - Scheduled",
+            gameDateTime = Instant.now().plusSeconds(3600),
+            season = testSeason,
+            gameStatus = GameStatus.SCHEDULED
+        ))
+        gameRepository.save(Game(
+            gameName = "All Games - In Progress",
+            gameDateTime = Instant.now(),
+            season = testSeason,
+            gameStatus = GameStatus.IN_PROGRESS
+        ))
+
+        mockMvc.perform(get("/api/seasons/${testSeason.id}/all-games")
+            .header("Authorization", "Bearer $regularUserToken"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(3)) // Expect all 3 games
+            .andExpect(jsonPath("$[?(@.gameName == 'All Games - Completed')]").exists())
+            .andExpect(jsonPath("$[?(@.gameName == 'All Games - Scheduled')]").exists())
+            .andExpect(jsonPath("$[?(@.gameName == 'All Games - In Progress')]").exists())
     }
 }

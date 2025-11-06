@@ -1,6 +1,7 @@
 package com.pokerleaguebackend.repository
 
 import com.pokerleaguebackend.model.Game
+import com.pokerleaguebackend.model.enums.GameStatus // Import GameStatus
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
@@ -8,5 +9,6 @@ import org.springframework.stereotype.Repository
 interface GameRepository : JpaRepository<Game, Long> {
     fun countBySeasonId(seasonId: Long): Long
     fun findAllBySeasonId(seasonId: Long): List<Game>
+    fun findAllBySeasonIdAndGameStatus(seasonId: Long, gameStatus: GameStatus): List<Game> // New method
     fun findByCalendarToken(calendarToken: String): Game?
 }

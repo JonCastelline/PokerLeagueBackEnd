@@ -11,6 +11,7 @@ import org.springframework.security.access.AccessDeniedException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import com.pokerleaguebackend.model.enums.UserRole
+import com.pokerleaguebackend.model.enums.GameStatus
 import biweekly.Biweekly
 import biweekly.ICalendar
 import biweekly.component.VEvent
@@ -166,6 +167,10 @@ class GameService(
     }
 
     fun getGameHistory(seasonId: Long): List<Game> {
+        return gameRepository.findAllBySeasonIdAndGameStatus(seasonId, GameStatus.COMPLETED)
+    }
+
+    fun getAllGamesBySeason(seasonId: Long): List<Game> {
         return gameRepository.findAllBySeasonId(seasonId)
     }
 
