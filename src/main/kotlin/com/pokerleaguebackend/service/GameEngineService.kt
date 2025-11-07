@@ -209,7 +209,7 @@ class GameEngineService(
 
         val lastEliminated = game.liveGamePlayers
             .filter { it.isEliminated }
-            .maxByOrNull { it.place ?: 0 }
+            .minByOrNull { it.place ?: 0 }
             ?: throw IllegalStateException("No players have been eliminated yet.")
 
         lastEliminated.eliminatedBy?.let { killer ->
