@@ -172,7 +172,6 @@ class GameService(
 
     fun getAllGamesBySeason(seasonId: Long): List<Game> {
         val games = gameRepository.findAllBySeasonId(seasonId)
-        println("GameService.getAllGamesBySeason: Retrieved ${games.size} games for seasonId: $seasonId") // Debug log
         return games
     }
 

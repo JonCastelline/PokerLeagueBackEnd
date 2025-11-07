@@ -164,9 +164,7 @@ class GameController(
     @GetMapping("/seasons/{seasonId}/all-games")
     @PreAuthorize(" @leagueService.isLeagueMember(#seasonId, principal.username)")
     fun getAllGamesBySeason( @PathVariable seasonId: Long, principal: Principal): ResponseEntity<List<Game>> {
-        println("getAllGamesBySeason called for seasonId: $seasonId by user: ${principal.name}") // Debug log
         val games = gameService.getAllGamesBySeason(seasonId)
-        println("games retrieved: ${games.size}") // Debug log
         return ResponseEntity.ok(games)
     }
 
