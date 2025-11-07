@@ -63,7 +63,14 @@ class SeasonService @Autowired constructor(
             leagueId, currentDate, currentDate
         )
 
-        return activeSeasons.firstOrNull() // Return the first active season found, or null if none
+        // Prioritize non-casual seasons
+        val nonCasualActiveSeason = activeSeasons.firstOrNull { !it.isCasual }
+        if (nonCasualActiveSeason != null) {
+            return nonCasualActiveSeason
+        }
+
+        // If no non-casual active season, return the first casual active season (if any)
+        return activeSeasons.firstOrNull()
     }
 
     fun finalizeSeason(seasonId: Long, playerId: Long): Season {

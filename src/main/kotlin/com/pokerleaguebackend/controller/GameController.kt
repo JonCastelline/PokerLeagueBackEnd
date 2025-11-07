@@ -155,6 +155,19 @@ class GameController(
         return ResponseEntity.ok(games)
     }
 
+    @Tag(name = "Game Management")
+    @Operation(summary = "Get all games for a season")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successfully retrieved all games for the season"),
+        ApiResponse(responseCode = "403", description = "User is not a member of the league")
+    ])
+    @GetMapping("/seasons/{seasonId}/all-games")
+    @PreAuthorize(" @leagueService.isLeagueMember(#seasonId, principal.username)")
+    fun getAllGamesBySeason( @PathVariable seasonId: Long, principal: Principal): ResponseEntity<List<Game>> {
+        val games = gameService.getAllGamesBySeason(seasonId)
+        return ResponseEntity.ok(games)
+    }
+
     @Tag(name = "Live Game Engine")
     @Operation(summary = "Get the current state of a live game")
     @ApiResponses(value = [

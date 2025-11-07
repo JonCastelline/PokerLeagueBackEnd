@@ -219,6 +219,53 @@ class GameEngineServiceTest {
     }
 
     @Test
+    fun `undoElimination_withThreePlayers_shouldRevertLastElimination`() {
+        // Given
+        val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")
+        val season = Season(id = 1, seasonName = "Test Season", league = league, startDate = Date(), endDate = Date())
+        val game = Game(
+            id = 1, gameName = "Test Game", season = season, gameStatus = GameStatus.IN_PROGRESS,
+            gameDateTime = Instant.now()
+        )
+        val playerAccount1 = PlayerAccount(id = 1, email = "test1@test.com", password = "password", firstName = "Test", lastName = "User1")
+        val playerAccount2 = PlayerAccount(id = 2, email = "test2@test.com", password = "password", firstName = "Test", lastName = "User2")
+        val playerAccount3 = PlayerAccount(id = 3, email = "test3@test.com", password = "password", firstName = "Test", lastName = "User3")
+        val player1 = LeagueMembership(id = 1, league = league, displayName = "Player 1", role = UserRole.PLAYER, playerAccount = playerAccount1)
+        val player2 = LeagueMembership(id = 2, league = league, displayName = "Player 2", role = UserRole.PLAYER, playerAccount = playerAccount2)
+        val player3 = LeagueMembership(id = 3, league = league, displayName = "Player 3", role = UserRole.PLAYER, playerAccount = playerAccount3)
+
+        val livePlayer1 = LiveGamePlayer(game = game, player = player1, kills = 2)
+        val livePlayer3 = LiveGamePlayer(game = game, player = player3, isEliminated = true, place = 3, eliminatedBy = livePlayer1)
+        val livePlayer2 = LiveGamePlayer(game = game, player = player2, isEliminated = true, place = 2, eliminatedBy = livePlayer1)
+        game.liveGamePlayers.addAll(listOf(livePlayer1, livePlayer2, livePlayer3))
+        val seasonSettings = SeasonSettings(id = 1, season = season, durationSeconds = 1200)
+
+        `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
+        `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
+        `when`(gameRepository.save(game)).thenReturn(game)
+
+        // When
+        val gameState = gameEngineService.undoElimination(1)
+
+        // Then
+        val undonePlayer = gameState.players.find { it.id == 2L } // Player 2 should be undone
+        val stillEliminatedPlayer = gameState.players.find { it.id == 3L }
+        val killerPlayer = gameState.players.find { it.id == 1L }
+
+        assertNotNull(undonePlayer)
+        assertFalse(undonePlayer!!.isEliminated)
+        assertNull(undonePlayer.place)
+
+        assertNotNull(stillEliminatedPlayer)
+        assertTrue(stillEliminatedPlayer!!.isEliminated)
+        assertEquals(3, stillEliminatedPlayer.place)
+
+        assertNotNull(killerPlayer)
+        assertEquals(1, killerPlayer!!.kills) // Kill count should be decremented by 1
+    }
+
+
+    @Test
     fun `startGame should assign bounty to player with highest points if trackBounties is true and standings exist`() {
         // Given
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test-code")

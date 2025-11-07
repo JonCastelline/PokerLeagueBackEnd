@@ -4,6 +4,7 @@ import com.pokerleaguebackend.model.League
 import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.PlayerInvite
+import com.pokerleaguebackend.model.Season
 import com.pokerleaguebackend.model.enums.InviteStatus
 import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.payload.dto.LeagueMembershipDto
@@ -83,6 +84,17 @@ class LeagueService(
 
         val league = League(leagueName = leagueName, inviteCode = inviteCode, expirationDate = expirationDate)
         val savedLeague = leagueRepository.save(league)
+
+        // Create a default "Casual" season for the new league
+        val casualSeason = Season(
+            seasonName = "Casual Games",
+            startDate = Date(), // Start date can be now
+            endDate = Date(253402297199000L), // Set to 9999-12-31 23:59:59 UTC, effectively never ends within DB limits
+            isFinalized = false,
+            isCasual = true, // Mark as casual
+            league = savedLeague
+        )
+        seasonRepository.save(casualSeason)
 
         val membership = LeagueMembership(
             playerAccount = creator,

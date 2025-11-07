@@ -23,6 +23,7 @@ data class Season(
     @Column(columnDefinition = "DATE")
     var endDate: Date,
     var isFinalized: Boolean = false,
+    var isCasual: Boolean = false,
 
     @ManyToOne
     @JoinColumn(name = "league_id")
