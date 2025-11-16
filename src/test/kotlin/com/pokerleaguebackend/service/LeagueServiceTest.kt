@@ -428,6 +428,7 @@ class LeagueServiceTest {
         val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test", expirationDate = null)
         val playerAccount = PlayerAccount(id = requestingPlayerAccountId, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Test User", iconUrl = null, isActive = true)
+        val members = listOf(membership)
 
         val casualSeason = Season(id = 1, league = league, seasonName = "Casual", startDate = Date(0), endDate = Date(Long.MAX_VALUE), isFinalized = false, isCasual = true)
         val activeSeason = Season(id = 2, league = league, seasonName = "Active", startDate = yesterday, endDate = tomorrow, isFinalized = false, isCasual = false)
@@ -442,6 +443,7 @@ class LeagueServiceTest {
         val activeGame = Game(id = 1, season = activeSeason, gameName = "Active Game", gameDateTime = Instant.now(), gameStatus = GameStatus.SCHEDULED)
 
         `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, requestingPlayerAccountId)).thenReturn(membership)
+        `when`(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(members)
         `when`(seasonRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(casualSeason, activeSeason, futureSeason, finalizedSeason, oldActiveSeason))
         `when`(seasonSettingsRepository.findBySeasonId(casualSeason.id)).thenReturn(casualSettings)
         `when`(seasonSettingsRepository.findBySeasonId(activeSeason.id)).thenReturn(activeSettings)
@@ -454,5 +456,7 @@ class LeagueServiceTest {
         assertEquals(activeGame.id, response.activeSeasonGames[0].id)
         assertEquals(activeSettings.durationSeconds, response.activeSeasonSettings?.durationSeconds)
         assertEquals(casualSettings.durationSeconds, response.casualSeasonSettings?.durationSeconds)
+        assertEquals(1, response.members.size)
+        assertEquals(membership.id, response.members[0].id)
     }
 }

@@ -881,11 +881,14 @@ class LeagueService(
             activeSeasonSettings = seasonSettingsRepository.findBySeasonId(mostActiveSeason.id)
         }
 
+        val members = getLeagueMembers(leagueId, requestingPlayerAccountId)
+
         return PlayPageDataResponse(
             activeSeason = mostActiveSeason,
             activeSeasonGames = activeSeasonGames,
             activeSeasonSettings = activeSeasonSettings,
-            casualSeasonSettings = casualSeasonSettings
+            casualSeasonSettings = casualSeasonSettings,
+            members = members
         )
     }
 }
