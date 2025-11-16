@@ -10,6 +10,7 @@ import com.pokerleaguebackend.payload.request.TransferLeagueOwnershipRequest
 import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipRoleRequest
 import com.pokerleaguebackend.payload.request.UpdateLeagueMembershipStatusRequest
 import com.pokerleaguebackend.payload.request.InvitePlayerRequest
+import com.pokerleaguebackend.payload.response.PlayPageDataResponse
 import com.pokerleaguebackend.security.UserPrincipal
 import com.pokerleaguebackend.service.LeagueService
 import com.pokerleaguebackend.exception.DuplicatePlayerException
@@ -378,5 +379,21 @@ class LeagueController(private val leagueService: LeagueService) {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
         val deepLink = leagueService.invitePlayer(leagueId, membershipId, request.email, playerAccount.id)
         return ResponseEntity.ok(mapOf("deepLink" to deepLink))
+    }
+
+    @Tag(name = "League Management")
+    @Operation(summary = "Get all data needed for the Play page")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successfully retrieved Play page data"),
+        ApiResponse(responseCode = "403", description = "User is not a member of the league")
+    ])
+    @GetMapping("/{leagueId}/play-page-data")
+    fun getPlayPageData(
+        @PathVariable leagueId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails
+    ): ResponseEntity<PlayPageDataResponse> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val playPageData = leagueService.getPlayPageData(leagueId, playerAccount.id)
+        return ResponseEntity.ok(playPageData)
     }
 }

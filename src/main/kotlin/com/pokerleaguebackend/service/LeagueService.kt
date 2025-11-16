@@ -5,12 +5,15 @@ import com.pokerleaguebackend.model.LeagueMembership
 import com.pokerleaguebackend.model.PlayerAccount
 import com.pokerleaguebackend.model.PlayerInvite
 import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.model.Game
+import com.pokerleaguebackend.model.SeasonSettings
 import com.pokerleaguebackend.model.enums.InviteStatus
 import com.pokerleaguebackend.model.enums.UserRole
 import com.pokerleaguebackend.payload.dto.LeagueMembershipDto
 import com.pokerleaguebackend.payload.dto.LeagueDto
 import com.pokerleaguebackend.payload.dto.PlayerInviteDto
 import com.pokerleaguebackend.payload.dto.PublicPlayerInviteDto
+import com.pokerleaguebackend.payload.response.PlayPageDataResponse
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -848,5 +851,41 @@ class LeagueService(
         }
         val seasonSettings = seasonSettingsRepository.findBySeasonId(game.season.id)
         return seasonSettings?.playerEliminationEnabled ?: false
+    }
+
+    fun getPlayPageData(leagueId: Long, requestingPlayerAccountId: Long): PlayPageDataResponse {
+        authorizeLeagueMembershipAccess(leagueId, requestingPlayerAccountId)
+
+        val allSeasons = seasonRepository.findAllByLeagueId(leagueId)
+        val today = Date()
+
+        // Find casual season settings
+        val casualSeason = allSeasons.find { it.isCasual }
+        val casualSeasonSettings = casualSeason?.let { seasonSettingsRepository.findBySeasonId(it.id) }
+
+        // Find the most active non-casual season
+        val activeNonCasualSeasons = allSeasons.filter { season ->
+            !season.isFinalized &&
+            !season.isCasual &&
+            (season.startDate.before(today) || season.startDate.compareTo(today) == 0) &&
+            (season.endDate.after(today) || season.endDate.compareTo(today) == 0)
+        }
+
+        val mostActiveSeason = activeNonCasualSeasons.maxByOrNull { it.startDate }
+
+        var activeSeasonGames: List<Game> = emptyList()
+        var activeSeasonSettings: SeasonSettings? = null
+
+        if (mostActiveSeason != null) {
+            activeSeasonGames = gameRepository.findAllBySeasonId(mostActiveSeason.id)
+            activeSeasonSettings = seasonSettingsRepository.findBySeasonId(mostActiveSeason.id)
+        }
+
+        return PlayPageDataResponse(
+            activeSeason = mostActiveSeason,
+            activeSeasonGames = activeSeasonGames,
+            activeSeasonSettings = activeSeasonSettings,
+            casualSeasonSettings = casualSeasonSettings
+        )
     }
 }
