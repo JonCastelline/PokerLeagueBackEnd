@@ -18,6 +18,7 @@ import biweekly.component.VEvent
 import jakarta.servlet.http.HttpServletResponse
 import java.time.Instant
 import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.UUID
 
@@ -48,11 +49,12 @@ class GameService(
         val gameDateTime = request.gameDateTime ?: Instant.now()
 
         // Validate gameDateTime against season's start and end dates
-        val gameDate = gameDateTime.atZone(ZoneId.of("UTC")).toLocalDate()
-        val seasonStartDate = season.startDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
-        val seasonEndDate = season.endDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+        val seasonStartInstant = season.startDate.toInstant()
+        // The season ends at the end of the given end date.
+        // So, the valid interval is [startDate, endDate + 1 day).
+        val seasonEndExclusiveInstant = season.endDate.toInstant().plus(1, ChronoUnit.DAYS)
 
-        if (gameDate.isBefore(seasonStartDate) || gameDate.isAfter(seasonEndDate)) {
+        if (gameDateTime.isBefore(seasonStartInstant) || !gameDateTime.isBefore(seasonEndExclusiveInstant)) {
             throw IllegalArgumentException("Game date must be within the season's start and end dates.")
         }
 
@@ -96,11 +98,12 @@ class GameService(
         val gameDateTime = request.gameDateTime ?: existingGame.gameDateTime
 
         // Validate gameDateTime against season's start and end dates
-        val gameDate = gameDateTime.atZone(ZoneId.of("UTC")).toLocalDate()
-        val seasonStartDate = season.startDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
-        val seasonEndDate = season.endDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+        val seasonStartInstant = season.startDate.toInstant()
+        // The season ends at the end of the given end date.
+        // So, the valid interval is [startDate, endDate + 1 day).
+        val seasonEndExclusiveInstant = season.endDate.toInstant().plus(1, ChronoUnit.DAYS)
 
-        if (gameDate.isBefore(seasonStartDate) || gameDate.isAfter(seasonEndDate)) {
+        if (gameDateTime.isBefore(seasonStartInstant) || !gameDateTime.isBefore(seasonEndExclusiveInstant)) {
             throw IllegalArgumentException("Game date must be within the season's start and end dates.")
         }
 
