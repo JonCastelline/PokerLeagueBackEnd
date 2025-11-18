@@ -87,6 +87,7 @@ class LeagueService(
 
         val league = League(leagueName = leagueName, inviteCode = inviteCode, expirationDate = expirationDate)
         val savedLeague = leagueRepository.save(league)
+        logger.info("League created with ID: {}", savedLeague.id)
 
         // Create a default "Casual" season for the new league
         val casualSeason = Season(
@@ -97,7 +98,13 @@ class LeagueService(
             isCasual = true, // Mark as casual
             league = savedLeague
         )
-        seasonRepository.save(casualSeason)
+        val savedCasualSeason = seasonRepository.save(casualSeason)
+        logger.info("Casual season created with ID: {} for league ID: {}", savedCasualSeason.id, savedLeague.id)
+
+        // Create default SeasonSettings for the casual season
+        // NOTE: This is where the SeasonSettings for casual games should be created.
+        // If this block is not present or not correctly saving, casual game settings will be missing.
+        logger.warn("No SeasonSettings are currently being created for the casual season. This will lead to 'Casual game settings not found' errors.")
 
         val membership = LeagueMembership(
             playerAccount = creator,
@@ -855,12 +862,24 @@ class LeagueService(
 
     fun getPlayPageData(leagueId: Long, requestingPlayerAccountId: Long): PlayPageDataResponse {
         authorizeLeagueMembershipAccess(leagueId, requestingPlayerAccountId)
+        logger.info("Fetching PlayPageData for leagueId: {} by playerAccountId: {}", leagueId, requestingPlayerAccountId)
 
         val allSeasons = seasonRepository.findAllByLeagueId(leagueId)
         val today = Date()
 
         // Find casual season settings
         val casualSeason = allSeasons.find { it.isCasual }
+        if (casualSeason != null) {
+            logger.info("Casual season found for leagueId: {}. Season ID: {}", leagueId, casualSeason.id)
+            val casualSeasonSettings = casualSeason?.let { seasonSettingsRepository.findBySeasonId(it.id) }
+            if (casualSeasonSettings != null) {
+                logger.info("Casual season settings found for leagueId: {}. Settings ID: {}", leagueId, casualSeasonSettings.id)
+            } else {
+                logger.warn("Casual season settings NOT found for leagueId: {}. Season ID: {}", leagueId, casualSeason.id)
+            }
+        } else {
+            logger.warn("Casual season NOT found for leagueId: {}", leagueId)
+        }
         val casualSeasonSettings = casualSeason?.let { seasonSettingsRepository.findBySeasonId(it.id) }
 
         // Find the most active non-casual season
