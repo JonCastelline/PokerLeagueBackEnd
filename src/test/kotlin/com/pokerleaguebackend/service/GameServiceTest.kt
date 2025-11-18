@@ -23,6 +23,8 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.springframework.security.access.AccessDeniedException
 import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Optional
@@ -50,6 +52,7 @@ class GameServiceTest {
     private lateinit var adminMembership: LeagueMembership
     private lateinit var playerAccount: PlayerAccount
 
+    // Season dates are defined as the start of the day in UTC
     private val seasonStartDate: Instant = Instant.parse("2025-01-01T00:00:00Z")
     private val seasonEndDate: Instant = Instant.parse("2025-12-31T00:00:00Z")
 
@@ -90,8 +93,9 @@ class GameServiceTest {
 
     @Test
     fun `createGame should succeed for valid game within season boundaries`() {
-        val gameTime = seasonStartDate.plus(10, ChronoUnit.DAYS)
-        val request = CreateGameRequest(gameName = "Test Game", gameDateTime = gameTime, gameLocation = "Test Location")
+        val gameDateTimeStr = "2025-01-11T10:00:00-06:00" // A date within the season
+        val expectedInstant = ZonedDateTime.parse(gameDateTimeStr).toInstant()
+        val request = CreateGameRequest(gameName = "Test Game", gameDateTime = gameDateTimeStr, gameLocation = "Test Location")
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1L, 1L)).thenReturn(adminMembership)
@@ -100,12 +104,12 @@ class GameServiceTest {
         val result = gameService.createGame(1L, request, 1L)
 
         assertEquals("Test Game", result.gameName)
-        assertEquals(gameTime, result.gameDateTime)
+        assertEquals(expectedInstant, result.gameDateTime)
     }
 
     @Test
     fun `createGame should throw exception if season is not found`() {
-        val request = CreateGameRequest(gameName = "Test Game", gameDateTime = Instant.now(), gameLocation = "Test Location")
+        val request = CreateGameRequest(gameName = "Test Game", gameDateTime = "2025-01-11T10:00:00-06:00", gameLocation = "Test Location")
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.empty())
 
         assertThrows(IllegalArgumentException::class.java) {
@@ -116,7 +120,7 @@ class GameServiceTest {
     @Test
     fun `createGame should throw exception if user is not an admin`() {
         val playerMembership = adminMembership.copy(role = UserRole.PLAYER)
-        val request = CreateGameRequest(gameName = "Test Game", gameDateTime = Instant.now(), gameLocation = "Test Location")
+        val request = CreateGameRequest(gameName = "Test Game", gameDateTime = "2025-01-11T10:00:00-06:00", gameLocation = "Test Location")
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1L, 1L)).thenReturn(playerMembership)
@@ -129,7 +133,7 @@ class GameServiceTest {
     @Test
     fun `createGame should throw exception if season is finalized`() {
         testSeason.isFinalized = true
-        val request = CreateGameRequest(gameName = "Test Game", gameDateTime = Instant.now(), gameLocation = "Test Location")
+        val request = CreateGameRequest(gameName = "Test Game", gameDateTime = "2025-01-11T10:00:00-06:00", gameLocation = "Test Location")
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1L, 1L)).thenReturn(adminMembership)
@@ -142,36 +146,37 @@ class GameServiceTest {
     // --- Boundary Tests ---
 
     @Test
-    fun `createGame should succeed on the first moment of the season start date`() {
-        val gameTime = seasonStartDate
-        val request = CreateGameRequest(gameName = null, gameDateTime = gameTime, gameLocation = null)
+    fun `createGame should succeed on the first day of the season in a local timezone`() {
+        val gameDateTimeStr = "2025-01-01T00:00:00-06:00" // Game's local date is 2025-01-01
+        val expectedInstant = ZonedDateTime.parse(gameDateTimeStr).toInstant()
+        val request = CreateGameRequest(gameName = null, gameDateTime = gameDateTimeStr, gameLocation = null)
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1L, 1L)).thenReturn(adminMembership)
         whenever(gameRepository.save(any<Game>())).thenAnswer { it.arguments[0] }
 
         val result = gameService.createGame(1L, request, 1L)
-        assertEquals(gameTime, result.gameDateTime)
+        assertEquals(expectedInstant, result.gameDateTime)
     }
 
     @Test
-    fun `createGame should succeed on the last moment of the season end date`() {
-        // The exclusive end is the start of the next day. So, one nanosecond before is the last valid moment.
-        val gameTime = seasonEndDate.plus(1, ChronoUnit.DAYS).minusNanos(1)
-        val request = CreateGameRequest(gameName = null, gameDateTime = gameTime, gameLocation = null)
+    fun `createGame should succeed on the last day of the season in a local timezone`() {
+        val gameDateTimeStr = "2025-12-31T23:59:59-06:00" // Game's local date is 2025-12-31
+        val expectedInstant = ZonedDateTime.parse(gameDateTimeStr).toInstant()
+        val request = CreateGameRequest(gameName = null, gameDateTime = gameDateTimeStr, gameLocation = null)
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1L, 1L)).thenReturn(adminMembership)
         whenever(gameRepository.save(any<Game>())).thenAnswer { it.arguments[0] }
 
         val result = gameService.createGame(1L, request, 1L)
-        assertEquals(gameTime, result.gameDateTime)
+        assertEquals(expectedInstant, result.gameDateTime)
     }
 
     @Test
-    fun `createGame should fail just before the season start date`() {
-        val gameTime = seasonStartDate.minusNanos(1)
-        val request = CreateGameRequest(gameName = null, gameDateTime = gameTime, gameLocation = null)
+    fun `createGame should fail on the day before the season start date`() {
+        val gameDateTimeStr = "2024-12-31T23:59:59-06:00" // Game's local date is 2024-12-31
+        val request = CreateGameRequest(gameName = null, gameDateTime = gameDateTimeStr, gameLocation = null)
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1L, 1L)).thenReturn(adminMembership)
@@ -183,9 +188,9 @@ class GameServiceTest {
     }
 
     @Test
-    fun `createGame should fail at the exact moment the season ends (exclusive)`() {
-        val gameTime = seasonEndDate.plus(1, ChronoUnit.DAYS)
-        val request = CreateGameRequest(gameName = null, gameDateTime = gameTime, gameLocation = null)
+    fun `createGame should fail on the day after the season end date`() {
+        val gameDateTimeStr = "2026-01-01T00:00:00-06:00" // Game's local date is 2026-01-01
+        val request = CreateGameRequest(gameName = null, gameDateTime = gameDateTimeStr, gameLocation = null)
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(1L, 1L)).thenReturn(adminMembership)
@@ -201,8 +206,9 @@ class GameServiceTest {
     @Test
     fun `updateGame should succeed for valid date`() {
         val existingGame = Game(id = 1L, gameName = "Old Name", gameDateTime = seasonStartDate.plus(5, ChronoUnit.DAYS), season = testSeason)
-        val newGameTime = seasonStartDate.plus(15, ChronoUnit.DAYS)
-        val request = CreateGameRequest(gameName = "New Name", gameDateTime = newGameTime, gameLocation = "New Location")
+        val newGameDateTimeStr = "2025-01-15T12:00:00-06:00"
+        val expectedInstant = ZonedDateTime.parse(newGameDateTimeStr).toInstant()
+        val request = CreateGameRequest(gameName = "New Name", gameDateTime = newGameDateTimeStr, gameLocation = "New Location")
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(gameRepository.findById(1L)).thenReturn(Optional.of(existingGame))
@@ -212,12 +218,12 @@ class GameServiceTest {
         val result = gameService.updateGame(1L, 1L, request, 1L)
 
         assertEquals("New Name", result.gameName)
-        assertEquals(newGameTime, result.gameDateTime)
+        assertEquals(expectedInstant, result.gameDateTime)
     }
 
     @Test
     fun `updateGame should throw exception if game is not found`() {
-        val request = CreateGameRequest(gameName = null, gameDateTime = Instant.now(), gameLocation = null)
+        val request = CreateGameRequest(gameName = null, gameDateTime = "2025-01-15T12:00:00-06:00", gameLocation = null)
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(gameRepository.findById(1L)).thenReturn(Optional.empty())
 
@@ -229,8 +235,8 @@ class GameServiceTest {
     @Test
     fun `updateGame should fail if new date is before season start`() {
         val existingGame = Game(id = 1L, gameName = "Old Name", gameDateTime = seasonStartDate.plus(5, ChronoUnit.DAYS), season = testSeason)
-        val newGameTime = seasonStartDate.minusNanos(1)
-        val request = CreateGameRequest(gameName = null, gameDateTime = newGameTime, gameLocation = null)
+        val newGameDateTimeStr = "2024-12-31T23:59:59-06:00"
+        val request = CreateGameRequest(gameName = null, gameDateTime = newGameDateTimeStr, gameLocation = null)
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(gameRepository.findById(1L)).thenReturn(Optional.of(existingGame))
@@ -245,8 +251,8 @@ class GameServiceTest {
     @Test
     fun `updateGame should fail if new date is after season end`() {
         val existingGame = Game(id = 1L, gameName = "Old Name", gameDateTime = seasonStartDate.plus(5, ChronoUnit.DAYS), season = testSeason)
-        val newGameTime = seasonEndDate.plus(1, ChronoUnit.DAYS)
-        val request = CreateGameRequest(gameName = null, gameDateTime = newGameTime, gameLocation = null)
+        val newGameDateTimeStr = "2026-01-01T00:00:00-06:00"
+        val request = CreateGameRequest(gameName = null, gameDateTime = newGameDateTimeStr, gameLocation = null)
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(gameRepository.findById(1L)).thenReturn(Optional.of(existingGame))
@@ -262,7 +268,7 @@ class GameServiceTest {
     fun `updateGame should throw exception if user is not an admin`() {
         val existingGame = Game(id = 1L, gameName = "Old Name", gameDateTime = seasonStartDate.plus(5, ChronoUnit.DAYS), season = testSeason)
         val playerMembership = adminMembership.copy(role = UserRole.PLAYER)
-        val request = CreateGameRequest(gameName = "New Name", gameDateTime = Instant.now(), gameLocation = "New Location")
+        val request = CreateGameRequest(gameName = "New Name", gameDateTime = "2025-01-15T12:00:00-06:00", gameLocation = "New Location")
 
         whenever(seasonRepository.findById(1L)).thenReturn(Optional.of(testSeason))
         whenever(gameRepository.findById(1L)).thenReturn(Optional.of(existingGame))

@@ -18,7 +18,7 @@ import biweekly.component.VEvent
 import jakarta.servlet.http.HttpServletResponse
 import java.time.Instant
 import java.time.ZoneId
-import java.time.temporal.ChronoUnit
+import java.time.ZonedDateTime
 import java.util.Date
 import java.util.UUID
 
@@ -46,15 +46,16 @@ class GameService(
             throw IllegalStateException("Cannot add games to a finalized season.")
         }
 
-        val gameDateTime = request.gameDateTime ?: Instant.now()
+        val gameDateTimeStr = request.gameDateTime ?: throw IllegalArgumentException("Game date time is required")
+        val zonedDateTime = ZonedDateTime.parse(gameDateTimeStr)
+        val gameInstant = zonedDateTime.toInstant()
+        val gameLocalDate = zonedDateTime.toLocalDate()
 
-        // Validate gameDateTime against season's start and end dates
-        val seasonStartInstant = season.startDate.toInstant()
-        // The season ends at the end of the given end date.
-        // So, the valid interval is [startDate, endDate + 1 day).
-        val seasonEndExclusiveInstant = season.endDate.toInstant().plus(1, ChronoUnit.DAYS)
+        // Validate game's local date against season's UTC dates
+        val seasonStartLocalDate = season.startDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+        val seasonEndLocalDate = season.endDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
 
-        if (gameDateTime.isBefore(seasonStartInstant) || !gameDateTime.isBefore(seasonEndExclusiveInstant)) {
+        if (gameLocalDate.isBefore(seasonStartLocalDate) || gameLocalDate.isAfter(seasonEndLocalDate)) {
             throw IllegalArgumentException("Game date must be within the season's start and end dates.")
         }
 
@@ -63,7 +64,7 @@ class GameService(
 
         val newGame = Game(
             gameName = gameNameToUse,
-            gameDateTime = gameDateTime,
+            gameDateTime = gameInstant,
             gameLocation = request.gameLocation,
             calendarToken = UUID.randomUUID().toString(),
             season = season
@@ -95,20 +96,25 @@ class GameService(
             throw IllegalStateException("Cannot update games in a finalized season.")
         }
 
-        val gameDateTime = request.gameDateTime ?: existingGame.gameDateTime
+        val gameInstant: Instant
+        if (request.gameDateTime != null) {
+            val zonedDateTime = ZonedDateTime.parse(request.gameDateTime)
+            gameInstant = zonedDateTime.toInstant()
+            val gameLocalDate = zonedDateTime.toLocalDate()
 
-        // Validate gameDateTime against season's start and end dates
-        val seasonStartInstant = season.startDate.toInstant()
-        // The season ends at the end of the given end date.
-        // So, the valid interval is [startDate, endDate + 1 day).
-        val seasonEndExclusiveInstant = season.endDate.toInstant().plus(1, ChronoUnit.DAYS)
+            // Validate game's local date against season's UTC dates
+            val seasonStartLocalDate = season.startDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
+            val seasonEndLocalDate = season.endDate.toInstant().atZone(ZoneId.of("UTC")).toLocalDate()
 
-        if (gameDateTime.isBefore(seasonStartInstant) || !gameDateTime.isBefore(seasonEndExclusiveInstant)) {
-            throw IllegalArgumentException("Game date must be within the season's start and end dates.")
+            if (gameLocalDate.isBefore(seasonStartLocalDate) || gameLocalDate.isAfter(seasonEndLocalDate)) {
+                throw IllegalArgumentException("Game date must be within the season's start and end dates.")
+            }
+        } else {
+            gameInstant = existingGame.gameDateTime
         }
 
         existingGame.gameName = request.gameName ?: existingGame.gameName
-        existingGame.gameDateTime = gameDateTime
+        existingGame.gameDateTime = gameInstant
         existingGame.gameLocation = request.gameLocation
 
         return gameRepository.save(existingGame)
