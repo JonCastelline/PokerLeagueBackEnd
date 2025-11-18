@@ -95,7 +95,7 @@ class SeasonSettingsService(
         return seasonSettingsRepository.save(existingSettings)
     }
 
-    private fun createSeasonSettings(season: Season): SeasonSettings {
+    fun createSeasonSettings(season: Season): SeasonSettings {
         val latestSeason = seasonRepository.findLatestSeasonBefore(season.league.id, season.startDate, season.id)
 
         val latestSettings = latestSeason?.let { seasonSettingsRepository.findBySeasonId(it.id) }

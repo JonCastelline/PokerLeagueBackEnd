@@ -6,6 +6,11 @@ import com.pokerleaguebackend.payload.request.JoinLeagueRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
+import com.pokerleaguebackend.repository.SeasonRepository
+import com.pokerleaguebackend.service.SeasonService
+import com.pokerleaguebackend.service.SeasonSettingsService
+import com.pokerleaguebackend.model.Season
+import com.pokerleaguebackend.model.SeasonSettings
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -43,24 +48,38 @@ class LeagueActionsIntegrationTest {
     @Autowired
     lateinit var passwordEncoder: PasswordEncoder
 
+    @Autowired
+    lateinit var seasonService: SeasonService
+
+    @Autowired
+    lateinit var seasonSettingsService: SeasonSettingsService
+
+    @Autowired
+    lateinit var seasonRepository: SeasonRepository
+
     private var testUserToken: String? = null
     private var testUser: PlayerAccount? = null
     private var leagueId: Long = 0
 
     @BeforeEach
     fun setUp() {
-        // Clean DB tables in FK-safe order to avoid constraint violations when tests are re-run
-        jdbcTemplate.execute("DELETE FROM player_security_answer")
-        jdbcTemplate.execute("DELETE FROM player_invites")
-        jdbcTemplate.execute("DELETE FROM game_results")
-        jdbcTemplate.execute("DELETE FROM live_game_player")
-        jdbcTemplate.execute("DELETE FROM league_home_content")
-        jdbcTemplate.execute("DELETE FROM league_membership")
-        jdbcTemplate.execute("DELETE FROM season_settings")
-        jdbcTemplate.execute("DELETE FROM game")
-        jdbcTemplate.execute("DELETE FROM season")
-        jdbcTemplate.execute("DELETE FROM league")
-        jdbcTemplate.execute("DELETE FROM player_account")
+        // Robust DB reset: disable referential integrity, truncate all user tables, then re-enable.
+        // This avoids FK constraint issues when tests are re-run and new tables are added.
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE")
+        val tableNames = jdbcTemplate.queryForList("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='PUBLIC'")
+            .map { it["TABLE_NAME"] as String }
+            .filter { tn -> tn != "DATABASECHANGELOG" && tn != "DATABASECHANGELOGLOCK" }
+
+        tableNames.forEach { tn ->
+            // Use EXECUTE to run TRUNCATE; wrap in try/catch to continue on unforeseen tables
+            try {
+                jdbcTemplate.execute("TRUNCATE TABLE \"$tn\"")
+            } catch (e: Exception) {
+                // Fallback to DELETE if TRUNCATE fails for any reason
+                jdbcTemplate.execute("DELETE FROM \"$tn\"")
+            }
+        }
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE")
 
         // Create a test user and log them in
         testUser = PlayerAccount(

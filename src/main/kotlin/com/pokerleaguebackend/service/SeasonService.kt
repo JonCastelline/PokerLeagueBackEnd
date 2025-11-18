@@ -35,6 +35,7 @@ class SeasonService @Autowired constructor(
             seasonName = createSeasonRequest.seasonName,
             startDate = createSeasonRequest.startDate,
             endDate = createSeasonRequest.endDate,
+            isCasual = createSeasonRequest.isCasual,
             league = league
         )
         return seasonRepository.save(season)

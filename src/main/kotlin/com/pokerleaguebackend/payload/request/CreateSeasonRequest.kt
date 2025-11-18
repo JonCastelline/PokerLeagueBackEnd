@@ -9,5 +9,6 @@ data class CreateSeasonRequest(
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "UTC")
     val startDate: Date,
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "UTC")
-    val endDate: Date
+    val endDate: Date,
+    val isCasual: Boolean = false
 )
