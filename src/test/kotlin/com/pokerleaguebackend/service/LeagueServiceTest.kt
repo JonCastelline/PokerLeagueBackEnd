@@ -63,6 +63,12 @@ class LeagueServiceTest {
     private lateinit var seasonSettingsRepository: SeasonSettingsRepository
 
     @Mock
+    private lateinit var seasonSettingsService: SeasonSettingsService
+
+    @Mock
+    private lateinit var seasonService: SeasonService
+
+    @Mock
     private lateinit var env: Environment
 
     @Mock
@@ -143,6 +149,8 @@ class LeagueServiceTest {
 
         `when`(playerAccountRepository.findById(creatorId)).thenReturn(Optional.of(creator))
         `when`(leagueRepository.save(any<League>())).thenReturn(savedLeague)
+        `when`(seasonService.createSeason(any(), any())).thenReturn(Season(id = 1L, league = savedLeague, seasonName = "Casual Games", startDate = Date(), endDate = Date(), isCasual = true))
+        `when`(seasonSettingsService.createSeasonSettings(any())).thenReturn(SeasonSettings(season = Season(id = 1L, league = savedLeague, seasonName = "Casual Games", startDate = Date(), endDate = Date(), isCasual = true)))
         `when`(leagueMembershipRepository.save(any<LeagueMembership>())).thenAnswer { it.arguments[0] as LeagueMembership }
 
         val createdLeague = leagueService.createLeague(leagueName, creatorId)

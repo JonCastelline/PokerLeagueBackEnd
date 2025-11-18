@@ -14,6 +14,7 @@ import com.pokerleaguebackend.payload.dto.LeagueDto
 import com.pokerleaguebackend.payload.dto.PlayerInviteDto
 import com.pokerleaguebackend.payload.dto.PublicPlayerInviteDto
 import com.pokerleaguebackend.payload.response.PlayPageDataResponse
+import com.pokerleaguebackend.payload.request.CreateSeasonRequest
 import com.pokerleaguebackend.repository.LeagueMembershipRepository
 import com.pokerleaguebackend.repository.LeagueRepository
 import com.pokerleaguebackend.repository.PlayerAccountRepository
@@ -48,7 +49,9 @@ class LeagueService(
     private val leagueHomeContentRepository: LeagueHomeContentRepository,
     private val playerInviteRepository: PlayerInviteRepository,
     private val seasonSettingsRepository: SeasonSettingsRepository,
-    private val entityManager: EntityManager
+    private val entityManager: EntityManager,
+    private val seasonSettingsService: SeasonSettingsService,
+    private val seasonService: SeasonService
 ) {
 
     @Value("\${pokerleague.frontend.base-url}")
@@ -90,21 +93,18 @@ class LeagueService(
         logger.info("League created with ID: {}", savedLeague.id)
 
         // Create a default "Casual" season for the new league
-        val casualSeason = Season(
+        val createCasualSeasonRequest = CreateSeasonRequest(
             seasonName = "Casual Games",
-            startDate = Date(), // Start date can be now
+            startDate = Date(),// Start date can be now
             endDate = Date(253402297199000L), // Set to 9999-12-31 23:59:59 UTC, effectively never ends within DB limits
-            isFinalized = false,
-            isCasual = true, // Mark as casual
-            league = savedLeague
+            isCasual = true
         )
-        val savedCasualSeason = seasonRepository.save(casualSeason)
-        logger.info("Casual season created with ID: {} for league ID: {}", savedCasualSeason.id, savedLeague.id)
+        val savedCasualSeason = seasonService.createSeason(savedLeague.id, createCasualSeasonRequest)
+        logger.info("Casual season created with ID: {} for league ID: {} via SeasonService", savedCasualSeason.id, savedLeague.id)
 
-        // Create default SeasonSettings for the casual season
-        // NOTE: This is where the SeasonSettings for casual games should be created.
-        // If this block is not present or not correctly saving, casual game settings will be missing.
-        logger.warn("No SeasonSettings are currently being created for the casual season. This will lead to 'Casual game settings not found' errors.")
+        // Create default SeasonSettings for the casual season using the SeasonSettingsService
+        seasonSettingsService.createSeasonSettings(savedCasualSeason)
+        logger.info("Default SeasonSettings initialized for casual season ID: {}", savedCasualSeason.id)
 
         val membership = LeagueMembership(
             playerAccount = creator,
@@ -875,7 +875,7 @@ class LeagueService(
             if (casualSeasonSettings != null) {
                 logger.info("Casual season settings found for leagueId: {}. Settings ID: {}", leagueId, casualSeasonSettings.id)
             } else {
-                logger.warn("Casual season settings NOT found for leagueId: {}. Season ID: {}", leagueId, casualSeason.id)
+                logger.info("Casual season settings NOT found for leagueId: {}. Season ID: {}", leagueId, casualSeason.id)
             }
         } else {
             logger.warn("Casual season NOT found for leagueId: {}", leagueId)
