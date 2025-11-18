@@ -1,5 +1,6 @@
 package com.pokerleaguebackend.model
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -19,8 +20,10 @@ data class Season(
 
     var seasonName: String,
     @Column(columnDefinition = "DATE")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "UTC")
     var startDate: Date,
     @Column(columnDefinition = "DATE")
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd", timezone = "UTC")
     var endDate: Date,
     var isFinalized: Boolean = false,
     var isCasual: Boolean = false,

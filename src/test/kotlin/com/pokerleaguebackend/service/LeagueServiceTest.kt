@@ -415,4 +415,48 @@ class LeagueServiceTest {
 
         assertFalse(leagueService.isLeagueAdminOrEliminationControlEnabled(gameId, username))
     }
+
+    @Test
+    fun `getPlayPageData should return correct active season and casual settings`() {
+        val leagueId = 1L
+        val requestingPlayerAccountId = 1L
+        val now = Date()
+        val oneDay = 86400000L // Milliseconds in a day
+        val yesterday = Date(now.time - oneDay)
+        val tomorrow = Date(now.time + oneDay)
+
+        val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test", expirationDate = null)
+        val playerAccount = PlayerAccount(id = requestingPlayerAccountId, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
+        val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Test User", iconUrl = null, isActive = true)
+        val members = listOf(membership)
+
+        val casualSeason = Season(id = 1, league = league, seasonName = "Casual", startDate = Date(0), endDate = Date(Long.MAX_VALUE), isFinalized = false, isCasual = true)
+        val activeSeason = Season(id = 2, league = league, seasonName = "Active", startDate = yesterday, endDate = tomorrow, isFinalized = false, isCasual = false)
+        val futureSeason = Season(id = 3, league = league, seasonName = "Future", startDate = tomorrow, endDate = Date(tomorrow.time + oneDay), isFinalized = false, isCasual = false)
+        val finalizedSeason = Season(id = 4, league = league, seasonName = "Finalized", startDate = yesterday, endDate = tomorrow, isFinalized = true, isCasual = false)
+        val oldActiveSeason = Season(id = 5, league = league, seasonName = "Old Active", startDate = Date(yesterday.time - oneDay), endDate = tomorrow, isFinalized = false, isCasual = false)
+
+
+        val casualSettings = SeasonSettings(season = casualSeason, durationSeconds = 600)
+        val activeSettings = SeasonSettings(season = activeSeason, durationSeconds = 1200)
+
+        val activeGame = Game(id = 1, season = activeSeason, gameName = "Active Game", gameDateTime = Instant.now(), gameStatus = GameStatus.SCHEDULED)
+
+        `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, requestingPlayerAccountId)).thenReturn(membership)
+        `when`(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(members)
+        `when`(seasonRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(casualSeason, activeSeason, futureSeason, finalizedSeason, oldActiveSeason))
+        `when`(seasonSettingsRepository.findBySeasonId(casualSeason.id)).thenReturn(casualSettings)
+        `when`(seasonSettingsRepository.findBySeasonId(activeSeason.id)).thenReturn(activeSettings)
+        `when`(gameRepository.findAllBySeasonId(activeSeason.id)).thenReturn(listOf(activeGame))
+
+        val response = leagueService.getPlayPageData(leagueId, requestingPlayerAccountId)
+
+        assertEquals(activeSeason.id, response.activeSeason?.id)
+        assertEquals(1, response.activeSeasonGames.size)
+        assertEquals(activeGame.id, response.activeSeasonGames[0].id)
+        assertEquals(activeSettings.durationSeconds, response.activeSeasonSettings?.durationSeconds)
+        assertEquals(casualSettings.durationSeconds, response.casualSeasonSettings?.durationSeconds)
+        assertEquals(1, response.members.size)
+        assertEquals(membership.id, response.members[0].id)
+    }
 }

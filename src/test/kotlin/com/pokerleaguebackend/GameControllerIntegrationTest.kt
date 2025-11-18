@@ -177,7 +177,7 @@ class GameControllerIntegrationTest {
     fun `createGame should create a new game as admin`() {
         val createGameRequest = CreateGameRequest(
             gameName = null,
-            gameDateTime = Instant.now(),
+            gameDateTime = Instant.now().toString(),
             gameLocation = null
         )
 
@@ -194,7 +194,7 @@ class GameControllerIntegrationTest {
     fun `createGame should return forbidden for regular user`() {
         val createGameRequest = CreateGameRequest(
             gameName = null,
-            gameDateTime = Instant.now(),
+            gameDateTime = Instant.now().toString(),
             gameLocation = null
         )
 
@@ -321,7 +321,7 @@ class GameControllerIntegrationTest {
     fun `createGame should assign sequential game names`() {
         val createGameRequest = CreateGameRequest(
             gameName = null,
-            gameDateTime = Instant.now(),
+            gameDateTime = Instant.now().toString(),
             gameLocation = null
         )
 
@@ -352,7 +352,7 @@ class GameControllerIntegrationTest {
         // Attempt to create a game in the finalized season
         val createGameRequest = CreateGameRequest(
             gameName = null,
-            gameDateTime = Instant.now(),
+            gameDateTime = Instant.now().toString(),
             gameLocation = null
         )
 
@@ -374,7 +374,7 @@ class GameControllerIntegrationTest {
 
         val updateGameRequest = CreateGameRequest(
             gameName = "Updated Game Name",
-            gameDateTime = Instant.now().plusSeconds(86400 + 3600), // +1 day, +1 hour
+            gameDateTime = Instant.now().plusSeconds(86400 + 3600).toString(), // +1 day, +1 hour
             gameLocation = "Updated Location"
         )
 
@@ -397,7 +397,7 @@ class GameControllerIntegrationTest {
 
         val updateGameRequest = CreateGameRequest(
             gameName = "Updated Game Name",
-            gameDateTime = Instant.now().plusSeconds(365 * 24 * 3600 * 10), // 10 years in future
+            gameDateTime = Instant.now().plusSeconds(365 * 24 * 3600 * 10).toString(), // 10 years in future
             gameLocation = "Some Location"
         )
 
@@ -419,7 +419,7 @@ class GameControllerIntegrationTest {
 
         val updateGameRequest = CreateGameRequest(
             gameName = "Attempted Update",
-            gameDateTime = Instant.now(),
+            gameDateTime = Instant.now().toString(),
             gameLocation = "Forbidden Location"
         )
 
@@ -435,7 +435,7 @@ class GameControllerIntegrationTest {
         val nonExistentGameId = 9999L
         val updateGameRequest = CreateGameRequest(
             gameName = "Non Existent",
-            gameDateTime = Instant.now(),
+            gameDateTime = Instant.now().toString(),
             gameLocation = "Anywhere"
         )
 
@@ -461,7 +461,7 @@ class GameControllerIntegrationTest {
 
         val updateGameRequest = CreateGameRequest(
             gameName = "Attempted Update in Finalized Season",
-            gameDateTime = Instant.now(),
+            gameDateTime = Instant.now().toString(),
             gameLocation = "Finalized Location"
         )
 
