@@ -63,6 +63,12 @@ class SeasonSettingsService(
         existingSettings.playerEliminationEnabled = settingsDto.playerEliminationEnabled
         existingSettings.playerTimerControlEnabled = settingsDto.playerTimerControlEnabled
 
+        // For casual seasons, certain settings are enforced
+        if (season.isCasual) {
+            existingSettings.playerEliminationEnabled = true
+            existingSettings.playerTimerControlEnabled = true
+        }
+
         // Update blind levels
         existingSettings.blindLevels.clear()
         val newBlindLevels = settingsDto.blindLevels.map { dto ->
@@ -102,6 +108,11 @@ class SeasonSettingsService(
                 placePoints = mutableListOf()
             )
 
+            if (season.isCasual) {
+                newSettings.playerEliminationEnabled = true
+                newSettings.playerTimerControlEnabled = true
+            }
+
             val newBlindLevels = latestSettings.blindLevels.map { it.copy(id = 0, seasonSettings = newSettings) }
             val newPlacePoints = latestSettings.placePoints.map { it.copy(id = 0, seasonSettings = newSettings) }
 
@@ -120,7 +131,9 @@ class SeasonSettingsService(
                 bountyOnLeaderAbsenceRule = BountyOnLeaderAbsenceRule.NO_BOUNTY,
                 enableAttendancePoints = false,
                 attendancePoints = BigDecimal.ZERO,
-                startingStack = 1500
+                startingStack = 1500,
+                playerEliminationEnabled = season.isCasual,
+                playerTimerControlEnabled = season.isCasual
             )
 
             val defaultPlacePoints = listOf(
