@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import com.pokerleaguebackend.model.enums.UserRole
 import java.math.BigDecimal
+import kotlin.jvm.Synchronized
 
 @Service
 class SeasonSettingsService(
@@ -22,6 +23,7 @@ class SeasonSettingsService(
     private val leagueMembershipRepository: LeagueMembershipRepository
 ) {
 
+    @Synchronized
     fun getSeasonSettings(seasonId: Long, playerId: Long): SeasonSettings {
         val season = seasonRepository.findById(seasonId)
             .orElseThrow { IllegalArgumentException("Season not found") }
