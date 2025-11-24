@@ -256,4 +256,118 @@ class SeasonControllerIntegrationTest {
         val deletedSettings = seasonSettingsRepository.findBySeasonId(season.id)
         assert(deletedSettings == null)
     }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `getSeasonSettingsPageData should return data for specific season when selectedSeasonId is provided`() {
+        // Create a few seasons
+        val season1 = seasonRepository.save(Season(seasonName = "Season 1", startDate = Date(System.currentTimeMillis() - 200000), endDate = Date(System.currentTimeMillis() - 100000), league = testLeague))
+        val season2 = seasonRepository.save(Season(seasonName = "Season 2", startDate = Date(System.currentTimeMillis() - 50000), endDate = Date(System.currentTimeMillis() + 50000), league = testLeague))
+        
+        // Create settings for season2 to verify they are fetched correctly
+        seasonSettingsRepository.save(SeasonSettings(season = season2, startingStack = 5000))
+
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/season-settings-page", testLeague.id)
+            .with(user(adminPrincipal))
+            .param("selectedSeasonId", season2.id.toString()))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.selectedSeason.id").value(season2.id))
+            .andExpect(jsonPath("$.selectedSeason.seasonName").value("Season 2"))
+            .andExpect(jsonPath("$.settings.startingStack").value(5000))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `getSeasonSettingsPageData should select active season by default`() {
+        // Create a past season and a currently active season
+        seasonRepository.save(Season(seasonName = "Past Season", startDate = Date(System.currentTimeMillis() - 200000), endDate = Date(System.currentTimeMillis() - 100000), league = testLeague))
+        val activeSeason = seasonRepository.save(Season(seasonName = "Active Season", startDate = Date(System.currentTimeMillis() - 50000), endDate = Date(System.currentTimeMillis() + 50000), league = testLeague))
+
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/season-settings-page", testLeague.id)
+            .with(user(adminPrincipal)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.selectedSeason.id").value(activeSeason.id))
+            .andExpect(jsonPath("$.selectedSeason.seasonName").value("Active Season"))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `getSeasonSettingsPageData should select next future season by default when no active season`() {
+        // Create a past season and a future season
+        seasonRepository.save(Season(seasonName = "Past Season", startDate = Date(System.currentTimeMillis() - 200000), endDate = Date(System.currentTimeMillis() - 100000), league = testLeague))
+        val futureSeason = seasonRepository.save(Season(seasonName = "Future Season", startDate = Date(System.currentTimeMillis() + 100000), endDate = Date(System.currentTimeMillis() + 200000), league = testLeague))
+
+        // The future season is the only one after today, so it should be selected
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/season-settings-page", testLeague.id)
+            .with(user(adminPrincipal)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.selectedSeason.id").value(futureSeason.id))
+            .andExpect(jsonPath("$.selectedSeason.seasonName").value("Future Season"))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `getSeasonSettingsPageData should select most recent past season by default when no active or future seasons`() {
+        // Create multiple past seasons
+        val olderPastSeason = seasonRepository.save(Season(seasonName = "Older Past Season", startDate = Date(System.currentTimeMillis() - 400000), endDate = Date(System.currentTimeMillis() - 300000), league = testLeague))
+        val recentPastSeason = seasonRepository.save(Season(seasonName = "Recent Past Season", startDate = Date(System.currentTimeMillis() - 200000), endDate = Date(System.currentTimeMillis() - 100000), league = testLeague))
+
+        // The most recent past season should be selected
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/season-settings-page", testLeague.id)
+            .with(user(adminPrincipal)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.selectedSeason.id").value(recentPastSeason.id))
+            .andExpect(jsonPath("$.selectedSeason.seasonName").value("Recent Past Season"))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `getSeasonSettingsPageData should select casual season by default when no other seasons exist`() {
+        val casualSeason = seasonRepository.save(Season(seasonName = "Casual Games", startDate = Date(System.currentTimeMillis() - 1000), endDate = Date(System.currentTimeMillis() + 1000), league = testLeague, isCasual = true))
+
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/season-settings-page", testLeague.id)
+            .with(user(adminPrincipal)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.selectedSeason.id").value(casualSeason.id))
+            .andExpect(jsonPath("$.selectedSeason.seasonName").value("Casual Games"))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `getSeasonSettingsPageData should exclude finalized seasons`() {
+        seasonRepository.save(Season(seasonName = "Finalized Season", startDate = Date(), endDate = Date(), league = testLeague, isFinalized = true))
+        val casualSeason = seasonRepository.save(Season(seasonName = "Casual Games", startDate = Date(), endDate = Date(), league = testLeague, isCasual = true))
+
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/season-settings-page", testLeague.id)
+            .with(user(adminPrincipal)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.allSeasons.length()").value(1))
+            .andExpect(jsonPath("$.allSeasons[0].seasonName").value("Casual Games"))
+    }
+
+    @Test
+    @WithMockUser(username = "admin@test.com", roles = ["ADMIN"])
+    fun `getSeasonSettingsPageData should sort seasons correctly`() {
+        val season1 = seasonRepository.save(Season(seasonName = "Season A", startDate = Date(System.currentTimeMillis() - 200000), endDate = Date(System.currentTimeMillis() - 100000), league = testLeague))
+        val season2 = seasonRepository.save(Season(seasonName = "Season B", startDate = Date(System.currentTimeMillis() - 100000), endDate = Date(System.currentTimeMillis() - 50000), league = testLeague))
+        val casualSeason = seasonRepository.save(Season(seasonName = "Casual Games", startDate = Date(System.currentTimeMillis() - 300000), endDate = Date(System.currentTimeMillis() - 250000), league = testLeague, isCasual = true))
+
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/season-settings-page", testLeague.id)
+            .with(user(adminPrincipal)))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.allSeasons.length()").value(3))
+            .andExpect(jsonPath("$.allSeasons[0].id").value(season2.id)) // Season B is most recent
+            .andExpect(jsonPath("$.allSeasons[1].id").value(season1.id)) // Season A is next
+            .andExpect(jsonPath("$.allSeasons[2].id").value(casualSeason.id)) // Casual is last
+    }
+
+    @Test
+    fun `getSeasonSettingsPageData should return 403 for non-member`() {
+        val nonMember = playerAccountRepository.save(PlayerAccount(firstName = "Non", lastName = "Member", email = "non.member@test.com", password = "password"))
+        val nonMemberPrincipal = UserPrincipal(nonMember, emptyList())
+
+        mockMvc.perform(get("/api/leagues/{leagueId}/seasons/season-settings-page", testLeague.id)
+            .with(user(nonMemberPrincipal)))
+            .andExpect(status().isForbidden())
+    }
 }

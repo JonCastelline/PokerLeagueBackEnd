@@ -15,6 +15,37 @@ import org.springframework.transaction.annotation.Transactional
 import com.pokerleaguebackend.model.enums.UserRole
 import java.math.BigDecimal
 import kotlin.jvm.Synchronized
+import com.pokerleaguebackend.payload.dto.BlindLevelDto
+import com.pokerleaguebackend.payload.dto.PlacePointDto
+
+private fun BlindLevel.toDto() = BlindLevelDto(
+    level = this.level,
+    smallBlind = this.smallBlind,
+    bigBlind = this.bigBlind
+)
+
+private fun PlacePoint.toDto() = PlacePointDto(
+    place = this.place,
+    points = this.points
+)
+
+private fun SeasonSettings.toDto() = SeasonSettingsDto(
+    trackKills = this.trackKills,
+    trackBounties = this.trackBounties,
+    killPoints = this.killPoints,
+    bountyPoints = this.bountyPoints,
+    durationSeconds = this.durationSeconds,
+    bountyOnLeaderAbsenceRule = this.bountyOnLeaderAbsenceRule,
+    enableAttendancePoints = this.enableAttendancePoints,
+    attendancePoints = this.attendancePoints,
+    startingStack = this.startingStack,
+    warningSoundEnabled = this.warningSoundEnabled,
+    warningSoundTimeSeconds = this.warningSoundTimeSeconds ?: 0,
+    playerEliminationEnabled = this.playerEliminationEnabled,
+    playerTimerControlEnabled = this.playerTimerControlEnabled,
+    blindLevels = this.blindLevels.map { it.toDto() },
+    placePoints = this.placePoints.map { it.toDto() }
+)
 
 @Service
 class SeasonSettingsService(
@@ -168,5 +199,9 @@ class SeasonSettingsService(
 
             return seasonSettingsRepository.save(defaultSettings)
         }
+    }
+
+    fun toDto(seasonSettings: SeasonSettings): SeasonSettingsDto {
+        return seasonSettings.toDto()
     }
 }
