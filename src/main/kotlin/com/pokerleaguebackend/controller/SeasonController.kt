@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -24,6 +25,8 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.util.NoSuchElementException
 import com.pokerleaguebackend.payload.response.ApiMessage
+import com.pokerleaguebackend.payload.dto.SeasonSettingsPageData
+import org.springframework.web.bind.annotation.RequestParam
 
 @Tag(name = "Season Management", description = "Endpoints for managing seasons within a league")
 @RestController
@@ -185,5 +188,21 @@ class SeasonController @Autowired constructor(private val seasonService: SeasonS
         } catch (e: IllegalStateException) {
             ResponseEntity.status(HttpStatus.CONFLICT).body(ApiMessage(e.message ?: "Cannot delete season with existing games"))
         }
+    }
+
+    @Operation(summary = "Get all data needed for the Season Settings page")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Successfully retrieved Season Settings page data"),
+        ApiResponse(responseCode = "403", description = "User is not a member of the league")
+    ])
+    @GetMapping("/season-settings-page")
+    fun getSeasonSettingsPageData(
+        @PathVariable leagueId: Long,
+        @AuthenticationPrincipal userDetails: UserDetails,
+        @RequestParam(required = false) selectedSeasonId: Long?
+    ): ResponseEntity<SeasonSettingsPageData> {
+        val playerAccount = (userDetails as UserPrincipal).playerAccount
+        val seasonSettingsPageData = seasonService.getSeasonSettingsPageData(leagueId, selectedSeasonId, playerAccount.id)
+        return ResponseEntity.ok(seasonSettingsPageData)
     }
 }

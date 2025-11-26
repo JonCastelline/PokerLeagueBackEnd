@@ -262,7 +262,6 @@ class LeagueServiceTest {
         val ownerAccount = PlayerAccount(id = 1, firstName = "Owner", lastName = "User", email = "owner@test.com", password = "password")
         val adminAccount = PlayerAccount(id = 2, firstName = "Admin", lastName = "User", email = "admin@test.com", password = "password")
         val league = League(id = 1, leagueName = "Test League", inviteCode = "test", expirationDate = null, nonOwnerAdminsCanManageRoles = true)
-        val ownerMembership = LeagueMembership(id = 1, playerAccount = ownerAccount, league = league, role = UserRole.ADMIN, isOwner = true, displayName = "Owner", iconUrl = null, isActive = true)
         val adminMembership = LeagueMembership(id = 2, playerAccount = adminAccount, league = league, role = UserRole.ADMIN, isOwner = false, displayName = "Admin", iconUrl = null, isActive = true)
         val targetMembership = LeagueMembership(id = 1, playerAccount = ownerAccount, league = league, role = UserRole.ADMIN, isOwner = true, displayName = "Owner", iconUrl = "http://example.com/owner_icon.png", isActive = true)
 
