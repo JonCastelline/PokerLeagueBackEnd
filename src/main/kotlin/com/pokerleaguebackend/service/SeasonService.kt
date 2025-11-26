@@ -71,6 +71,7 @@ class SeasonService @Autowired constructor(
 
     private val logger = LoggerFactory.getLogger(SeasonService::class.java)
 
+    @Transactional
     fun createSeason(leagueId: Long, createSeasonRequest: CreateSeasonRequest): Season {
         logger.info("Attempting to create season for leagueId: {} with request: {}", leagueId, createSeasonRequest)
         val league = leagueRepository.findById(leagueId).orElseThrow { NoSuchElementException("League not found with ID: $leagueId") }
@@ -81,7 +82,9 @@ class SeasonService @Autowired constructor(
             isCasual = createSeasonRequest.isCasual,
             league = league
         )
-        return seasonRepository.save(season)
+        val newSeason = seasonRepository.save(season)
+        seasonSettingsService.createSeasonSettings(newSeason)
+        return newSeason
     }
 
     fun getSeasonsByLeague(leagueId: Long, playerId: Long): List<Season> {

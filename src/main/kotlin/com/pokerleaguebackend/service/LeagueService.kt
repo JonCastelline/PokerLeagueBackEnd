@@ -99,12 +99,8 @@ class LeagueService(
             endDate = Date(253402297199000L), // Set to 9999-12-31 23:59:59 UTC, effectively never ends within DB limits
             isCasual = true
         )
-        val savedCasualSeason = seasonService.createSeason(savedLeague.id, createCasualSeasonRequest)
-        logger.info("Casual season created with ID: {} for league ID: {} via SeasonService", savedCasualSeason.id, savedLeague.id)
-
-        // Create default SeasonSettings for the casual season using the SeasonSettingsService
-        seasonSettingsService.createSeasonSettings(savedCasualSeason)
-        logger.info("Default SeasonSettings initialized for casual season ID: {}", savedCasualSeason.id)
+    val savedCasualSeason = seasonService.createSeason(savedLeague.id, createCasualSeasonRequest)
+    logger.info("Casual season created with ID: {} for league ID: {} via SeasonService", savedCasualSeason.id, savedLeague.id)
 
         val membership = LeagueMembership(
             playerAccount = creator,
@@ -871,7 +867,7 @@ class LeagueService(
         val casualSeason = allSeasons.find { it.isCasual }
         if (casualSeason != null) {
             logger.info("Casual season found for leagueId: {}. Season ID: {}", leagueId, casualSeason.id)
-            val casualSeasonSettings = casualSeason?.let { seasonSettingsRepository.findBySeasonId(it.id) }
+            val casualSeasonSettings = casualSeason.let { seasonSettingsRepository.findBySeasonId(it.id) }
             if (casualSeasonSettings != null) {
                 logger.info("Casual season settings found for leagueId: {}. Settings ID: {}", leagueId, casualSeasonSettings.id)
             } else {
