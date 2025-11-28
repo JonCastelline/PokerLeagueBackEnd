@@ -272,4 +272,8 @@ class SeasonService @Autowired constructor(
         )
     }
 
+    fun getSeasonById(seasonId: Long): Season {
+        return seasonRepository.findById(seasonId)
+            .orElseThrow { NoSuchElementException("Season not found with ID: $seasonId") }
+    }
 }

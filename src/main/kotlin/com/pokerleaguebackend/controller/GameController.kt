@@ -30,13 +30,21 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.security.Principal
+import org.springframework.http.HttpHeaders
+import com.pokerleaguebackend.service.CsvExportService
+import com.pokerleaguebackend.service.SeasonService
+import com.pokerleaguebackend.service.LeagueService
+import java.util.NoSuchElementException
 
 @RestController
 @RequestMapping("/api")
 class GameController(
     private val gameService: GameService,
     private val gameEngineService: GameEngineService,
-    private val playerAccountRepository: PlayerAccountRepository
+    private val playerAccountRepository: PlayerAccountRepository,
+    private val csvExportService: CsvExportService,
+    private val seasonService: SeasonService,
+    private val leagueService: LeagueService
 ) {
 
     @Tag(name = "Game Management")
@@ -347,5 +355,37 @@ class GameController(
     @GetMapping("/games/calendar/{calendarToken}.ics")
     fun getGameCalendar(@PathVariable calendarToken: String, response: HttpServletResponse) {
         gameService.getGameCalendar(calendarToken, response)
+    }
+
+    @Tag(name = "Game Management")
+    @Operation(summary = "Export season game history to CSV")
+    @ApiResponses(value = [
+        ApiResponse(responseCode = "200", description = "Game history exported successfully"),
+        ApiResponse(responseCode = "403", description = "User is not a member of the league"),
+        ApiResponse(responseCode = "404", description = "Season not found")
+    ])
+    @GetMapping("/seasons/{seasonId}/games/csv")
+    fun exportGameHistoryToCsv(
+        @PathVariable seasonId: Long,
+        principal: Principal
+    ): ResponseEntity<String> {
+        return try {
+            if (!leagueService.isLeagueMember(seasonId, principal.name)) {
+                throw AccessDeniedException("User is not a member of this league")
+            }
+
+            val csvData = csvExportService.generateGameHistoryCsv(seasonId, principal.name)
+            val season = seasonService.getSeasonById(seasonId)
+            val filename = "game_history-".plus(season.seasonName.replace(" ", "_")).plus(".csv")
+
+            ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "text/csv")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"$filename\"")
+                .body(csvData)
+        } catch (e: NoSuchElementException) {
+            ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.message)
+        } catch (e: AccessDeniedException) {
+            ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.message)
+        }
     }
 }
