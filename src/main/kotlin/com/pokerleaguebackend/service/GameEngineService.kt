@@ -99,7 +99,7 @@ class GameEngineService(
 
         // Determine initial bounty holder(s)
         val initialBountyHolders = if (seasonSettings.trackBounties) {
-            val standings = standingsService.getStandingsForLatestSeason(game.season.league.id)
+            val standings = standingsService.getStandingsForSeason(game.season.id)
             if (standings.isNotEmpty()) {
                 val maxPoints = standings.maxOf { it.totalPoints }
                 if (maxPoints > java.math.BigDecimal.ZERO) {

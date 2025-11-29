@@ -287,7 +287,7 @@ class GameEngineServiceTest {
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
         `when`(leagueMembershipRepository.findAllById(request.playerIds)).thenReturn(players)
-        `when`(standingsService.getStandingsForLatestSeason(game.season.league.id)).thenReturn(standings)
+        `when`(standingsService.getStandingsForSeason(season.id)).thenReturn(standings)
         `when`(gameRepository.save(game)).thenReturn(game)
 
         // When
@@ -344,7 +344,7 @@ class GameEngineServiceTest {
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
         `when`(leagueMembershipRepository.findAllById(request.playerIds)).thenReturn(players)
-        `when`(standingsService.getStandingsForLatestSeason(game.season.league.id)).thenReturn(emptyList()) // Empty standings
+        `when`(standingsService.getStandingsForSeason(season.id)).thenReturn(emptyList()) // Empty standings
         `when`(gameRepository.save(game)).thenReturn(game)
 
         // When
@@ -510,7 +510,7 @@ class GameEngineServiceTest {
         `when`(gameRepository.findById(1)).thenReturn(Optional.of(game))
         `when`(seasonSettingsRepository.findBySeasonId(1)).thenReturn(seasonSettings)
         `when`(leagueMembershipRepository.findAllById(request.playerIds)).thenReturn(players)
-        `when`(standingsService.getStandingsForLatestSeason(game.season.league.id)).thenReturn(standings)
+        `when`(standingsService.getStandingsForSeason(season.id)).thenReturn(standings)
         `when`(gameRepository.save(game)).thenReturn(game)
 
         // When
