@@ -221,4 +221,42 @@ class CsvExportServiceTest {
         val actualCsv = csvExportService.generateGameHistoryCsv(seasonId, principalName)
         assertEquals(expectedCsv, actualCsv)
     }
+
+    @Test
+    fun `generateGameHistoryCsv should sort games by date then place`() {
+        val seasonId = 99L
+        // create two games out of chronological order
+        val laterGame = Game(id = 301L, gameName = "Later Game", gameDateTime = Instant.parse("2025-12-02T10:00:00Z"), season = mockSeasonTrackAll)
+        val earlierGame = Game(id = 300L, gameName = "Earlier Game", gameDateTime = Instant.parse("2025-12-01T10:00:00Z"), season = mockSeasonTrackAll)
+        // return in unsorted order to ensure service sorts
+        val unsortedGames = listOf(laterGame, earlierGame)
+
+        val player1Membership = LeagueMembership(playerAccount = mockPlayerAccount.copy(id = 11L, firstName = "A", lastName = "One", email = "a1@example.com"), league = mockLeague, role = UserRole.PLAYER, displayName = "Player A")
+        val player2Membership = LeagueMembership(playerAccount = mockPlayerAccount.copy(id = 12L, firstName = "B", lastName = "Two", email = "b2@example.com"), league = mockLeague, role = UserRole.PLAYER, displayName = "Player B")
+
+        // For earlierGame provide results in reverse-place order to ensure sorting by place
+        val earlier_r2 = GameResult(id = 10L, game = earlierGame, player = player2Membership, place = 2, kills = 0, bounties = 0, bountyPlacedOnPlayer = null)
+        val earlier_r1 = GameResult(id = 11L, game = earlierGame, player = player1Membership, place = 1, kills = 1, bounties = 0, bountyPlacedOnPlayer = null)
+        val earlierResultsUnsorted = listOf(earlier_r2, earlier_r1)
+
+        // For laterGame provide results in reverse-place order as well
+        val later_r2 = GameResult(id = 20L, game = laterGame, player = player2Membership, place = 2, kills = 0, bounties = 0, bountyPlacedOnPlayer = null)
+        val later_r1 = GameResult(id = 21L, game = laterGame, player = player1Membership, place = 1, kills = 2, bounties = 1, bountyPlacedOnPlayer = null)
+        val laterResultsUnsorted = listOf(later_r2, later_r1)
+
+        Mockito.`when`(gameService.getGameHistory(seasonId)).thenReturn(unsortedGames)
+        Mockito.`when`(seasonSettingsService.getSeasonSettings(seasonId, playerId)).thenReturn(seasonSettingsTrackAll)
+        Mockito.`when`(gameService.getGameResults(earlierGame.id)).thenReturn(earlierResultsUnsorted)
+        Mockito.`when`(gameService.getGameResults(laterGame.id)).thenReturn(laterResultsUnsorted)
+
+        val expectedCsv = """Game Date,Game Name,Player Name,Place,Kills,Bounties
+2025-12-01,Earlier Game,Player A,1,1,0
+2025-12-01,Earlier Game,Player B,2,0,0
+2025-12-02,Later Game,Player A,1,2,1
+2025-12-02,Later Game,Player B,2,0,0
+"""
+
+        val actualCsv = csvExportService.generateGameHistoryCsv(seasonId, principalName)
+        assertEquals(expectedCsv, actualCsv)
+    }
 }

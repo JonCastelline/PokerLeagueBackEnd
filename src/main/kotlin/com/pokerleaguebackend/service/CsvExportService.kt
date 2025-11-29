@@ -82,8 +82,10 @@ class CsvExportService(
             ?: throw IllegalStateException("Player with email $principalName not found.")
         val playerId = playerAccount.id
 
-        val games = gameService.getGameHistory(seasonId)
-        val seasonSettings = seasonSettingsService.getSeasonSettings(seasonId, playerId)
+    val games = gameService.getGameHistory(seasonId)
+    // sort games chronologically to ensure CSV groups by game in order
+    val sortedGames = games.sortedWith(compareBy<Game>({ it.gameDateTime }, { it.id }))
+    val seasonSettings = seasonSettingsService.getSeasonSettings(seasonId, playerId)
 
         val headers = mutableListOf("Game Date", "Game Name", "Player Name", "Place")
         if (seasonSettings.trackKills) {
@@ -101,9 +103,10 @@ class CsvExportService(
             .build()
 
         CSVPrinter(stringWriter, csvFormat).use { csvPrinter ->
-            games.forEach { game: Game ->
+            sortedGames.forEach { game: Game ->
                 val gameId = requireNotNull(game.id) { "Game id missing for game: ${game.gameName}" }
-                val gameResults = gameService.getGameResults(gameId)
+                // sort results by place so within each game rows are in finishing order
+                val gameResults = gameService.getGameResults(gameId).sortedBy { it.place }
                 gameResults.forEach { result: GameResult ->
                     val record = mutableListOf(
                         game.gameDateTime.atZone(ZoneId.systemDefault()).toLocalDate().toString(),
