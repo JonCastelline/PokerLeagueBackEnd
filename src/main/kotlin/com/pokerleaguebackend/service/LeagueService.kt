@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Value
 import jakarta.persistence.EntityManager
 import org.slf4j.LoggerFactory
 import java.util.UUID
+import java.util.TimeZone
 
 import org.springframework.transaction.annotation.Transactional
 import java.util.Date
@@ -857,11 +858,21 @@ class LeagueService(
     }
 
     fun getPlayPageData(leagueId: Long, requestingPlayerAccountId: Long): PlayPageDataResponse {
+        return getPlayPageData(leagueId, requestingPlayerAccountId, Date())
+    }
+
+    fun getPlayPageData(leagueId: Long, requestingPlayerAccountId: Long, now: Date): PlayPageDataResponse {
         authorizeLeagueMembershipAccess(leagueId, requestingPlayerAccountId)
 
         val allSeasons = seasonRepository.findAllByLeagueId(leagueId)
-        val today = Date()
-        logger.info("Today's date: {}", today)
+        
+        val todayCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+        todayCal.time = now
+        todayCal.set(Calendar.HOUR_OF_DAY, 0)
+        todayCal.set(Calendar.MINUTE, 0)
+        todayCal.set(Calendar.SECOND, 0)
+        todayCal.set(Calendar.MILLISECOND, 0)
+        val startOfTodayUTC = todayCal.time
 
         // Find casual season settings
         val casualSeason = allSeasons.find { it.isCasual }
@@ -880,10 +891,18 @@ class LeagueService(
 
         // Find the most active non-casual season
         val activeNonCasualSeasons = allSeasons.filter { season ->
+            val endCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
+            endCal.time = season.endDate
+            endCal.set(Calendar.HOUR_OF_DAY, 23)
+            endCal.set(Calendar.MINUTE, 59)
+            endCal.set(Calendar.SECOND, 59)
+            endCal.set(Calendar.MILLISECOND, 999)
+            val endOfDayEndDateUTC = endCal.time
+
             !season.isFinalized &&
             !season.isCasual &&
-            (season.startDate.before(today) || season.startDate.compareTo(today) == 0) &&
-            (season.endDate.after(today) || season.endDate.compareTo(today) == 0)
+            !season.startDate.after(startOfTodayUTC) && // startDate <= startOfTodayUTC
+            !startOfTodayUTC.after(endOfDayEndDateUTC)   // startOfTodayUTC <= endOfDayEndDateUTC
         }
 
         val mostActiveSeason = activeNonCasualSeasons.maxByOrNull { it.startDate }
