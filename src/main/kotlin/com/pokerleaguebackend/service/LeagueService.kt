@@ -861,6 +861,7 @@ class LeagueService(
 
         val allSeasons = seasonRepository.findAllByLeagueId(leagueId)
         val today = Date()
+        logger.info("Today's date: {}", today)
 
         // Find casual season settings
         val casualSeason = allSeasons.find { it.isCasual }
