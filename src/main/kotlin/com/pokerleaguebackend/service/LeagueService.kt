@@ -895,7 +895,7 @@ class LeagueService(
             activeSeasonSettings = seasonSettingsRepository.findBySeasonId(mostActiveSeason.id)
         }
 
-        val members = getActiveLeagueMembers(leagueId, requestingPlayerAccountId)
+        val members = getLeagueMembers(leagueId, requestingPlayerAccountId)
 
         return PlayPageDataResponse(
             activeSeason = mostActiveSeason,
