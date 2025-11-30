@@ -858,7 +858,6 @@ class LeagueService(
 
     fun getPlayPageData(leagueId: Long, requestingPlayerAccountId: Long): PlayPageDataResponse {
         authorizeLeagueMembershipAccess(leagueId, requestingPlayerAccountId)
-        logger.info("Fetching PlayPageData for leagueId: {} by playerAccountId: {}", leagueId, requestingPlayerAccountId)
 
         val allSeasons = seasonRepository.findAllByLeagueId(leagueId)
         val today = Date()
@@ -896,7 +895,7 @@ class LeagueService(
             activeSeasonSettings = seasonSettingsRepository.findBySeasonId(mostActiveSeason.id)
         }
 
-        val members = getLeagueMembers(leagueId, requestingPlayerAccountId)
+        val members = getActiveLeagueMembers(leagueId, requestingPlayerAccountId)
 
         return PlayPageDataResponse(
             activeSeason = mostActiveSeason,
