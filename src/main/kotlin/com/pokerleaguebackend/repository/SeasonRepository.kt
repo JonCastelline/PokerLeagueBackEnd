@@ -10,7 +10,8 @@ import java.util.Date
 @Repository
 interface SeasonRepository : JpaRepository<Season, Long> {
     fun findTopByLeagueIdOrderByStartDateDesc(leagueId: Long): Season?
-    fun findAllByLeagueId(leagueId: Long): List<Season>
+    @Query("SELECT s FROM Season s JOIN FETCH s.league WHERE s.league.id = :leagueId")
+    fun findAllByLeagueId(@Param("leagueId") leagueId: Long): List<Season>
     fun findByLeagueIdAndStartDateLessThanEqualAndEndDateGreaterThanEqual(leagueId: Long, startDate: Date, endDate: Date): List<Season>
 
     @Query("SELECT s FROM Season s WHERE s.league.id = :leagueId AND s.id <> :seasonId AND s.startDate < :startDate ORDER BY s.startDate DESC LIMIT 1")
