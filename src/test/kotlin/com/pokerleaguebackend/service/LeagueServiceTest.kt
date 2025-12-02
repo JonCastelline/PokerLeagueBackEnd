@@ -457,7 +457,7 @@ class LeagueServiceTest {
         `when`(seasonSettingsRepository.findBySeasonId(activeSeason.id)).thenReturn(activeSettings)
         `when`(gameRepository.findAllBySeasonId(activeSeason.id)).thenReturn(listOf(activeGame))
 
-        val response = leagueService.getPlayPageData(leagueId, requestingPlayerAccountId)
+        val response = leagueService.getPlayPageData(leagueId, requestingPlayerAccountId, activeSeason.id)
 
         assertEquals(activeSeason.id, response.activeSeason?.id)
         assertEquals(1, response.activeSeasonGames.size)
@@ -469,30 +469,31 @@ class LeagueServiceTest {
     }
 
     @Test
-    fun `getPlayPageData_shouldConsiderSeasonActiveOnItsLastDay`() {
+    fun `getPlayPageData_shouldReturnCasualSeasonIfNoSeasonIdProvided`() {
         val leagueId = 1L
         val requestingPlayerAccountId = 1L
 
-        // Set "now" to a specific date: Nov 30, 2025
-        val nowCalendar = Calendar.getInstance()
-        nowCalendar.set(2025, Calendar.NOVEMBER, 30)
-        val now = nowCalendar.time
-
-        // Create a season that ends on this day
         val league = League(id = leagueId, leagueName = "Test League", inviteCode = "test", expirationDate = null)
-        val seasonEndsToday = Season(id = 1, league = league, seasonName = "Ends Today", startDate = Date(now.time - 86400000L), endDate = now, isFinalized = false, isCasual = false)
-        
         val playerAccount = PlayerAccount(id = requestingPlayerAccountId, firstName = "Test", lastName = "User", email = "test@test.com", password = "password")
         val membership = LeagueMembership(playerAccount = playerAccount, league = league, role = UserRole.PLAYER, displayName = "Test User", iconUrl = null, isActive = true)
-        
+        val members = listOf(membership)
+
+        val casualSeason = Season(id = 1, league = league, seasonName = "Casual", startDate = Date(0), endDate = Date(Long.MAX_VALUE), isFinalized = false, isCasual = true)
+        val casualSettings = SeasonSettings(season = casualSeason, durationSeconds = 600)
+
         `when`(leagueMembershipRepository.findByLeagueIdAndPlayerAccountId(leagueId, requestingPlayerAccountId)).thenReturn(membership)
-        `when`(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(membership))
-        `when`(seasonRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(seasonEndsToday))
-        `when`(gameRepository.findAllBySeasonId(seasonEndsToday.id)).thenReturn(emptyList()) // No games needed for this test
-        `when`(seasonSettingsRepository.findBySeasonId(seasonEndsToday.id)).thenReturn(null) // No settings needed
+        `when`(leagueMembershipRepository.findAllByLeagueId(leagueId)).thenReturn(members)
+        `when`(seasonRepository.findAllByLeagueId(leagueId)).thenReturn(listOf(casualSeason))
+        `when`(seasonSettingsRepository.findBySeasonId(casualSeason.id)).thenReturn(casualSettings)
+        `when`(gameRepository.findAllBySeasonId(any())).thenReturn(emptyList()) // No active games if no specific season
 
-        val response = leagueService.getPlayPageData(leagueId, requestingPlayerAccountId, now)
+        val response = leagueService.getPlayPageData(leagueId, requestingPlayerAccountId, null) // Pass null for seasonId
 
-        assertEquals(seasonEndsToday.id, response.activeSeason?.id)
+        assertEquals(null, response.activeSeason)
+        assertEquals(0, response.activeSeasonGames.size)
+        assertEquals(null, response.activeSeasonSettings)
+        assertEquals(casualSettings.durationSeconds, response.casualSeasonSettings?.durationSeconds)
+        assertEquals(1, response.members.size)
+        assertEquals(membership.id, response.members[0].id)
     }
 }

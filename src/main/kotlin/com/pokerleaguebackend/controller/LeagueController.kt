@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 import com.pokerleaguebackend.payload.dto.LeagueSettingsDto
@@ -390,10 +391,11 @@ class LeagueController(private val leagueService: LeagueService) {
     @GetMapping("/{leagueId}/play-page-data")
     fun getPlayPageData(
         @PathVariable leagueId: Long,
+        @RequestParam(required = false) seasonId: Long?,
         @AuthenticationPrincipal userDetails: UserDetails
     ): ResponseEntity<PlayPageDataResponse> {
         val playerAccount = (userDetails as UserPrincipal).playerAccount
-        val playPageData = leagueService.getPlayPageData(leagueId, playerAccount.id)
+        val playPageData = leagueService.getPlayPageData(leagueId, playerAccount.id, seasonId)
         return ResponseEntity.ok(playPageData)
     }
 }
