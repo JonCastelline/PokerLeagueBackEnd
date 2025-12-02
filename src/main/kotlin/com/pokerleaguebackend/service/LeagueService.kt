@@ -857,68 +857,33 @@ class LeagueService(
         return seasonSettings?.playerEliminationEnabled ?: false
     }
 
-    fun getPlayPageData(leagueId: Long, requestingPlayerAccountId: Long): PlayPageDataResponse {
-        return getPlayPageData(leagueId, requestingPlayerAccountId, Date())
-    }
-
-    fun getPlayPageData(leagueId: Long, requestingPlayerAccountId: Long, now: Date): PlayPageDataResponse {
+    fun getPlayPageData(leagueId: Long, requestingPlayerAccountId: Long, seasonId: Long?): PlayPageDataResponse {
         authorizeLeagueMembershipAccess(leagueId, requestingPlayerAccountId)
 
+        // Always fetch all members and casual season settings
+        val members = getLeagueMembers(leagueId, requestingPlayerAccountId)
         val allSeasons = seasonRepository.findAllByLeagueId(leagueId)
-        
-        val todayCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-        todayCal.time = now
-        todayCal.set(Calendar.HOUR_OF_DAY, 0)
-        todayCal.set(Calendar.MINUTE, 0)
-        todayCal.set(Calendar.SECOND, 0)
-        todayCal.set(Calendar.MILLISECOND, 0)
-        val startOfTodayUTC = todayCal.time
-
-        // Find casual season settings
         val casualSeason = allSeasons.find { it.isCasual }
-        if (casualSeason != null) {
-            logger.info("Casual season found for leagueId: {}. Season ID: {}", leagueId, casualSeason.id)
-            val casualSeasonSettings = casualSeason.let { seasonSettingsRepository.findBySeasonId(it.id) }
-            if (casualSeasonSettings != null) {
-                logger.info("Casual season settings found for leagueId: {}. Settings ID: {}", leagueId, casualSeasonSettings.id)
-            } else {
-                logger.info("Casual season settings NOT found for leagueId: {}. Season ID: {}", leagueId, casualSeason.id)
-            }
-        } else {
-            logger.warn("Casual season NOT found for leagueId: {}", leagueId)
-        }
         val casualSeasonSettings = casualSeason?.let { seasonSettingsRepository.findBySeasonId(it.id) }
 
-        // Find the most active non-casual season
-        val activeNonCasualSeasons = allSeasons.filter { season ->
-            val endCal = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
-            endCal.time = season.endDate
-            endCal.set(Calendar.HOUR_OF_DAY, 23)
-            endCal.set(Calendar.MINUTE, 59)
-            endCal.set(Calendar.SECOND, 59)
-            endCal.set(Calendar.MILLISECOND, 999)
-            val endOfDayEndDateUTC = endCal.time
-
-            !season.isFinalized &&
-            !season.isCasual &&
-            !season.startDate.after(startOfTodayUTC) && // startDate <= startOfTodayUTC
-            !startOfTodayUTC.after(endOfDayEndDateUTC)   // startOfTodayUTC <= endOfDayEndDateUTC
-        }
-
-        val mostActiveSeason = activeNonCasualSeasons.maxByOrNull { it.startDate }
-
+        var targetSeason: Season? = null
         var activeSeasonGames: List<Game> = emptyList()
         var activeSeasonSettings: SeasonSettings? = null
 
-        if (mostActiveSeason != null) {
-            activeSeasonGames = gameRepository.findAllBySeasonId(mostActiveSeason.id)
-            activeSeasonSettings = seasonSettingsRepository.findBySeasonId(mostActiveSeason.id)
+        // If a specific seasonId is provided, fetch its data
+        if (seasonId != null) {
+            targetSeason = allSeasons.find { it.id == seasonId }
+            if (targetSeason != null) {
+                activeSeasonGames = gameRepository.findAllBySeasonId(targetSeason.id)
+                activeSeasonSettings = seasonSettingsRepository.findBySeasonId(targetSeason.id)
+            } else {
+                // Log a warning if the requested seasonId is not found
+                logger.warn("Requested seasonId {} not found for leagueId {}", seasonId, leagueId)
+            }
         }
 
-        val members = getLeagueMembers(leagueId, requestingPlayerAccountId)
-
         return PlayPageDataResponse(
-            activeSeason = mostActiveSeason,
+            activeSeason = targetSeason,
             activeSeasonGames = activeSeasonGames,
             activeSeasonSettings = activeSeasonSettings,
             casualSeasonSettings = casualSeasonSettings,
